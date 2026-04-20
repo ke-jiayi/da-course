@@ -1,488 +1,362 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import ReactPlayer from 'react-player';
+import React, { useState } from 'react';
 import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-github';
-import 'ace-builds/src-noconflict/ext-language_tools';
-import { FaCheck, FaPlay, FaPause, FaSave, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
-interface CourseModule {
+interface Exercise {
+  id: string;
+  type: 'multiple-choice' | 'code';
+  question: string;
+  options?: string[];
+  correct_answer?: string;
+  code_template?: string;
+  expected_output?: string;
+}
+
+interface Module {
   id: string;
   title: string;
   description: string;
   video_url: string;
   code_example: string;
   exercises: Exercise[];
-  order_index: number;
-  progress: number;
-  completed: boolean;
-}
-
-interface Exercise {
-  id: string;
-  question: string;
-  type: 'multiple-choice' | 'coding';
-  options?: string[];
-  correct_answer?: string;
-  coding_problem?: string;
-  test_cases?: TestCase[];
-}
-
-interface TestCase {
-  input: string;
-  expected_output: string;
 }
 
 interface Course {
   id: string;
   title: string;
-  modules: CourseModule[];
+  description: string;
+  modules: Module[];
 }
 
 const LearnPage: React.FC = () => {
-  const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
-  const [course, setCourse] = useState<Course | null>(null);
-  const [module, setModule] = useState<CourseModule | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [videoProgress, setVideoProgress] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [code, setCode] = useState('');
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
-  const [exerciseFeedback, setExerciseFeedback] = useState<Record<string, { correct: boolean; message: string }>>({});
-  const [overallProgress, setOverallProgress] = useState(0);
+  const [selectedCourse, setSelectedCourse] = useState<string>('1');
+  const [selectedModule, setSelectedModule] = useState<string>('m1');
+  const [activeTab, setActiveTab] = useState<string>('video');
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
 
-  // 模拟课程数据
-  const mockCourses: Record<string, Course> = {
-    '1': {
+  // 课程数据
+  const courses: Course[] = [
+    {
       id: '1',
-      title: '数据分析基础',
+      title: '机器学习基础',
+      description: '学习机器学习的基本概念和算法',
       modules: [
         {
           id: 'm1',
-          title: '数据分析概述',
-          description: '了解数据分析的定义、重要性和应用场景',
+          title: '机器学习基础概念',
+          description: '了解机器学习的基本概念和应用场景',
           video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          code_example: "import pandas as pd\nimport numpy as np\n\n# 示例数据分析代码\ndata = {\n    \"name\": [\"Alice\", \"Bob\", \"Charlie\", \"David\"],\n    \"age\": [25, 30, 35, 40],\n    \"salary\": [50000, 60000, 70000, 80000]\n}\n\ndf = pd.DataFrame(data)\nprint(df)\nprint(\"\n平均薪资:\", df['salary'].mean())",
+          code_example: '# 机器学习基础概念示例\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\n\n# 生成示例数据\nnp.random.seed(42)\nx = np.linspace(0, 10, 100)\ny = 2 * x + 1 + np.random.normal(0, 1, 100)\n\n# 可视化数据\nplt.figure(figsize=(10, 6))\nplt.scatter(x, y, alpha=0.6)\nplt.title("示例数据")\nplt.xlabel("X")\nplt.ylabel("Y")\nplt.grid(True)\nplt.show()\n\nprint("机器学习基础概念示例")\nprint("1. 监督学习: 从标记数据中学习")\nprint("2. 无监督学习: 从未标记数据中学习")\nprint("3. 强化学习: 通过与环境交互学习")',
           exercises: [
             {
               id: 'ex1',
               type: 'multiple-choice',
-              question: '数据分析的主要目的是什么？',
+              question: '以下哪种学习类型需要标记数据？',
               options: [
-                '仅仅收集数据',
-                '从数据中提取有价值的 insights',
-                '创建美观的数据可视化',
-                '编写复杂的代码'
+                '监督学习',
+                '无监督学习',
+                '强化学习',
+                '半监督学习'
               ],
-              correct_answer: '从数据中提取有价值的 insights'
+              correct_answer: '监督学习'
             },
             {
               id: 'ex2',
-              type: 'coding',
-              question: '编写代码计算以下数据的平均值',
-              coding_problem: 'data = [10, 20, 30, 40, 50]\n# 计算平均值并打印结果',
-              test_cases: [
-                {
-                  input: '',
-                  expected_output: '30.0'
-                }
-              ]
+              type: 'multiple-choice',
+              question: '聚类属于哪种学习类型？',
+              options: [
+                '监督学习',
+                '无监督学习',
+                '强化学习',
+                '半监督学习'
+              ],
+              correct_answer: '无监督学习'
             }
-          ],
-          order_index: 1,
-          progress: 50,
-          completed: false
+          ]
         },
         {
           id: 'm2',
-          title: '数据收集与预处理',
-          description: '学习如何收集和清洗数据',
+          title: 'Python编程基础',
+          description: '学习Numpy、Pandas数据预处理方法和Scikit-learn机器学习库语法',
           video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          code_example: "import pandas as pd\n\n# 数据清洗示例\ndata = {\n    \"name\": [\"Alice\", \"Bob\", None, \"David\"],\n    \"age\": [25, None, 35, 40],\n    \"salary\": [50000, 60000, 70000, None]\n}\n\ndf = pd.DataFrame(data)\nprint(\"原始数据:\")\nprint(df)\n\n# 填充缺失值\ndf['age'].fillna(df['age'].mean(), inplace=True)\ndf['salary'].fillna(df['salary'].mean(), inplace=True)\ndf['name'].fillna('Unknown', inplace=True)\n\nprint(\"\n清洗后的数据:\")\nprint(df)",
+          code_example: '# Python编程基础示例\nimport numpy as np\nimport pandas as pd\nfrom sklearn.preprocessing import StandardScaler, LabelEncoder\n\n# Numpy基础操作\nprint("=== Numpy基础操作 ===")\n# 创建数组\na = np.array([1, 2, 3, 4, 5])\nb = np.array([[1, 2, 3], [4, 5, 6]])\nprint(f"一维数组: {a}")\nprint(f"二维数组:\n{b}")\nprint(f"数组形状: {b.shape}")\n\n# 数组运算\nc = a + 1\nd = a * 2\nprint(f"a + 1: {c}")\nprint(f"a * 2: {d}")\n\n# Pandas数据预处理\nprint("\n=== Pandas数据预处理 ===")\n# 创建DataFrame\ndata = {\n    "age": [25, 30, None, 40, 45],\n    "gender": ["M", "F", "M", "F", "M"],\n    "income": [50000, 60000, 70000, None, 90000],\n    "purchase": [1, 0, 1, 1, 0]\n}\n\ndf = pd.DataFrame(data)\nprint("原始数据:\n", df)\n\n# 处理缺失值\ndf["age"].fillna(df["age"].mean(), inplace=True)\ndf["income"].fillna(df["income"].median(), inplace=True)\nprint("\n处理缺失值后:\n", df)\n\n# 标签编码\nlabel_encoder = LabelEncoder()\ndf["gender"] = label_encoder.fit_transform(df["gender"])\nprint("\n标签编码后:\n", df)\n\n# 特征缩放\nscaler = StandardScaler()\ndf[["age", "income"]] = scaler.fit_transform(df[["age", "income"]])\nprint("\n特征缩放后:\n", df)\n\n# Scikit-learn基础\nprint("\n=== Scikit-learn基础 ===")\nprint("数据预处理完成，可用于机器学习模型训练")',
           exercises: [
             {
               id: 'ex1',
               type: 'multiple-choice',
-              question: '数据预处理的主要步骤不包括以下哪项？',
+              question: '以下哪个库用于数据预处理和分析？',
               options: [
-                '数据收集',
-                '数据清洗',
-                '数据转换',
-                '模型训练'
+                'Numpy',
+                'Pandas',
+                'Matplotlib',
+                'Scikit-learn'
               ],
-              correct_answer: '模型训练'
+              correct_answer: 'Pandas'
+            },
+            {
+              id: 'ex2',
+              type: 'multiple-choice',
+              question: '以下哪个方法用于填充缺失值？',
+              options: [
+                'fillna()',
+                'dropna()',
+                'replace()',
+                'interpolate()'
+              ],
+              correct_answer: 'fillna()'
             }
-          ],
-          order_index: 2,
-          progress: 0,
-          completed: false
-        }
-      ]
-    },
-    '2': {
-      id: '2',
-      title: 'Python数据分析',
-      modules: [
+          ]
+        },
         {
-          id: 'm1',
-          title: 'Python基础回顾',
-          description: '复习Python的基本语法和数据结构',
+          id: 'm3',
+          title: '核心知识点',
+          description: '学习线性回归、逻辑回归、KNN分类和聚类算法基础',
           video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          code_example: '# Python基础语法示例\n\n# 变量和数据类型\nname = "Alice"\nage = 30\nsalary = 50000.50\nis_employed = True\n\n# 列表\nfruits = ["apple", "banana", "cherry"]\n\n# 字典\nperson = {\n    "name": name,\n    "age": age,\n    "salary": salary,\n    "is_employed": is_employed\n}\n\n# 循环\nfor fruit in fruits:\n    print(f"I like {fruit}")\n\n# 函数\ndef calculate_bonus(salary, rate=0.1):\n    return salary * rate\n\nprint(f"Bonus: {calculate_bonus(salary)}")',
+          code_example: '# 核心知识点示例\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.linear_model import LinearRegression, LogisticRegression\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.cluster import KMeans\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import accuracy_score, r2_score\n\n# 线性回归\nprint("=== 线性回归 ===")\nnp.random.seed(42)\nx = np.linspace(0, 10, 100).reshape(-1, 1)\ny = 2 * x + 1 + np.random.normal(0, 1, 100).reshape(-1, 1)\n\nx_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)\n\nlinear_model = LinearRegression()\nlinear_model.fit(x_train, y_train)\ny_pred = linear_model.predict(x_test)\nprint(f"线性回归R² score: {r2_score(y_test, y_pred):.2f}")\n\n# 逻辑回归\nprint("\n=== 逻辑回归 ===")\n# 生成二分类数据\nx = np.random.randn(100, 2)\ny = (x[:, 0] + x[:, 1] > 0).astype(int)\n\nx_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)\n\nlogistic_model = LogisticRegression()\nlogistic_model.fit(x_train, y_train)\ny_pred = logistic_model.predict(x_test)\nprint(f"逻辑回归准确率: {accuracy_score(y_test, y_pred):.2f}")\n\n# KNN分类\nprint("\n=== KNN分类 ===")\nknn_model = KNeighborsClassifier(n_neighbors=3)\nknn_model.fit(x_train, y_train)\ny_pred = knn_model.predict(x_test)\nprint(f"KNN准确率: {accuracy_score(y_test, y_pred):.2f}")\n\n# K-means聚类\nprint("\n=== K-means聚类 ===")\n# 生成聚类数据\nx = np.random.randn(100, 2)\nkmeans = KMeans(n_clusters=3, random_state=42)\ny_pred = kmeans.fit_predict(x)\nprint(f"聚类结果形状: {y_pred.shape}")\nprint(f"聚类中心:\n{kmeans.cluster_centers_}")\n\n# 可视化聚类结果\nplt.figure(figsize=(8, 6))\nplt.scatter(x[:, 0], x[:, 1], c=y_pred, cmap="viridis")\nplt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300, c="red", marker="*")\nplt.title("K-means聚类结果")\nplt.show()',
           exercises: [
             {
               id: 'ex1',
-              type: 'coding',
-              question: '编写一个函数计算阶乘',
-              coding_problem: 'def factorial(n):\n    # 实现阶乘计算\n    pass\n\n# 测试\nprint(factorial(5))  # 应输出 120',
-              test_cases: [
-                {
-                  input: '5',
-                  expected_output: '120'
-                },
-                {
-                  input: '3',
-                  expected_output: '6'
-                }
-              ]
+              type: 'multiple-choice',
+              question: '以下哪种算法用于回归问题？',
+              options: [
+                '线性回归',
+                '逻辑回归',
+                'KNN分类',
+                'K-means聚类'
+              ],
+              correct_answer: '线性回归'
+            },
+            {
+              id: 'ex2',
+              type: 'multiple-choice',
+              question: '以下哪种算法属于无监督学习？',
+              options: [
+                '线性回归',
+                '逻辑回归',
+                'KNN分类',
+                'K-means聚类'
+              ],
+              correct_answer: 'K-means聚类'
             }
-          ],
-          order_index: 1,
-          progress: 0,
-          completed: false
+          ]
+        },
+        {
+          id: 'm4',
+          title: '行业应用',
+          description: '学习用户流失预测、商品销量预估等业务场景的应用',
+          video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          code_example: '# 行业应用示例\nimport numpy as np\nimport pandas as pd\nfrom sklearn.linear_model import LogisticRegression, LinearRegression\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import accuracy_score, r2_score\n\n# 用户流失预测\nprint("=== 用户流失预测 ===")\n# 生成用户数据\nnp.random.seed(42)\nn_users = 1000\ndata = {\n    "usage": np.random.normal(50, 20, n_users),\n    "support_tickets": np.random.randint(0, 10, n_users),\n    "contract_duration": np.random.randint(1, 24, n_users),\n    "churn": np.random.randint(0, 2, n_users)\n}\n\ndf = pd.DataFrame(data)\nX = df[["usage", "support_tickets", "contract_duration"]]\ny = df["churn"]\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)\n\nchurn_model = LogisticRegression()\nchurn_model.fit(X_train, y_train)\ny_pred = churn_model.predict(X_test)\nprint(f"用户流失预测准确率: {accuracy_score(y_test, y_pred):.2f}")\n\n# 商品销量预估\nprint("\n=== 商品销量预估 ===")\n# 生成销售数据\nnp.random.seed(42)\nmonths = 12\nad_spend = np.random.normal(10000, 2000, months)\nprice = np.random.normal(50, 10, months)\nsales = 1000 + 0.05 * ad_spend - 2 * price + np.random.normal(0, 50, months)\n\ndf = pd.DataFrame({"ad_spend": ad_spend, "price": price, "sales": sales})\nX = df[["ad_spend", "price"]]\ny = df["sales"]\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)\n\nsales_model = LinearRegression()\nsales_model.fit(X_train, y_train)\ny_pred = sales_model.predict(X_test)\nprint(f"商品销量预估R² score: {r2_score(y_test, y_pred):.2f}")\nprint(f"模型系数: {sales_model.coef_}")\nprint(f"截距: {sales_model.intercept_}")',
+          exercises: [
+            {
+              id: 'ex1',
+              type: 'multiple-choice',
+              question: '用户流失预测属于哪种机器学习任务？',
+              options: [
+                '回归',
+                '分类',
+                '聚类',
+                '降维'
+              ],
+              correct_answer: '分类'
+            },
+            {
+              id: 'ex2',
+              type: 'multiple-choice',
+              question: '商品销量预估属于哪种机器学习任务？',
+              options: [
+                '回归',
+                '分类',
+                '聚类',
+                '降维'
+              ],
+              correct_answer: '回归'
+            }
+          ]
         }
       ]
     }
-  };
+  ];
 
-  useEffect(() => {
-    // 模拟获取课程和模块数据
-    if (courseId && moduleId) {
-      setTimeout(() => {
-        const courseData = mockCourses[courseId];
-        if (courseData) {
-          setCourse(courseData);
-          const moduleData = courseData.modules.find(m => m.id === moduleId);
-          if (moduleData) {
-            setModule(moduleData);
-            setCode(moduleData.code_example);
-            // 计算总体进度
-            const totalProgress = courseData.modules.reduce((sum, m) => sum + m.progress, 0);
-            const avgProgress = totalProgress / courseData.modules.length;
-            setOverallProgress(avgProgress);
-          }
-        }
-        setLoading(false);
-      }, 500);
-    }
-  }, [courseId, moduleId]);
+  // 获取当前选中的课程和模块
+  const currentCourse = courses.find(course => course.id === selectedCourse);
+  const currentModule = currentCourse?.modules.find(module => module.id === selectedModule);
 
-  const handleVideoProgress = (state: any) => {
-    if (state.played) {
-      const progress = Math.round(state.played * 100);
-      setVideoProgress(progress);
-      // 自动保存进度
-      if (module) {
-        saveProgress(progress);
-      }
-    }
-  };
-
-  const saveProgress = (progress: number) => {
-    // 这里可以实现与后端的进度保存逻辑
-    console.log('保存进度:', progress);
-    // 模拟保存成功
-    if (module) {
-      const updatedModule = { ...module, progress };
-      setModule(updatedModule);
-    }
-  };
-
-  const handleExerciseSubmit = (exerciseId: string, answer: string) => {
-    if (!module) return;
-
-    const exercise = module.exercises.find(ex => ex.id === exerciseId);
-    if (!exercise) return;
-
-    let isCorrect = false;
-    let message = '';
-
-    if (exercise.type === 'multiple-choice' && exercise.correct_answer) {
-      isCorrect = answer === exercise.correct_answer;
-      message = isCorrect ? '回答正确！' : '回答错误，请再试一次。';
-    } else if (exercise.type === 'coding' && exercise.test_cases) {
-      // 简单的代码执行模拟
-      try {
-        // 这里只是一个简单的模拟，实际项目中需要更复杂的代码执行环境
-        // 模拟代码执行结果
-        isCorrect = answer.includes('return') || answer.includes('print');
-        message = isCorrect ? '代码执行正确！' : '代码执行有问题，请检查。';
-      } catch (error) {
-        isCorrect = false;
-        message = '代码执行出错，请检查语法。';
-      }
-    }
-
-    setUserAnswers(prev => ({ ...prev, [exerciseId]: answer }));
-    setExerciseFeedback(prev => ({
+  // 处理答案提交
+  const handleAnswerSubmit = (exerciseId: string, answer: string) => {
+    setAnswers(prev => ({
       ...prev,
-      [exerciseId]: { correct: isCorrect, message }
+      [exerciseId]: answer
     }));
-
-    // 检查是否所有练习都已完成
-    const allExercisesCompleted = module.exercises.every(ex => 
-      exerciseFeedback[ex.id]?.correct
-    );
-
-    if (allExercisesCompleted && videoProgress >= 90) {
-      // 标记模块为已完成
-      if (module) {
-        const updatedModule = { ...module, completed: true, progress: 100 };
-        setModule(updatedModule);
-      }
-    }
   };
-
-  if (loading) {
-    return <div className="flex items-center justify-center h-64">加载学习内容中...</div>;
-  }
-
-  if (!course || !module) {
-    return <div className="flex items-center justify-center h-64">课程或模块不存在</div>;
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 导航栏 */}
-      <nav className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/" className="text-xl font-bold text-blue-600">学习平台</Link>
-          <div className="flex items-center gap-4">
-            <Link to={`/course/${courseId}`} className="text-gray-600 hover:text-blue-600">
-              返回课程
-            </Link>
-          </div>
-        </div>
-      </nav>
-
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        {/* 模块信息 */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-2">{module.title}</h1>
-          <p className="text-gray-600 mb-4">{module.description}</p>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
-            <div 
-              className="bg-blue-600 h-2 rounded-full" 
-              style={{ width: `${module.progress}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between text-sm text-gray-500">
-            <span>进度: {module.progress}%</span>
-            <span>{module.completed ? '已完成' : '进行中'}</span>
-          </div>
-        </div>
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* 课程选择 */}
+          <div className="w-full md:w-1/4">
+            <div className="bg-white rounded-2xl shadow-cute p-6 mb-6">
+              <h2 className="text-xl font-bold mb-4 text-text">课程选择</h2>
+              <ul className="space-y-2">
+                {courses.map(course => (
+                  <li key={course.id}>
+                    <button
+                      onClick={() => setSelectedCourse(course.id)}
+                      className={`w-full text-left py-2 px-4 rounded-xl transition-all duration-300 ${selectedCourse === course.id ? 'bg-primary text-white font-medium' : 'hover:bg-gray-100'}`}
+                    >
+                      {course.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* 左侧内容区 */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* 视频播放器 */}
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <h2 className="text-lg font-semibold mb-4">视频教程</h2>
-              <div className="aspect-w-16 aspect-h-9 mb-4">
-                <ReactPlayer
-                  {...{ url: module.video_url, controls: true, playing: isPlaying, onProgress: handleVideoProgress, onPlay: () => setIsPlaying(true), onPause: () => setIsPlaying(false), width: "100%", height: "100%" } as any}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setIsPlaying(!isPlaying)}
-                    className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            {/* 模块列表 */}
+            <div className="bg-white rounded-2xl shadow-cute p-6">
+              <h2 className="text-xl font-bold mb-4 text-text">课程模块</h2>
+              <ul className="space-y-2">
+                {currentCourse?.modules.map(module => (
+                  <li key={module.id}>
+                    <button
+                      onClick={() => setSelectedModule(module.id)}
+                      className={`w-full text-left py-2 px-4 rounded-xl transition-all duration-300 ${selectedModule === module.id ? 'bg-primary text-white font-medium' : 'hover:bg-gray-100'}`}
+                    >
+                      {module.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* 主要内容 */}
+          <div className="w-full md:w-3/4">
+            {currentModule && (
+              <div className="bg-white rounded-2xl shadow-cute p-6 mb-6">
+                <h2 className="text-2xl font-bold mb-2 text-text">{currentModule.title}</h2>
+                <p className="text-text mb-6">{currentModule.description}</p>
+
+                {/* 标签页 */}
+                <div className="flex border-b border-gray-200 mb-6">
+                  <button
+                    onClick={() => setActiveTab('video')}
+                    className={`py-2 px-4 border-b-2 font-medium transition-all duration-300 ${activeTab === 'video' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                   >
-                    {isPlaying ? <FaPause size={16} /> : <FaPlay size={16} />}
-                    {isPlaying ? '暂停' : '播放'}
+                    视频讲解
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('code')}
+                    className={`py-2 px-4 border-b-2 font-medium transition-all duration-300 ${activeTab === 'code' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  >
+                    代码示例
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('exercises')}
+                    className={`py-2 px-4 border-b-2 font-medium transition-all duration-300 ${activeTab === 'exercises' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                  >
+                    练习测评
                   </button>
                 </div>
-                <div className="text-sm text-gray-600">
-                  视频进度: {videoProgress}%
-                </div>
-              </div>
-            </div>
 
-            {/* 代码示例 */}
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <h2 className="text-lg font-semibold mb-4">代码示例</h2>
-              <div className="mb-4">
-                <AceEditor
-                  mode="python"
-                  theme="github"
-                  value={code}
-                  onChange={setCode}
-                  name="code-editor"
-                  editorProps={{
-                    $blockScrolling: true
-                  }}
-                  width="100%"
-                  height="300px"
-                  fontSize={14}
-                  showPrintMargin={false}
-                  showGutter={true}
-                  highlightActiveLine={true}
-                  setOptions={{
-                    enableBasicAutocompletion: true,
-                    enableLiveAutocompletion: true,
-                    enableSnippets: true,
-                    showLineNumbers: true,
-                    tabSize: 2
-                  }}
-                />
-              </div>
-              <div className="flex justify-end">
-                <button 
-                  onClick={() => console.log('保存代码')}
-                  className="flex items-center gap-1 px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                >
-                  <FaSave size={16} />
-                  保存代码
-                </button>
-              </div>
-            </div>
-
-            {/* 互动练习 */}
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <h2 className="text-lg font-semibold mb-4">互动练习</h2>
-              {module.exercises.map((exercise, index) => (
-                <div key={exercise.id} className="mb-6 last:mb-0">
-                  <h3 className="font-medium mb-3">练习 {index + 1}: {exercise.question}</h3>
-                  
-                  {exercise.type === 'multiple-choice' && exercise.options && (
-                    <div className="space-y-2 mb-4">
-                      {exercise.options.map((option, optIndex) => (
-                        <div key={optIndex} className="flex items-center">
-                          <input
-                            type="radio"
-                            id={`option-${optIndex}`}
-                            name={`exercise-${exercise.id}`}
-                            value={option}
-                            checked={userAnswers[exercise.id] === option}
-                            onChange={(e) => handleExerciseSubmit(exercise.id, e.target.value)}
-                            className="mr-2"
-                          />
-                          <label htmlFor={`option-${optIndex}`} className="cursor-pointer">
-                            {option}
-                          </label>
-                        </div>
-                      ))}
+                {/* 标签页内容 */}
+                <div>
+                  {/* 视频讲解 */}
+                  {activeTab === 'video' && (
+                    <div className="rounded-xl overflow-hidden bg-gray-100 p-8 text-center">
+                      <p className="text-text">视频讲解功能开发中...</p>
                     </div>
                   )}
-                  
-                  {exercise.type === 'coding' && exercise.coding_problem && (
-                    <div className="mb-4">
+
+                  {/* 代码示例 */}
+                  {activeTab === 'code' && (
+                    <div>
                       <AceEditor
                         mode="python"
                         theme="github"
-                        value={userAnswers[exercise.id] || exercise.coding_problem}
-                        onChange={(value) => setUserAnswers(prev => ({ ...prev, [exercise.id]: value }))}
-                        name={`code-exercise-${exercise.id}`}
-                        editorProps={{
-                          $blockScrolling: true
-                        }}
+                        value={currentModule.code_example}
+                        readOnly={true}
                         width="100%"
-                        height="200px"
+                        height="500px"
                         fontSize={14}
                         showPrintMargin={false}
                         showGutter={true}
                         highlightActiveLine={true}
                         setOptions={{
-                          enableBasicAutocompletion: true,
-                          enableLiveAutocompletion: true,
-                          enableSnippets: true,
-                          showLineNumbers: true,
-                          tabSize: 2
+                          enableBasicAutocompletion: false,
+                          enableLiveAutocompletion: false,
+                          enableSnippets: false,
+                          enableSpellcheck: false,
+                          tabSize: 4
                         }}
                       />
                     </div>
                   )}
-                  
-                  <div className="flex justify-end">
-                    <button 
-                      onClick={() => handleExerciseSubmit(exercise.id, userAnswers[exercise.id] || '')}
-                      className="px-4 py-1 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    >
-                      提交答案
-                    </button>
-                  </div>
-                  
-                  {exerciseFeedback[exercise.id] && (
-                    <div className={`mt-3 p-3 rounded-md ${exerciseFeedback[exercise.id].correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      <div className="flex items-center gap-2">
-                        {exerciseFeedback[exercise.id].correct ? 
-                          <FaCheckCircle size={18} /> : 
-                          <FaTimesCircle size={18} />
-                        }
-                        <span>{exerciseFeedback[exercise.id].message}</span>
-                      </div>
+
+                  {/* 练习测评 */}
+                  {activeTab === 'exercises' && (
+                    <div className="space-y-6">
+                      {currentModule.exercises.map(exercise => (
+                        <div key={exercise.id} className="bg-gray-50 rounded-xl p-6">
+                          <h3 className="text-lg font-semibold mb-4 text-text">{exercise.question}</h3>
+                          
+                          {exercise.type === 'multiple-choice' && (
+                            <div className="space-y-2">
+                              {exercise.options?.map((option, index) => (
+                                <div key={index} className="flex items-center">
+                                  <input
+                                    type="radio"
+                                    id={`${exercise.id}_${index}`}
+                                    name={exercise.id}
+                                    value={option}
+                                    checked={answers[exercise.id] === option}
+                                    onChange={(e) => handleAnswerSubmit(exercise.id, e.target.value)}
+                                    className="mr-2"
+                                  />
+                                  <label htmlFor={`${exercise.id}_${index}`} className="text-text">
+                                    {option}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {exercise.type === 'code' && (
+                            <div>
+                              <AceEditor
+                                mode="python"
+                                theme="github"
+                                value={exercise.code_template || ''}
+                                onChange={(value) => handleAnswerSubmit(exercise.id, value)}
+                                width="100%"
+                                height="300px"
+                                fontSize={14}
+                                showPrintMargin={false}
+                                showGutter={true}
+                                highlightActiveLine={true}
+                                setOptions={{
+                                  enableBasicAutocompletion: true,
+                                  enableLiveAutocompletion: true,
+                                  enableSnippets: true,
+                                  enableSpellcheck: false,
+                                  tabSize: 4
+                                }}
+                              />
+                              {exercise.expected_output && (
+                                <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                                  <h4 className="font-medium mb-2">预期输出:</h4>
+                                  <pre className="text-sm text-gray-700">{exercise.expected_output}</pre>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 右侧边栏 */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* 课程进度 */}
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <h2 className="text-lg font-semibold mb-4">学习进度</h2>
-              <div className="mb-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium">总体进度</span>
-                  <span className="text-sm font-medium">{Math.round(overallProgress)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${overallProgress}%` }}
-                  ></div>
-                </div>
               </div>
-              <div className="mb-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium">当前模块</span>
-                  <span className="text-sm font-medium">{module.progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-green-500 h-2 rounded-full" 
-                    style={{ width: `${module.progress}%` }}
-                  ></div>
-                </div>
-              </div>
-              {module.completed && (
-                <div className="flex items-center gap-2 text-green-600 mb-4">
-                  <FaCheck size={16} />
-                  <span className="text-sm font-medium">本模块已完成</span>
-                </div>
-              )}
-            </div>
-
-            {/* 课程导航 */}
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <h2 className="text-lg font-semibold mb-4">课程导航</h2>
-              <div className="space-y-2">
-                {course.modules.map((m) => (
-                  <Link 
-                    key={m.id}
-                    to={`/learn/${courseId}/${m.id}`}
-                    className={`flex items-center justify-between p-2 rounded-md transition-colors ${m.id === moduleId ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}
-                  >
-                    <span>{m.order_index}. {m.title}</span>
-                    {m.completed && <FaCheck size={16} className="text-green-500" />}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

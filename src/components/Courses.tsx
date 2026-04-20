@@ -50,6 +50,30 @@ const Courses: React.FC = () => {
       difficulty: 'advanced',
       duration: 25,
       image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Advanced%20deep%20learning%20course%20cover&image_size=square'
+    },
+    {
+      id: '5',
+      title: '数据可视化高级技巧',
+      description: '学习高级数据可视化技术和工具，创建专业的数据可视化作品',
+      difficulty: 'advanced',
+      duration: 18,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Advanced%20data%20visualization%20techniques%20course%20cover&image_size=square'
+    },
+    {
+      id: '6',
+      title: '机器学习应用案例',
+      description: '通过实际案例学习机器学习在各个领域的应用',
+      difficulty: 'intermediate',
+      duration: 22,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Machine%20learning%20application%20cases%20course%20cover&image_size=square'
+    },
+    {
+      id: '7',
+      title: '商业数据分析实战',
+      description: '学习如何使用数据分析解决实际商业问题',
+      difficulty: 'intermediate',
+      duration: 20,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Business%20data%20analysis%20case%20study%20course%20cover&image_size=square'
     }
   ];
 
@@ -91,21 +115,21 @@ const Courses: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6 text-center">课程中心</h1>
       
       {/* 搜索和筛选区域 */}
-      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
+      <div className="mb-6 sm:mb-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="sm:col-span-1">
           <input
             type="text"
             placeholder="搜索课程..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
-        <div>
+        <div className="sm:col-span-1">
           <select
             value={filterDifficulty}
             onChange={(e) => setFilterDifficulty(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="all">所有难度</option>
             <option value="beginner">初级</option>
@@ -113,11 +137,11 @@ const Courses: React.FC = () => {
             <option value="advanced">高级</option>
           </select>
         </div>
-        <div>
+        <div className="sm:col-span-1">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'duration' | 'difficulty' | 'title')}
-            className="w-full px-4 py-2 border rounded-lg"
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="title">按标题</option>
             <option value="duration">按时长</option>
@@ -127,17 +151,17 @@ const Courses: React.FC = () => {
       </div>
 
       {/* 课程列表 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredAndSortedCourses.map(course => (
           <Link to={`/courses/${course.id}`} key={course.id} className="block">
             <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               <img 
                 src={course.image} 
                 alt={course.title} 
-                className="w-full h-48 object-cover"
+                className="w-full h-40 sm:h-48 object-cover"
               />
               <div className="p-4">
-                <h3 className="text-lg font-semibold mb-2">{course.title}</h3>
+                <h3 className="text-base sm:text-lg font-semibold mb-2">{course.title}</h3>
                 <p className="text-gray-600 mb-4 line-clamp-2">{course.description}</p>
                 <div className="flex justify-between items-center">
                   <span className={`px-2 py-1 rounded text-xs ${course.difficulty === 'beginner' ? 'bg-green-100 text-green-800' : course.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>

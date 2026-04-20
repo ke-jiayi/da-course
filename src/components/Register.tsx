@@ -31,16 +31,16 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
   }
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-center mb-6">注册</h2>
+    <div className="w-full max-w-md mx-auto p-8 bg-white rounded-2xl shadow-cute">
+      <h2 className="text-2xl font-bold text-center mb-6 text-primary">注册</h2>
       {error && (
-        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+        <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">
           {error}
         </div>
       )}
       <form onSubmit={handleRegister} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="relative">
+          <label htmlFor="email" className="block text-sm font-medium text-text mb-1 transition-all duration-300">
             邮箱
           </label>
           <input
@@ -49,11 +49,11 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300 hover:border-primary/50 focus:border-primary"
           />
         </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="relative">
+          <label htmlFor="password" className="block text-sm font-medium text-text mb-1 transition-all duration-300">
             密码
           </label>
           <input
@@ -62,13 +62,13 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300 hover:border-primary/50 focus:border-primary"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full bg-primary text-white py-3 px-4 rounded-full hover:bg-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:opacity-70 disabled:cursor-not-allowed shadow-button hover:shadow-button-hover transform hover:-translate-y-0.5 font-medium"
         >
           {loading ? '注册中...' : '注册'}
         </button>
@@ -76,7 +76,7 @@ const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchToLogin 
       <div className="mt-4 text-center">
         <button
           onClick={onSwitchToLogin}
-          className="text-blue-600 hover:text-blue-800 text-sm"
+          className="text-primary hover:text-secondary text-sm transition-all duration-300"
         >
           已有账号？立即登录
         </button>

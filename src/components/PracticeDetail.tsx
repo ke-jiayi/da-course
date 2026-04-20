@@ -4,6 +4,7 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
+import { FaCheck, FaTimes, FaLightbulb, FaBook, FaCode, FaChartBar } from 'react-icons/fa';
 
 interface Task {
   id: string;
@@ -16,6 +17,24 @@ interface Task {
 interface TestCase {
   input: string;
   expected: string;
+  passed?: boolean;
+  actual?: string;
+  error?: string;
+}
+
+interface CodeAnalysis {
+  codeQuality: number;
+  performance: number;
+  style: number;
+  suggestions: string[];
+}
+
+interface LearningResource {
+  id: string;
+  title: string;
+  type: 'article' | 'video' | 'course';
+  url: string;
+  description: string;
 }
 
 interface ExerciseDetail {
@@ -35,7 +54,10 @@ const PracticeDetail: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState('');
-  const [activeTab, setActiveTab] = useState('task'); // 'task', 'code', 'analysis'
+  const [testResults, setTestResults] = useState<TestCase[]>([]);
+  const [codeAnalysis, setCodeAnalysis] = useState<CodeAnalysis | null>(null);
+  const [learningResources, setLearningResources] = useState<LearningResource[]>([]);
+  const [activeTab, setActiveTab] = useState('task'); // 'task', 'code', 'analysis', 'feedback'
 
   useEffect(() => {
     // 模拟获取练习详情数据
@@ -142,6 +164,73 @@ print(df.info())
     setSubmitted(true);
     setScore(85);
     setFeedback('你的代码基本正确，但在处理异常值方面还有改进空间。建议使用IQR方法来识别异常值。');
+    
+    // 模拟测试用例结果
+    setTestResults([
+      {
+        input: '加载数据并显示前5行',
+        expected: '成功加载数据并显示前5行',
+        actual: '成功加载数据并显示前5行',
+        passed: true
+      },
+      {
+        input: '处理缺失值',
+        expected: '成功处理所有缺失值',
+        actual: '成功处理所有缺失值',
+        passed: true
+      },
+      {
+        input: '处理异常值',
+        expected: '成功处理所有异常值',
+        actual: '部分异常值未处理',
+        passed: false,
+        error: '建议使用IQR方法来识别异常值'
+      },
+      {
+        input: '数据转换',
+        expected: '成功完成数据转换',
+        actual: '成功完成数据转换',
+        passed: true
+      }
+    ]);
+    
+    // 模拟代码分析
+    setCodeAnalysis({
+      codeQuality: 85,
+      performance: 75,
+      style: 90,
+      suggestions: [
+        '建议添加注释以提高代码可读性',
+        '考虑使用更高效的数据处理方法',
+        '变量命名可以更清晰',
+        '异常处理可以更加完善'
+      ]
+    });
+    
+    // 模拟学习资源推荐
+    setLearningResources([
+      {
+        id: '1',
+        title: 'Python数据清洗最佳实践',
+        type: 'article',
+        url: '#',
+        description: '学习如何高效地清洗和预处理数据'
+      },
+      {
+        id: '2',
+        title: '异常值检测与处理',
+        type: 'video',
+        url: '#',
+        description: '详细讲解各种异常值检测方法'
+      },
+      {
+        id: '3',
+        title: '数据分析实战课程',
+        type: 'course',
+        url: '#',
+        description: '通过实际项目学习数据分析技能'
+      }
+    ]);
   };
 
   if (loading) {
@@ -185,7 +274,7 @@ print(df.info())
                 代码编辑器
               </button>
             </li>
-            <li>
+            <li className="mr-2">
               <button
                 onClick={() => setActiveTab('analysis')}
                 className={`inline-block p-4 border-b-2 rounded-t-lg ${activeTab === 'analysis' ? 'border-blue-600 text-blue-600' : 'border-transparent hover:text-gray-600 hover:border-gray-300'}`}
@@ -193,6 +282,16 @@ print(df.info())
                 案例分析
               </button>
             </li>
+            {submitted && (
+              <li>
+                <button
+                  onClick={() => setActiveTab('feedback')}
+                  className={`inline-block p-4 border-b-2 rounded-t-lg ${activeTab === 'feedback' ? 'border-blue-600 text-blue-600' : 'border-transparent hover:text-gray-600 hover:border-gray-300'}`}
+                >
+                  详细反馈
+                </button>
+              </li>
+            )}
           </ul>
         </div>
 
@@ -267,29 +366,141 @@ print(df.info())
             ))}
           </div>
         )}
+
+        {activeTab === 'feedback' && (
+          <div className="space-y-8">
+            {/* 总体评分 */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
+              <div className="flex items-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
+                  {score}
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-xl font-semibold text-gray-800">总体评分</h3>
+                  <p className="text-gray-600">{score >= 90 ? '优秀' : score >= 70 ? '良好' : score >= 60 ? '及格' : '需要改进'}</p>
+                </div>
+              </div>
+              <p className="text-gray-700">{feedback}</p>
+            </div>
+
+            {/* 测试用例结果 */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <FaCode className="mr-2 text-blue-600" />
+                测试用例结果
+              </h3>
+              <div className="space-y-4">
+                {testResults.map((test, index) => (
+                  <div key={index} className={`p-4 rounded-lg border ${test.passed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium text-gray-800">测试 {index + 1}: {test.input}</h4>
+                        <div className="mt-2 space-y-2">
+                          <div>
+                            <span className="text-sm font-medium text-gray-600">期望结果:</span>
+                            <p className="text-gray-700">{test.expected}</p>
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-gray-600">实际结果:</span>
+                            <p className={`${test.passed ? 'text-green-600' : 'text-red-600'}`}>{test.actual}</p>
+                          </div>
+                          {!test.passed && test.error && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">错误信息:</span>
+                              <p className="text-red-600">{test.error}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className={`p-2 rounded-full ${test.passed ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                        {test.passed ? <FaCheck /> : <FaTimes />}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 代码分析 */}
+            {codeAnalysis && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <FaChartBar className="mr-2 text-purple-600" />
+                  代码分析
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-600 mb-1">代码质量</h4>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${codeAnalysis.codeQuality}%` }}></div>
+                      </div>
+                      <span className="text-sm font-semibold">{codeAnalysis.codeQuality}%</span>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-600 mb-1">性能</h4>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="bg-green-600 h-2 rounded-full" style={{ width: `${codeAnalysis.performance}%` }}></div>
+                      </div>
+                      <span className="text-sm font-semibold">{codeAnalysis.performance}%</span>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-600 mb-1">代码风格</h4>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${codeAnalysis.style}%` }}></div>
+                      </div>
+                      <span className="text-sm font-semibold">{codeAnalysis.style}%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-600 mb-2 flex items-center">
+                    <FaLightbulb className="mr-2 text-yellow-500" />
+                    改进建议
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {codeAnalysis.suggestions.map((suggestion, index) => (
+                      <li key={index} className="text-gray-700">{suggestion}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* 学习资源推荐 */}
+            {learningResources.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <FaBook className="mr-2 text-green-600" />
+                  推荐学习资源
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {learningResources.map((resource) => (
+                    <div key={resource.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                      <div className="flex items-center mb-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${resource.type === 'article' ? 'bg-blue-100 text-blue-800' : resource.type === 'video' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                          {resource.type === 'article' ? '文章' : resource.type === 'video' ? '视频' : '课程'}
+                        </span>
+                      </div>
+                      <h4 className="font-medium text-gray-800 mb-1">{resource.title}</h4>
+                      <p className="text-sm text-gray-600 mb-3">{resource.description}</p>
+                      <a href={resource.url} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        查看资源
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {submitted && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">评分结果</h2>
-          <div className="flex items-center mb-4">
-            <div className="w-24 text-lg font-medium text-gray-700">得分:</div>
-            <div className="text-2xl font-bold text-blue-600">{score}/100</div>
-          </div>
-          <div className="mb-4">
-            <div className="w-24 text-lg font-medium text-gray-700 mb-2">反馈:</div>
-            <div className="bg-gray-50 p-4 rounded-md text-gray-700">{feedback}</div>
-          </div>
-          <div className="flex justify-end">
-            <button
-              onClick={() => setSubmitted(false)}
-              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
-            >
-              继续编辑
-            </button>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };
