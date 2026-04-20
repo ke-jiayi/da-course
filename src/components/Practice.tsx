@@ -40,6 +40,12 @@ const Practice: React.FC = () => {
           title: '时间序列分析',
           difficulty: '中等',
           description: '分析时间序列数据并进行预测'
+        },
+        {
+          id: '5',
+          title: '商务数据分析与Python · 实战思维测试',
+          difficulty: '中等',
+          description: '检验你对数据分析核心思维的深层理解，包含10道实战思维测试题'
         }
       ];
       

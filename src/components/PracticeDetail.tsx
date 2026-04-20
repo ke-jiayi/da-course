@@ -60,6 +60,13 @@ const PracticeDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState('task'); // 'task', 'code', 'analysis', 'feedback'
 
   useEffect(() => {
+    // 检查是否是思维测试练习
+    if (id === '5') {
+      // 重定向到思维测试页面
+      navigate('/data-analysis-test');
+      return;
+    }
+
     // 模拟获取练习详情数据
     const fetchExerciseDetail = async () => {
       // 实际项目中，这里应该调用API获取数据
@@ -157,7 +164,7 @@ print(df.info())
     };
 
     fetchExerciseDetail();
-  }, [id]);
+  }, [id, navigate]);
 
   const handleSubmit = () => {
     // 模拟提交和评分
