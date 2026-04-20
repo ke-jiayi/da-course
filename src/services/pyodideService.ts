@@ -26,8 +26,30 @@ export async function initPyodide() {
 export async function runPythonCode(code: string) {
   const py = await initPyodide();
   try {
+    // 捕获标准输出
+    let stdout = '';
+    let stderr = '';
+    
+    // 重定向标准输出
+    py.setStdout((text: string) => {
+      stdout += text;
+    });
+    
+    // 重定向标准错误
+    py.setStderr((text: string) => {
+      stderr += text;
+    });
+    
+    // 执行代码
     const result = await py.runPythonAsync(code);
-    return { success: true, result };
+    
+    // 构建输出
+    let output = stdout;
+    if (stderr) {
+      output += '\n错误输出:\n' + stderr;
+    }
+    
+    return { success: true, output, result };
   } catch (error) {
     return { success: false, error: (error as Error).message };
   }

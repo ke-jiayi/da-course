@@ -1460,7 +1460,7 @@ df = pd.DataFrame(data, columns=['date', 'product', 'sales', 'price', 'cost', 'p
     try {
       const result = await runPythonCode(code);
       if (result.success) {
-        setOutput('代码执行成功！');
+        setOutput(result.output || '代码执行成功！');
       } else {
         setError(result.error || '未知错误');
       }
