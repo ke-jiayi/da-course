@@ -33,6 +33,7 @@ const LearningGuide = lazy(() => import('./components/LearningGuide'))
 const Projects = lazy(() => import('./components/Projects'))
 const ProjectDetail = lazy(() => import('./components/ProjectDetail'))
 const CognitiveModule = lazy(() => import('./components/CognitiveModule'))
+const DataAnalysisTest = lazy(() => import('./components/DataAnalysisTest'))
 
 type AuthView = 'login' | 'register' | 'forgotPassword'
 
@@ -145,6 +146,7 @@ function App() {
               <Route path="/projects" element={<PageTransition><Projects /></PageTransition>} />
               <Route path="/project/:id" element={<PageTransition><ProjectDetail /></PageTransition>} />
               <Route path="/cognitive-module" element={<PageTransition><CognitiveModule /></PageTransition>} />
+              <Route path="/data-analysis-test" element={<PageTransition><DataAnalysisTest /></PageTransition>} />
             </Routes>
           </Suspense>
         </main>

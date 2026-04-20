@@ -31,6 +31,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLoginClick }) => {
             <Link to="/learning-record" className="text-text hover:text-primary font-medium transition-all duration-300">学习记录</Link>
             <Link to="/notifications" className="text-text hover:text-primary font-medium transition-all duration-300">通知</Link>
             <Link to="/settings" className="text-text hover:text-primary font-medium transition-all duration-300">设置</Link>
+            <Link to="/data-analysis-test" className="text-text hover:text-primary font-medium transition-all duration-300">思维测试</Link>
           </nav>
 
           {/* 用户菜单 */}
@@ -114,6 +115,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLoginClick }) => {
                 </Link>
                 <Link to="/settings" className="text-text hover:text-primary font-medium transition-all duration-300 py-3 px-4 rounded-lg hover:bg-primary/10" onClick={() => setMobileMenuOpen(false)}>
                   设置
+                </Link>
+                <Link to="/data-analysis-test" className="text-text hover:text-primary font-medium transition-all duration-300 py-3 px-4 rounded-lg hover:bg-primary/10" onClick={() => setMobileMenuOpen(false)}>
+                  思维测试
                 </Link>
               </nav>
               <div className="mt-4 pt-4 border-t border-gray-200">
