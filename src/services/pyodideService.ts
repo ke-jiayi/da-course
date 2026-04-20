@@ -30,18 +30,28 @@ export async function runPythonCode(code: string) {
     let stdout = '';
     let stderr = '';
     
-    // 重定向标准输出
-    py.setStdout((text: string) => {
-      stdout += text;
-    });
+    // 重定向标准输出和错误
+    py.runPython(`
+      import sys
+      
+      class Capture:
+          def __init__(self):
+              self.buffer = ''
+          def write(self, data):
+              self.buffer += data
+          def flush(self):
+              pass
+      
+      sys.stdout = Capture()
+      sys.stderr = Capture()
+    `);
     
-    // 重定向标准错误
-    py.setStderr((text: string) => {
-      stderr += text;
-    });
-    
-    // 执行代码
+    // 执行用户代码
     const result = await py.runPythonAsync(code);
+    
+    // 获取捕获的输出
+    stdout = py.runPython('sys.stdout.buffer');
+    stderr = py.runPython('sys.stderr.buffer');
     
     // 构建输出
     let output = stdout;
