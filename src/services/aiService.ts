@@ -1,5 +1,5 @@
 // AI服务配置
-const AI_WORKER_URL = 'https://your-worker-name.your-account.workers.dev'; // 替换为实际的Worker URL
+const AI_WORKER_URL = 'https://ai-proxy-worker.<your-account>.workers.dev'; // 替换为实际的Worker URL
 
 // 发送AI请求
 export async function sendAIRequest(messages: any[]) {

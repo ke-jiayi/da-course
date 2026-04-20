@@ -1,0 +1,11 @@
+name = "ai-proxy-worker"
+main = "worker.ts"
+compatibility_date = "2024-04-20"
+
+env = {
+  CLOUDFLARE_ACCOUNT_ID = "${CLOUDFLARE_ACCOUNT_ID}",
+  AI_GATEWAY_NAME = "${AI_GATEWAY_NAME}",
+  AI_API_KEY = "${AI_API_KEY}"
+}
+
+workers_dev = true
