@@ -3,6 +3,7 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
+import { runPython, runPythonCode } from '../services/pyodideService';
 
 const MachineLearning: React.FC = () => {
   const [code, setCode] = useState('');
@@ -15,32 +16,144 @@ const MachineLearning: React.FC = () => {
     setError('');
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     if (!code.trim()) {
       setError('请输入代码后再运行');
       setOutput('');
       return;
     }
 
-    // 模拟代码运行
     try {
-      let result = '';
-      if (code.includes('print')) {
-        result = '执行结果: 模拟输出';
-      } else if (code.includes('model')) {
-        result = '执行结果: 模型训练完成';
-      } else if (code.includes('predict')) {
-        result = '执行结果: 预测完成';
+      const result = await runPythonCode(code);
+      if (result.success) {
+        setOutput(result.output);
+        setError('');
       } else {
-        result = '执行结果: 代码执行成功';
+        setError('代码执行错误: ' + result.error);
+        setOutput('');
       }
-      setOutput(result);
-      setError('');
     } catch (err) {
-      setError('代码执行错误: ' + (err as Error).message);
+      setError('执行错误: ' + (err as Error).message);
       setOutput('');
     }
   };
+
+  // Python 代码示例
+  const codeExample1 = `from sklearn.model_selection import train_test_split
+import numpy as np
+
+# 准备数据
+X = np.array([[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]])
+y = np.array([2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+
+# 分割数据为训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+print('训练集大小:', X_train.shape[0])
+print('测试集大小:', X_test.shape[0])`;
+
+  const codeExample2 = `from sklearn.linear_model import LinearRegression
+import numpy as np
+
+# 准备数据：广告投入与销量
+# X: 广告投入（万元）
+# y: 销量（千件）
+X = np.array([[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]])
+y = np.array([1.2, 2.1, 2.9, 4.1, 4.8, 5.9, 6.8, 7.9, 8.7, 9.8])
+
+# 创建线性回归模型
+model = LinearRegression()
+
+# 训练模型
+model.fit(X, y)
+
+# 打印模型参数
+print('斜率:', model.coef_[0])
+print('截距:', model.intercept_)
+
+# 预测新数据：广告投入11万元时的销量
+prediction = model.predict([[11]])
+print('预测销量:', prediction[0], '千件')
+
+# 计算模型在训练集上的R²评分
+r2_score = model.score(X, y)
+print('R²评分:', r2_score)`;
+
+  const codeExample3 = `from sklearn.neighbors import KNeighborsClassifier
+import numpy as np
+
+# 准备数据：特征和标签
+# 特征：[花瓣长度, 花瓣宽度]
+# 标签：0=山鸢尾, 1=变色鸢尾, 2=维吉尼亚鸢尾
+X = np.array([[1.4, 0.2], [1.3, 0.2], [1.5, 0.2], [4.5, 1.5], [4.6, 1.5], [4.7, 1.6], [6.0, 2.5], [6.1, 2.6], [6.2, 2.7]])
+y = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
+
+# 创建KNN分类器，k=3
+knn = KNeighborsClassifier(n_neighbors=3)
+
+# 训练模型
+knn.fit(X, y)
+
+# 预测新数据
+new_data = np.array([[1.6, 0.3], [4.8, 1.7], [6.3, 2.8]])
+predictions = knn.predict(new_data)
+
+print('预测结果:', predictions)`;
+
+  const codeExample4 = `from sklearn.linear_model import LogisticRegression
+import numpy as np
+
+# 准备数据：考试成绩和是否录取
+# 特征：[数学成绩, 英语成绩]
+# 标签：0=未录取, 1=录取
+X = np.array([[70, 65], [80, 75], [60, 55], [50, 45], [90, 85], [85, 90], [65, 60], [45, 40]])
+y = np.array([1, 1, 0, 0, 1, 1, 0, 0])
+
+# 创建逻辑回归模型
+log_reg = LogisticRegression()
+
+# 训练模型
+log_reg.fit(X, y)
+
+# 预测新数据
+new_students = np.array([[75, 70], [55, 50]])
+predictions = log_reg.predict(new_students)
+
+print('预测结果:', predictions)
+
+# 预测概率
+probabilities = log_reg.predict_proba(new_students)
+print('预测概率:', probabilities)`;
+
+  const codeExample5 = `from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_val_score
+import numpy as np
+
+# 准备数据
+X = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11]])
+y = np.array([3, 5, 7, 9, 11, 13, 15, 17, 19, 21])
+
+# 数据标准化
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 创建模型
+model = LinearRegression()
+
+# 交叉验证
+scores = cross_val_score(model, X_scaled, y, cv=5)
+print('交叉验证评分:', scores)
+print('平均评分:', scores.mean())
+
+# 训练模型
+model.fit(X_scaled, y)
+
+# 预测新数据
+new_data = np.array([[11, 12]])
+new_data_scaled = scaler.transform(new_data)
+prediction = model.predict(new_data_scaled)
+print('预测结果:', prediction)`;
 
   const placeholder = `# 示例：使用sklearn进行简单线性回归
 from sklearn.linear_model import LinearRegression
@@ -118,20 +231,17 @@ print('预测结果:', prediction)`;
                 </ul>
                 <p className="text-text">下面是一个将数据分为训练集和测试集的示例：</p>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  from sklearn.model_selection import train_test_split
-                  import numpy as np
-                  <br/>
-                  <br/>
-                  # 准备数据
-                  X = np.array([[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]])
-                  y = np.array([2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
-                  <br/>
-                  # 分割数据为训练集和测试集
-                  X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-                  <br/>
-                  print('训练集大小:', X_train.shape[0])
-                  print('测试集大小:', X_test.shape[0])
+                  <pre id="code-ml-1">{codeExample1}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-ml-1')?.textContent || '', 'output-ml-1')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-ml-1" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -144,34 +254,17 @@ print('预测结果:', prediction)`;
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <p className="text-text mb-4">线性回归是最基础的机器学习算法之一，用于预测连续值。下面我们通过一个销量预测案例来学习线性回归。</p>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  from sklearn.linear_model import LinearRegression
-                  import numpy as np
-                  <br/>
-                  <br/>
-                  # 准备数据：广告投入与销量
-                  # X: 广告投入（万元）
-                  # y: 销量（千件）
-                  X = np.array([[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]])
-                  y = np.array([1.2, 2.1, 2.9, 4.1, 4.8, 5.9, 6.8, 7.9, 8.7, 9.8])
-                  <br/>
-                  # 创建线性回归模型
-                  model = LinearRegression()
-                  <br/>
-                  # 训练模型
-                  model.fit(X, y)
-                  <br/>
-                  # 打印模型参数
-                  print('斜率:', model.coef_[0])
-                  print('截距:', model.intercept_)
-                  <br/>
-                  # 预测新数据：广告投入11万元时的销量
-                  prediction = model.predict([[11]])
-                  print('预测销量:', prediction[0], '千件')
-                  <br/>
-                  # 计算模型在训练集上的R²评分
-                  r2_score = model.score(X, y)
-                  print('R²评分:', r2_score)
+                  <pre id="code-ml-2">{codeExample2}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-ml-2')?.textContent || '', 'output-ml-2')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-ml-2" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
                 <p className="text-text">线性回归模型通过拟合一条直线来预测数据，R²评分越接近1，说明模型拟合效果越好。</p>
               </div>
             </div>
@@ -187,57 +280,31 @@ print('预测结果:', prediction)`;
                 
                 <h4 className="font-medium text-text mb-3">KNN（K-最近邻）算法</h4>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  from sklearn.neighbors import KNeighborsClassifier
-                  import numpy as np
-                  <br/>
-                  <br/>
-                  # 准备数据：特征和标签
-                  # 特征：[花瓣长度, 花瓣宽度]
-                  # 标签：0=山鸢尾, 1=变色鸢尾, 2=维吉尼亚鸢尾
-                  X = np.array([[1.4, 0.2], [1.3, 0.2], [1.5, 0.2], [4.5, 1.5], [4.6, 1.5], [4.7, 1.6], [6.0, 2.5], [6.1, 2.6], [6.2, 2.7]])
-                  y = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
-                  <br/>
-                  # 创建KNN分类器，k=3
-                  knn = KNeighborsClassifier(n_neighbors=3)
-                  <br/>
-                  # 训练模型
-                  knn.fit(X, y)
-                  <br/>
-                  # 预测新数据
-                  new_data = np.array([[1.6, 0.3], [4.8, 1.7], [6.3, 2.8]])
-                  predictions = knn.predict(new_data)
-                  <br/>
-                  print('预测结果:', predictions)
+                  <pre id="code-ml-3">{codeExample3}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-ml-3')?.textContent || '', 'output-ml-3')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-ml-3" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
                 
                 <h4 className="font-medium text-text mb-3">逻辑回归算法</h4>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  from sklearn.linear_model import LogisticRegression
-                  import numpy as np
-                  <br/>
-                  <br/>
-                  # 准备数据：考试成绩和是否录取
-                  # 特征：[数学成绩, 英语成绩]
-                  # 标签：0=未录取, 1=录取
-                  X = np.array([[70, 65], [80, 75], [60, 55], [50, 45], [90, 85], [85, 90], [65, 60], [45, 40]])
-                  y = np.array([1, 1, 0, 0, 1, 1, 0, 0])
-                  <br/>
-                  # 创建逻辑回归模型
-                  log_reg = LogisticRegression()
-                  <br/>
-                  # 训练模型
-                  log_reg.fit(X, y)
-                  <br/>
-                  # 预测新数据
-                  new_students = np.array([[75, 70], [55, 50]])
-                  predictions = log_reg.predict(new_students)
-                  <br/>
-                  print('预测结果:', predictions)
-                  <br/>
-                  # 预测概率
-                  probabilities = log_reg.predict_proba(new_students)
-                  print('预测概率:', probabilities)
+                  <pre id="code-ml-4">{codeExample4}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-ml-4')?.textContent || '', 'output-ml-4')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-ml-4" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -250,37 +317,17 @@ print('预测结果:', prediction)`;
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <p className="text-text mb-4">模型优化是提高机器学习模型性能的重要步骤，下面我们学习一些常用的模型优化方法。</p>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  from sklearn.linear_model import LinearRegression
-                  from sklearn.preprocessing import StandardScaler
-                  from sklearn.model_selection import cross_val_score
-                  import numpy as np
-                  <br/>
-                  <br/>
-                  # 准备数据
-                  X = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11]])
-                  y = np.array([3, 5, 7, 9, 11, 13, 15, 17, 19, 21])
-                  <br/>
-                  # 数据标准化
-                  scaler = StandardScaler()
-                  X_scaled = scaler.fit_transform(X)
-                  <br/>
-                  # 创建模型
-                  model = LinearRegression()
-                  <br/>
-                  # 交叉验证
-                  scores = cross_val_score(model, X_scaled, y, cv=5)
-                  print('交叉验证评分:', scores)
-                  print('平均评分:', scores.mean())
-                  <br/>
-                  # 训练模型
-                  model.fit(X_scaled, y)
-                  <br/>
-                  # 预测新数据
-                  new_data = np.array([[11, 12]])
-                  new_data_scaled = scaler.transform(new_data)
-                  prediction = model.predict(new_data_scaled)
-                  print('预测结果:', prediction)
+                  <pre id="code-ml-5">{codeExample5}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-ml-5')?.textContent || '', 'output-ml-5')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-ml-5" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
                 <p className="text-text">数据标准化和交叉验证是常用的模型优化方法，可以提高模型的泛化能力和预测精度。</p>
               </div>
             </div>

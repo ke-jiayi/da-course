@@ -3,6 +3,7 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
+import { runPython, runPythonCode } from '../services/pyodideService';
 
 const DataVisualization: React.FC = () => {
   const [code, setCode] = useState('');
@@ -15,7 +16,7 @@ const DataVisualization: React.FC = () => {
     setError('');
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     if (!code.trim()) {
       setError('请输入代码后再运行');
       setOutput('');
@@ -23,23 +24,58 @@ const DataVisualization: React.FC = () => {
     }
 
     try {
-      let result = '';
-      if (code.includes('print')) {
-        result = '执行结果: 模拟输出';
-      } else if (code.includes('plt')) {
-        result = '执行结果: 图表已生成';
-      } else if (code.includes('df')) {
-        result = '执行结果: 数据处理完成';
+      const result = await runPythonCode(code);
+      if (result.success) {
+        setOutput(result.output);
+        setError('');
       } else {
-        result = '执行结果: 代码执行成功';
+        setError('代码执行错误: ' + result.error);
+        setOutput('');
       }
-      setOutput(result);
-      setError('');
     } catch (err) {
-      setError('代码执行错误: ' + (err as Error).message);
+      setError('执行错误: ' + (err as Error).message);
       setOutput('');
     }
   };
+
+  // Python 代码示例
+  const codeExample1 = `import matplotlib.pyplot as plt
+x = [1,2,3,4,5]
+y = [10,20,30,25,15]
+plt.plot(x,y)
+plt.show()`;
+
+  const codeExample2 = `import matplotlib.pyplot as plt
+
+categories = ['A', 'B', 'C', 'D', 'E']
+values = [10, 15, 7, 12, 9]
+
+plt.bar(categories, values)
+plt.title('柱状图示例')
+plt.xlabel('类别')
+plt.ylabel('值')
+plt.show()`;
+
+  const codeExample3 = `import matplotlib.pyplot as plt
+
+labels = ['苹果', '香蕉', '橙子', '梨']
+sizes = [30, 25, 20, 25]
+
+plt.pie(sizes, labels=labels, autopct='%1.1f%%')
+plt.title('水果分布')
+plt.show()`;
+
+  const codeExample4 = `import matplotlib.pyplot as plt
+
+months = ['1月', '2月', '3月', '4月', '5月', '6月']
+sales = [12000, 15000, 18000, 16000, 20000, 22000]
+
+plt.plot(months, sales, marker='o')
+plt.title('月度销售额')
+plt.xlabel('月份')
+plt.ylabel('销售额 (元)')
+plt.grid(True, alpha=0.3)
+plt.show()`;
 
   const defaultCode = `import matplotlib.pyplot as plt
 
@@ -87,13 +123,18 @@ plt.show()`;
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <p className="text-text mb-4">知识点：import matplotlib.pyplot as plt</p>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import matplotlib.pyplot as plt
-x = [1,2,3,4,5]
-y = [10,20,30,25,15]
-plt.plot(x,y)
-plt.show()`}</pre>
+                  <pre id="code-visualization-1">{codeExample1}</pre>
                 </div>
-                <p className="text-text">运行结果示意：弹出一张折线图</p>
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-text">运行结果示意：弹出一张折线图</p>
+                  <button
+                    onClick={() => runPython(document.getElementById('code-visualization-1')?.textContent || '', 'output-visualization-1')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-visualization-1" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -105,29 +146,31 @@ plt.show()`}</pre>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <h4 className="font-medium text-text mb-3">柱状图</h4>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import matplotlib.pyplot as plt
-
-categories = ['A', 'B', 'C', 'D', 'E']
-values = [10, 15, 7, 12, 9]
-
-plt.bar(categories, values)
-plt.title('柱状图示例')
-plt.xlabel('类别')
-plt.ylabel('值')
-plt.show()`}</pre>
+                  <pre id="code-visualization-2">{codeExample2}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-visualization-2')?.textContent || '', 'output-visualization-2')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-visualization-2" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
                 
                 <h4 className="font-medium text-text mb-3">饼图</h4>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import matplotlib.pyplot as plt
-
-labels = ['苹果', '香蕉', '橙子', '梨']
-sizes = [30, 25, 20, 25]
-
-plt.pie(sizes, labels=labels, autopct='%1.1f%%')
-plt.title('水果分布')
-plt.show()`}</pre>
+                  <pre id="code-visualization-3">{codeExample3}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-visualization-3')?.textContent || '', 'output-visualization-3')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-visualization-3" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -138,18 +181,17 @@ plt.show()`}</pre>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import matplotlib.pyplot as plt
-
-months = ['1月', '2月', '3月', '4月', '5月', '6月']
-sales = [12000, 15000, 18000, 16000, 20000, 22000]
-
-plt.plot(months, sales, marker='o')
-plt.title('月度销售额')
-plt.xlabel('月份')
-plt.ylabel('销售额 (元)')
-plt.grid(True, alpha=0.3)
-plt.show()`}</pre>
+                  <pre id="code-visualization-4">{codeExample4}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-visualization-4')?.textContent || '', 'output-visualization-4')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-visualization-4" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
           </div>

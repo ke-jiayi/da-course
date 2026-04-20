@@ -3,6 +3,7 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
+import { runPython, runPythonCode } from '../services/pyodideService';
 
 const DataMining: React.FC = () => {
   const [code, setCode] = useState('');
@@ -15,7 +16,7 @@ const DataMining: React.FC = () => {
     setError('');
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     if (!code.trim()) {
       setError('请输入代码后再运行');
       setOutput('');
@@ -23,25 +24,79 @@ const DataMining: React.FC = () => {
     }
 
     try {
-      let result = '';
-      if (code.includes('print')) {
-        result = '执行结果: 模拟输出';
-      } else if (code.includes('df')) {
-        result = '执行结果: 数据处理完成';
-      } else if (code.includes('dropna')) {
-        result = '执行结果: 缺失值处理完成';
-      } else if (code.includes('duplicated')) {
-        result = '执行结果: 去重完成';
+      const result = await runPythonCode(code);
+      if (result.success) {
+        setOutput(result.output);
+        setError('');
       } else {
-        result = '执行结果: 代码执行成功';
+        setError('代码执行错误: ' + result.error);
+        setOutput('');
       }
-      setOutput(result);
-      setError('');
     } catch (err) {
-      setError('代码执行错误: ' + (err as Error).message);
+      setError('执行错误: ' + (err as Error).message);
       setOutput('');
     }
   };
+
+  // Python 代码示例
+  const codeExample1 = `import pandas as pd
+
+data = {'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
+        'age': [25, 30, 35, None, 45],
+        'city': ['New York', 'London', 'Paris', 'Tokyo', 'Sydney']}
+df = pd.DataFrame(data)
+
+print('数据基本信息:')
+print(df.info())
+
+print('\n前5行数据:')
+print(df.head())`;
+
+  const codeExample2 = `import pandas as pd
+
+data = {'name': ['Alice', 'Bob', 'Alice', 'David', 'Bob'],
+        'age': [25, 30, 25, 35, 30],
+        'city': ['New York', 'London', 'New York', 'Tokyo', 'London']}
+df = pd.DataFrame(data)
+
+print('原始数据:')
+print(df)
+
+df_clean = df.drop_duplicates()
+print('\n去重后的数据:')
+print(df_clean)
+
+data2 = {'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
+         'age': [25, None, 35, 40, None],
+         'city': ['New York', 'London', None, 'Tokyo', 'Sydney']}
+df2 = pd.DataFrame(data2)
+
+print('\n原始数据2:')
+print(df2)
+
+df2['age'].fillna(df2['age'].mean(), inplace=True)
+df2['city'].fillna(df2['city'].mode()[0], inplace=True)
+
+print('\n处理后的数据2:')
+print(df2)`;
+
+  const codeExample3 = `import pandas as pd
+
+data = {
+    'user_id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'purchase_amount': [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
+    'purchase_frequency': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+}
+df = pd.DataFrame(data)
+
+df['value_score'] = df['purchase_amount'] * 0.7 + df['purchase_frequency'] * 300
+
+print('用户数据:')
+print(df)
+
+high_value_users = df[df['value_score'] > 5000]
+print('\n高价值用户:')
+print(high_value_users)`;
 
   const defaultCode = `import pandas as pd
 
@@ -53,7 +108,7 @@ print(df)
 
 df['age'].fillna(df['age'].mean(), inplace=True)
 
-print('\\n处理后的数据:')
+print('\n处理后的数据:')
 print(df)`;
 
   return (
@@ -91,20 +146,18 @@ print(df)`;
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <p className="text-text mb-4">知识点：info() / head() 方法</p>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import pandas as pd
-
-data = {'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
-        'age': [25, 30, 35, None, 45],
-        'city': ['New York', 'London', 'Paris', 'Tokyo', 'Sydney']}
-df = pd.DataFrame(data)
-
-print('数据基本信息:')
-print(df.info())
-
-print('\\n前5行数据:')
-print(df.head())`}</pre>
+                  <pre id="code-mining-1">{codeExample1}</pre>
                 </div>
-                <p className="text-text">运行结果：显示数据的基本信息和前几行数据</p>
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-text">运行结果：显示数据的基本信息和前几行数据</p>
+                  <button
+                    onClick={() => runPython(document.getElementById('code-mining-1')?.textContent || '', 'output-mining-1')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-mining-1" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -115,34 +168,17 @@ print(df.head())`}</pre>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import pandas as pd
-
-data = {'name': ['Alice', 'Bob', 'Alice', 'David', 'Bob'],
-        'age': [25, 30, 25, 35, 30],
-        'city': ['New York', 'London', 'New York', 'Tokyo', 'London']}
-df = pd.DataFrame(data)
-
-print('原始数据:')
-print(df)
-
-df_clean = df.drop_duplicates()
-print('\\n去重后的数据:')
-print(df_clean)
-
-data2 = {'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
-         'age': [25, None, 35, 40, None],
-         'city': ['New York', 'London', None, 'Tokyo', 'Sydney']}
-df2 = pd.DataFrame(data2)
-
-print('\\n原始数据2:')
-print(df2)
-
-df2['age'].fillna(df2['age'].mean(), inplace=True)
-df2['city'].fillna(df2['city'].mode()[0], inplace=True)
-
-print('\\n处理后的数据2:')
-print(df2)`}</pre>
+                  <pre id="code-mining-2">{codeExample2}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-mining-2')?.textContent || '', 'output-mining-2')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-mining-2" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -153,24 +189,17 @@ print(df2)`}</pre>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import pandas as pd
-
-data = {
-    'user_id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    'purchase_amount': [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
-    'purchase_frequency': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-}
-df = pd.DataFrame(data)
-
-df['value_score'] = df['purchase_amount'] * 0.7 + df['purchase_frequency'] * 300
-
-print('用户数据:')
-print(df)
-
-high_value_users = df[df['value_score'] > 5000]
-print('\\n高价值用户:')
-print(high_value_users)`}</pre>
+                  <pre id="code-mining-3">{codeExample3}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-mining-3')?.textContent || '', 'output-mining-3')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-mining-3" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
           </div>

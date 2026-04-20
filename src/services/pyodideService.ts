@@ -64,3 +64,26 @@ export async function runPythonCode(code: string) {
     return { success: false, error: (error as Error).message };
   }
 }
+
+// 运行Python代码并输出结果到指定元素
+export async function runPython(code: string, outputElementId: string) {
+  const outputElement = document.getElementById(outputElementId);
+  if (!outputElement) {
+    console.error(`Output element with id ${outputElementId} not found`);
+    return;
+  }
+  
+  // 显示加载状态
+  outputElement.innerHTML = '<div class="text-gray-500">正在执行代码...</div>';
+  
+  try {
+    const result = await runPythonCode(code);
+    if (result.success) {
+      outputElement.innerHTML = `<pre class="text-sm">${result.output}</pre>`;
+    } else {
+      outputElement.innerHTML = `<pre class="text-red-500">错误: ${result.error}</pre>`;
+    }
+  } catch (error) {
+    outputElement.innerHTML = `<pre class="text-red-500">执行错误: ${(error as Error).message}</pre>`;
+  }
+}

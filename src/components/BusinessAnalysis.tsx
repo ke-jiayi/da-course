@@ -3,6 +3,7 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
+import { runPython, runPythonCode } from '../services/pyodideService';
 
 const BusinessAnalysis: React.FC = () => {
   const [code, setCode] = useState('');
@@ -15,7 +16,7 @@ const BusinessAnalysis: React.FC = () => {
     setError('');
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     if (!code.trim()) {
       setError('请输入代码后再运行');
       setOutput('');
@@ -23,25 +24,81 @@ const BusinessAnalysis: React.FC = () => {
     }
 
     try {
-      let result = '';
-      if (code.includes('print')) {
-        result = '执行结果: 模拟输出';
-      } else if (code.includes('gmv') || code.includes('GMV')) {
-        result = '执行结果: GMV计算完成';
-      } else if (code.includes('profit') || code.includes('利润')) {
-        result = '执行结果: 利润计算完成';
-      } else if (code.includes('rate') || code.includes('率')) {
-        result = '执行结果: 比率计算完成';
+      const result = await runPythonCode(code);
+      if (result.success) {
+        setOutput(result.output);
+        setError('');
       } else {
-        result = '执行结果: 代码执行成功';
+        setError('代码执行错误: ' + result.error);
+        setOutput('');
       }
-      setOutput(result);
-      setError('');
     } catch (err) {
-      setError('代码执行错误: ' + (err as Error).message);
+      setError('执行错误: ' + (err as Error).message);
       setOutput('');
     }
   };
+
+  // Python 代码示例
+  const codeExample1 = `daily_sales = [10000, 12000, 11000, 15000, 13000, 14000, 16000]
+orders = [50, 60, 55, 75, 65, 70, 80]
+visitors = [500, 600, 550, 750, 650, 700, 800]
+repeat_customers = [10, 15, 12, 20, 18, 19, 25]
+
+gmv = sum(daily_sales)
+print('GMV:', gmv, '元')
+
+average_order_value = gmv / sum(orders)
+print('平均订单价值:', average_order_value)
+
+conversion_rate = (sum(orders) / sum(visitors)) * 100
+print('转化率:', conversion_rate, '%')
+
+total_customers = sum(orders)
+repeat_rate = (sum(repeat_customers) / total_customers) * 100
+print('复购率:', repeat_rate, '%')`;
+
+  const codeExample2 = `import pandas as pd
+
+data = {
+    'date': ['2026-01-01', '2026-01-01', '2026-01-02', '2026-01-02', '2026-01-03', '2026-01-03'],
+    'store': ['门店A', '门店B', '门店A', '门店B', '门店A', '门店B'],
+    'channel': ['线上', '线下', '线上', '线下', '线上', '线下'],
+    'sales': [5000, 3000, 5500, 3200, 4800, 2900],
+    'orders': [25, 15, 28, 16, 24, 14]
+}
+
+df = pd.DataFrame(data)
+print('原始数据:')
+print(df)
+
+store_analysis = df.groupby('store').agg({'sales': 'sum', 'orders': 'sum'})
+print('\n按门店分析:')
+print(store_analysis)
+
+channel_analysis = df.groupby('channel').agg({'sales': 'sum', 'orders': 'sum'})
+print('\n按渠道分析:')
+print(channel_analysis)`;
+
+  const codeExample3 = `import pandas as pd
+
+data = {
+    '月份': ['1月', '2月', '3月', '4月', '5月', '6月'],
+    'GMV': [1200000, 1500000, 1800000, 1600000, 2000000, 2200000],
+    '订单数': [6000, 7500, 9000, 8000, 10000, 11000],
+    '复购率': [20, 22, 25, 28, 30, 32],
+    '毛利率': [40, 41, 42, 43, 44, 45]
+}
+
+df = pd.DataFrame(data)
+print('电商月度经营数据:')
+print(df)
+
+df['GMV同比增长'] = df['GMV'].pct_change() * 100
+
+print('\n关键发现:')
+print('- GMV从1月的120万增长到6月的220万')
+print('- 复购率从1月的20%提高到6月的32%')
+print('- 毛利率从1月的40%提高到6月的45%')`;
 
   const defaultCode = `# 示例：计算商业指标
 sales = [1000, 1500, 1200, 1800, 2000]
@@ -92,25 +149,18 @@ print('利润率:', profit_margin)`;
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <p className="text-text mb-4">知识点：GMV / 复购率 / 转化率计算</p>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`daily_sales = [10000, 12000, 11000, 15000, 13000, 14000, 16000]
-orders = [50, 60, 55, 75, 65, 70, 80]
-visitors = [500, 600, 550, 750, 650, 700, 800]
-repeat_customers = [10, 15, 12, 20, 18, 19, 25]
-
-gmv = sum(daily_sales)
-print('GMV:', gmv, '元')
-
-average_order_value = gmv / sum(orders)
-print('平均订单价值:', average_order_value)
-
-conversion_rate = (sum(orders) / sum(visitors)) * 100
-print('转化率:', conversion_rate, '%')
-
-total_customers = sum(orders)
-repeat_rate = (sum(repeat_customers) / total_customers) * 100
-print('复购率:', repeat_rate, '%')`}</pre>
+                  <pre id="code-business-1">{codeExample1}</pre>
                 </div>
-                <p className="text-text">运行结果：显示 GMV、平均订单价值、转化率、复购率等指标</p>
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-text">运行结果：显示 GMV、平均订单价值、转化率、复购率等指标</p>
+                  <button
+                    onClick={() => runPython(document.getElementById('code-business-1')?.textContent || '', 'output-business-1')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-business-1" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -121,28 +171,17 @@ print('复购率:', repeat_rate, '%')`}</pre>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import pandas as pd
-
-data = {
-    'date': ['2026-01-01', '2026-01-01', '2026-01-02', '2026-01-02', '2026-01-03', '2026-01-03'],
-    'store': ['门店A', '门店B', '门店A', '门店B', '门店A', '门店B'],
-    'channel': ['线上', '线下', '线上', '线下', '线上', '线下'],
-    'sales': [5000, 3000, 5500, 3200, 4800, 2900],
-    'orders': [25, 15, 28, 16, 24, 14]
-}
-
-df = pd.DataFrame(data)
-print('原始数据:')
-print(df)
-
-store_analysis = df.groupby('store').agg({'sales': 'sum', 'orders': 'sum'})
-print('\\n按门店分析:')
-print(store_analysis)
-
-channel_analysis = df.groupby('channel').agg({'sales': 'sum', 'orders': 'sum'})
-print('\\n按渠道分析:')
-print(channel_analysis)`}</pre>
+                  <pre id="code-business-2">{codeExample2}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-business-2')?.textContent || '', 'output-business-2')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-business-2" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -153,27 +192,17 @@ print(channel_analysis)`}</pre>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre>{`import pandas as pd
-
-data = {
-    '月份': ['1月', '2月', '3月', '4月', '5月', '6月'],
-    'GMV': [1200000, 1500000, 1800000, 1600000, 2000000, 2200000],
-    '订单数': [6000, 7500, 9000, 8000, 10000, 11000],
-    '复购率': [20, 22, 25, 28, 30, 32],
-    '毛利率': [40, 41, 42, 43, 44, 45]
-}
-
-df = pd.DataFrame(data)
-print('电商月度经营数据:')
-print(df)
-
-df['GMV同比增长'] = df['GMV'].pct_change() * 100
-
-print('\\n关键发现:')
-print('- GMV从1月的120万增长到6月的220万')
-print('- 复购率从1月的20%提高到6月的32%')
-print('- 毛利率从1月的40%提高到6月的45%')`}</pre>
+                  <pre id="code-business-3">{codeExample3}</pre>
                 </div>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => runPython(document.getElementById('code-business-3')?.textContent || '', 'output-business-3')}
+                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
+                  >
+                    运行
+                  </button>
+                </div>
+                <div id="output-business-3" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
           </div>
