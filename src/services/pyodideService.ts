@@ -87,11 +87,12 @@ export async function runPython(code: string, outputElementId: string) {
   try {
     const result = await runPythonCode(code);
     if (result.success) {
-      outputElement.innerHTML = `<pre class="text-sm">${result.output}</pre>`;
+      outputElement.innerHTML = `<pre class="text-sm">${result.output || '无输出'}</pre>`;
     } else {
-      outputElement.innerHTML = `<pre class="text-red-500">错误: ${result.error}</pre>`;
+      outputElement.innerHTML = `<pre class="text-red-500">错误: ${result.error || '未知错误'}</pre>`;
     }
   } catch (error) {
-    outputElement.innerHTML = `<pre class="text-red-500">执行错误: ${(error as Error).message}</pre>`;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    outputElement.innerHTML = `<pre class="text-red-500">执行错误: ${errorMessage || '未知错误'}</pre>`;
   }
 }
