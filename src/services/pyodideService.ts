@@ -7,7 +7,7 @@ let pyodide: any = null;
 export async function initPyodide() {
   if (pyodide) return pyodide;
   pyodide = await loadPyodide({
-    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/'
+    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/'
   });
   // 预装核心库
   await pyodide.loadPackage([
