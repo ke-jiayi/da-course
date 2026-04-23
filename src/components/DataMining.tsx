@@ -26,7 +26,7 @@ const DataMining: React.FC = () => {
     try {
       const result = await runPythonCode(code);
       if (result.success) {
-        setOutput(result.output);
+        setOutput(result.output || '');
         setError('');
       } else {
         setError('代码执行错误: ' + result.error);
