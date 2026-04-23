@@ -7,34 +7,40 @@ import { runPythonCode } from '../services/pyodideService';
 
 const MachineLearning: React.FC = () => {
   const [code, setCode] = useState('');
-  const [output, setOutput] = useState('');
-  const [error, setError] = useState('');
+  const [result, setResult] = useState<{ success: boolean; stdout: string; stderr: string; error?: any; } | null>(null);
 
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
-    setOutput('');
-    setError('');
+    setResult(null);
   };
 
   const handleRunCode = async () => {
     if (!code.trim()) {
-      setError('请输入代码后再运行');
-      setOutput('');
+      setResult({
+        success: false,
+        stdout: '',
+        stderr: '',
+        error: {
+          type: 'InputError',
+          message: '请输入代码后再运行'
+        }
+      });
       return;
     }
 
     try {
-      const result = await runPythonCode(code);
-      if (result.success) {
-        setOutput(result.output || '');
-        setError('');
-      } else {
-        setError('代码执行错误: ' + result.error);
-        setOutput('');
-      }
+      const executionResult = await runPythonCode(code);
+      setResult(executionResult);
     } catch (err) {
-      setError('执行错误: ' + (err as Error).message);
-      setOutput('');
+      setResult({
+        success: false,
+        stdout: '',
+        stderr: '',
+        error: {
+          type: 'ExecutionError',
+          message: '执行错误: ' + (err as Error).message
+        }
+      });
     }
   };
 
@@ -285,10 +291,52 @@ print("这是一个简单的线性关系")`;
             </div>
             
             <div className="bg-gray-800 text-white p-4 rounded-lg">
-              {error ? (
-                <div className="text-red-400">{error}</div>
+              {!result ? (
+                <div className="text-gray-400">运行结果将显示在这里</div>
+              ) : result.success ? (
+                <div className="space-y-3">
+                  {result.stdout && (
+                    <div>
+                      <h3 className="text-green-400 font-semibold mb-1">标准输出:</h3>
+                      <pre className="text-gray-100 whitespace-pre-wrap">{result.stdout}</pre>
+                    </div>
+                  )}
+                  {result.stderr && (
+                    <div>
+                      <h3 className="text-yellow-400 font-semibold mb-1">标准错误:</h3>
+                      <pre className="text-gray-100 whitespace-pre-wrap">{result.stderr}</pre>
+                    </div>
+                  )}
+                  {!result.stdout && !result.stderr && (
+                    <div className="text-green-400">代码执行成功！</div>
+                  )}
+                </div>
               ) : (
-                <div>{output || '运行结果将显示在这里'}</div>
+                <div className="space-y-3">
+                  {result.stdout && (
+                    <div>
+                      <h3 className="text-green-400 font-semibold mb-1">标准输出:</h3>
+                      <pre className="text-gray-100 whitespace-pre-wrap">{result.stdout}</pre>
+                    </div>
+                  )}
+                  {result.stderr && (
+                    <div>
+                      <h3 className="text-yellow-400 font-semibold mb-1">标准错误:</h3>
+                      <pre className="text-gray-100 whitespace-pre-wrap">{result.stderr}</pre>
+                    </div>
+                  )}
+                  {result.error && (
+                    <div className="text-red-400">
+                      <h3 className="font-semibold mb-1">错误信息:</h3>
+                      <pre className="whitespace-pre-wrap">
+                        类型: {result.error.type}
+                        消息: {result.error.message}
+                        {result.error.lineNumber !== undefined && `\n行号: ${result.error.lineNumber}`}
+                        {result.error.stack && `\n\n堆栈跟踪:\n${result.error.stack}`}
+                      </pre>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>

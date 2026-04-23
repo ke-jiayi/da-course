@@ -1436,8 +1436,7 @@ df = pd.DataFrame(data, columns=['date', 'product', 'sales', 'price', 'cost', 'p
 
   const project = projects[projectId as keyof typeof projects] || projects['1'];
   const [code, setCode] = useState(project.tasks[0].code);
-  const [output, setOutput] = useState('');
-  const [error, setError] = useState('');
+  const [result, setResult] = useState<{ success: boolean; stdout: string; stderr: string; error?: any; } | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTask, setActiveTask] = useState(0);
   const [chatMessages, setChatMessages] = useState<any[]>(getChatHistory(projectId));
@@ -1454,18 +1453,21 @@ df = pd.DataFrame(data, columns=['date', 'product', 'sales', 'price', 'cost', 'p
 
   const handleRunCode = async () => {
     setLoading(true);
-    setOutput('');
-    setError('');
+    setResult(null);
     
     try {
-      const result = await runPythonCode(code);
-      if (result.success) {
-        setOutput(result.output || '代码执行成功！');
-      } else {
-        setError(result.error || '未知错误');
-      }
+      const executionResult = await runPythonCode(code);
+      setResult(executionResult);
     } catch (err) {
-      setError('执行出错: ' + (err as Error).message);
+      setResult({
+        success: false,
+        stdout: '',
+        stderr: '',
+        error: {
+          type: 'ExecutionError',
+          message: '执行出错: ' + (err as Error).message
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -1514,7 +1516,7 @@ df = pd.DataFrame(data, columns=['date', 'product', 'sales', 'price', 'cost', 'p
   const handleCodeCorrection = async () => {
     if (!code.trim()) return;
     
-    const errorMessage = error || '代码可能存在问题';
+    const errorMessage = result?.error ? `${result.error.type}: ${result.error.message}` : '代码可能存在问题';
     const newMessage = { 
       role: 'user', 
       content: `我的代码可能有问题，请帮我分析：\n\n${code}\n\n错误信息：${errorMessage}` 
@@ -1653,10 +1655,52 @@ df = pd.DataFrame(data, columns=['date', 'product', 'sales', 'price', 'cost', 'p
               <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-4 text-primary">运行结果</h2>
                 <div className="bg-gray-800 text-white p-4 rounded-lg">
-                  {error ? (
-                    <div className="text-red-400">{error}</div>
+                  {!result ? (
+                    <div className="text-gray-400">运行结果将显示在这里</div>
+                  ) : result.success ? (
+                    <div className="space-y-3">
+                      {result.stdout && (
+                        <div>
+                          <h3 className="text-green-400 font-semibold mb-1">标准输出:</h3>
+                          <pre className="text-gray-100 whitespace-pre-wrap">{result.stdout}</pre>
+                        </div>
+                      )}
+                      {result.stderr && (
+                        <div>
+                          <h3 className="text-yellow-400 font-semibold mb-1">标准错误:</h3>
+                          <pre className="text-gray-100 whitespace-pre-wrap">{result.stderr}</pre>
+                        </div>
+                      )}
+                      {!result.stdout && !result.stderr && (
+                        <div className="text-green-400">代码执行成功！</div>
+                      )}
+                    </div>
                   ) : (
-                    <div>{output || '运行结果将显示在这里'}</div>
+                    <div className="space-y-3">
+                      {result.stdout && (
+                        <div>
+                          <h3 className="text-green-400 font-semibold mb-1">标准输出:</h3>
+                          <pre className="text-gray-100 whitespace-pre-wrap">{result.stdout}</pre>
+                        </div>
+                      )}
+                      {result.stderr && (
+                        <div>
+                          <h3 className="text-yellow-400 font-semibold mb-1">标准错误:</h3>
+                          <pre className="text-gray-100 whitespace-pre-wrap">{result.stderr}</pre>
+                        </div>
+                      )}
+                      {result.error && (
+                        <div className="text-red-400">
+                          <h3 className="font-semibold mb-1">错误信息:</h3>
+                          <pre className="whitespace-pre-wrap">
+                            类型: {result.error.type}
+                            消息: {result.error.message}
+                            {result.error.lineNumber !== undefined && `\n行号: ${result.error.lineNumber}`}
+                            {result.error.stack && `\n\n堆栈跟踪:\n${result.error.stack}`}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
