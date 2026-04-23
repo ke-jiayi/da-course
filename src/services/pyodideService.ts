@@ -6,20 +6,25 @@ let pyodide: any = null;
 // 初始化Pyodide，预装所需库
 export async function initPyodide() {
   if (pyodide) return pyodide;
-  pyodide = await loadPyodide({
-    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/'
-  });
-  // 预装核心库 - 只加载Pyodide支持的包
-  await pyodide.loadPackage([
-    'pandas', 'numpy', 'matplotlib', 'scikit-learn'
-  ]);
-  // 配置matplotlib，使其在前端渲染
-  pyodide.runPython(`
-    import matplotlib.pyplot as plt
-    plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
-    plt.ioff()
-  `);
-  return pyodide;
+  try {
+    pyodide = await loadPyodide({
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/'
+    });
+    // 预装核心库 - 只加载Pyodide支持的包
+    await pyodide.loadPackage([
+      'pandas', 'numpy', 'matplotlib', 'scikit-learn'
+    ]);
+    // 配置matplotlib，使其在前端渲染
+    pyodide.runPython(`
+      import matplotlib.pyplot as plt
+      plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
+      plt.ioff()
+    `);
+    return pyodide;
+  } catch (error) {
+    console.error('Pyodide初始化失败:', error);
+    throw error;
+  }
 }
 
 // 运行Python代码
@@ -85,14 +90,26 @@ export async function runPython(code: string, outputElementId: string) {
   outputElement.innerHTML = '<div class="text-gray-500">正在执行代码...</div>';
   
   try {
+    console.log('开始执行Python代码:', code);
     const result = await runPythonCode(code);
+    console.log('执行结果:', result);
     if (result.success) {
-      outputElement.innerHTML = `<pre class="text-sm">${result.output || '无输出'}</pre>`;
+      // 检查输出是否包含HTML
+      if (result.output && result.output.includes('<img')) {
+        // 直接设置为HTML内容
+        outputElement.innerHTML = result.output;
+      } else {
+        // 否则使用pre标签
+        outputElement.innerHTML = `<pre class="text-sm">${result.output || '无输出'}</pre>`;
+      }
     } else {
-      outputElement.innerHTML = `<pre class="text-red-500">错误: ${result.error || '未知错误'}</pre>`;
+      const errorMsg = result.error || '未知错误';
+      console.error('代码执行错误:', errorMsg);
+      outputElement.innerHTML = `<pre class="text-red-500">错误: ${errorMsg}</pre>`;
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('执行错误:', errorMessage);
     outputElement.innerHTML = `<pre class="text-red-500">执行错误: ${errorMessage || '未知错误'}</pre>`;
   }
 }

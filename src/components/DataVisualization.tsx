@@ -40,12 +40,27 @@ const DataVisualization: React.FC = () => {
 
   // Python 代码示例
   const codeExample1 = `import matplotlib.pyplot as plt
+import numpy as np
+
 x = [1,2,3,4,5]
 y = [10,20,30,25,15]
 plt.plot(x,y)
-plt.show()`;
+plt.title('折线图示例')
+plt.xlabel('X轴')
+plt.ylabel('Y轴')
+
+# 在浏览器中显示图表
+import io
+import base64
+
+buf = io.BytesIO()
+plt.savefig(buf, format='png')
+buf.seek(0)
+img_str = base64.b64encode(buf.read()).decode('utf-8')
+print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
 
   const codeExample2 = `import matplotlib.pyplot as plt
+import numpy as np
 
 categories = ['A', 'B', 'C', 'D', 'E']
 values = [10, 15, 7, 12, 9]
@@ -54,18 +69,38 @@ plt.bar(categories, values)
 plt.title('柱状图示例')
 plt.xlabel('类别')
 plt.ylabel('值')
-plt.show()`;
+
+# 在浏览器中显示图表
+import io
+import base64
+
+buf = io.BytesIO()
+plt.savefig(buf, format='png')
+buf.seek(0)
+img_str = base64.b64encode(buf.read()).decode('utf-8')
+print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
 
   const codeExample3 = `import matplotlib.pyplot as plt
+import numpy as np
 
 labels = ['苹果', '香蕉', '橙子', '梨']
 sizes = [30, 25, 20, 25]
 
 plt.pie(sizes, labels=labels, autopct='%1.1f%%')
 plt.title('水果分布')
-plt.show()`;
+
+# 在浏览器中显示图表
+import io
+import base64
+
+buf = io.BytesIO()
+plt.savefig(buf, format='png')
+buf.seek(0)
+img_str = base64.b64encode(buf.read()).decode('utf-8')
+print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
 
   const codeExample4 = `import matplotlib.pyplot as plt
+import numpy as np
 
 months = ['1月', '2月', '3月', '4月', '5月', '6月']
 sales = [12000, 15000, 18000, 16000, 20000, 22000]
@@ -75,9 +110,19 @@ plt.title('月度销售额')
 plt.xlabel('月份')
 plt.ylabel('销售额 (元)')
 plt.grid(True, alpha=0.3)
-plt.show()`;
+
+# 在浏览器中显示图表
+import io
+import base64
+
+buf = io.BytesIO()
+plt.savefig(buf, format='png')
+buf.seek(0)
+img_str = base64.b64encode(buf.read()).decode('utf-8')
+print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
 
   const defaultCode = `import matplotlib.pyplot as plt
+import numpy as np
 
 x = [1, 2, 3, 4, 5]
 y = [10, 20, 30, 25, 15]
@@ -86,7 +131,16 @@ plt.plot(x, y)
 plt.title('折线图示例')
 plt.xlabel('X轴')
 plt.ylabel('Y轴')
-plt.show()`;
+
+# 在浏览器中显示图表
+import io
+import base64
+
+buf = io.BytesIO()
+plt.savefig(buf, format='png')
+buf.seek(0)
+img_str = base64.b64encode(buf.read()).decode('utf-8')
+print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
 
   return (
     <div className="min-h-screen bg-background">
