@@ -9,9 +9,9 @@ export async function initPyodide() {
   pyodide = await loadPyodide({
     indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/'
   });
-  // 预装核心库
+  // 预装核心库 - 只加载Pyodide支持的包
   await pyodide.loadPackage([
-    'pandas', 'numpy', 'matplotlib', 'seaborn', 'scikit-learn', 'mlxtend'
+    'pandas', 'numpy', 'matplotlib', 'scikit-learn'
   ]);
   // 配置matplotlib，使其在前端渲染
   pyodide.runPython(`
@@ -26,37 +26,45 @@ export async function initPyodide() {
 export async function runPythonCode(code: string) {
   const py = await initPyodide();
   try {
-    // 捕获标准输出
+    // 保存原始输出
     let stdout = '';
     let stderr = '';
     
-    // 重定向标准输出和错误
+    // 使用Pyodide的sys.stdout和sys.stderr重定向
     py.runPython(`
       import sys
+      from io import StringIO
       
-      class Capture:
-          def __init__(self):
-              self.buffer = ''
-          def write(self, data):
-              self.buffer += data
-          def flush(self):
-              pass
+      original_stdout = sys.stdout
+      original_stderr = sys.stderr
       
-      sys.stdout = Capture()
-      sys.stderr = Capture()
+      sys.stdout = captured_stdout = StringIO()
+      sys.stderr = captured_stderr = StringIO()
     `);
     
-    // 执行用户代码
-    const result = await py.runPythonAsync(code);
-    
-    // 获取捕获的输出
-    stdout = py.runPython('sys.stdout.buffer');
-    stderr = py.runPython('sys.stderr.buffer');
+    let result;
+    try {
+      // 执行用户代码
+      result = await py.runPythonAsync(code);
+    } finally {
+      // 获取捕获的输出
+      stdout = py.runPython('captured_stdout.getvalue()') || '';
+      stderr = py.runPython('captured_stderr.getvalue()') || '';
+      
+      // 恢复原始输出
+      py.runPython(`
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
+      `);
+    }
     
     // 构建输出
     let output = stdout;
     if (stderr) {
       output += '\n错误输出:\n' + stderr;
+    }
+    if (result !== undefined) {
+      output += '\n返回值: ' + result;
     }
     
     return { success: true, output, result };
