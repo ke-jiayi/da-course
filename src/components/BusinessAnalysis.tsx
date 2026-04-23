@@ -3,7 +3,7 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPython, runPythonCode } from '../services/pyodideService';
+import { runPythonCode } from '../services/pyodideService';
 
 const BusinessAnalysis: React.FC = () => {
   const [code, setCode] = useState('');
@@ -38,81 +38,24 @@ const BusinessAnalysis: React.FC = () => {
     }
   };
 
-  // Python 代码示例
-  const codeExample1 = `daily_sales = [10000, 12000, 11000, 15000, 13000, 14000, 16000]
-orders = [50, 60, 55, 75, 65, 70, 80]
-visitors = [500, 600, 550, 750, 650, 700, 800]
-repeat_customers = [10, 15, 12, 20, 18, 19, 25]
+  const defaultCode = `# 商业分析基础示例
+print("欢迎学习商业数据分析！")
+print("\n在这个课程中，你将学习：")
+print("1. 关键商业指标")
+print("2. 数据分析方法")
+print("3. 商业决策支持")
 
-gmv = sum(daily_sales)
-print('GMV:', gmv, '元')
+# 简单的商业计算示例
+sales = [10000, 12000, 15000, 14000, 18000]
+orders = [50, 60, 75, 70, 90]
 
-average_order_value = gmv / sum(orders)
-print('平均订单价值:', average_order_value)
+total_sales = sum(sales)
+total_orders = sum(orders)
+avg_order_value = total_sales / total_orders
 
-conversion_rate = (sum(orders) / sum(visitors)) * 100
-print('转化率:', conversion_rate, '%')
-
-total_customers = sum(orders)
-repeat_rate = (sum(repeat_customers) / total_customers) * 100
-print('复购率:', repeat_rate, '%')`;
-
-  const codeExample2 = `import pandas as pd
-
-data = {
-    'date': ['2026-01-01', '2026-01-01', '2026-01-02', '2026-01-02', '2026-01-03', '2026-01-03'],
-    'store': ['门店A', '门店B', '门店A', '门店B', '门店A', '门店B'],
-    'channel': ['线上', '线下', '线上', '线下', '线上', '线下'],
-    'sales': [5000, 3000, 5500, 3200, 4800, 2900],
-    'orders': [25, 15, 28, 16, 24, 14]
-}
-
-df = pd.DataFrame(data)
-print('原始数据:')
-print(df)
-
-store_analysis = df.groupby('store').agg({'sales': 'sum', 'orders': 'sum'})
-print('\n按门店分析:')
-print(store_analysis)
-
-channel_analysis = df.groupby('channel').agg({'sales': 'sum', 'orders': 'sum'})
-print('\n按渠道分析:')
-print(channel_analysis)`;
-
-  const codeExample3 = `import pandas as pd
-
-data = {
-    '月份': ['1月', '2月', '3月', '4月', '5月', '6月'],
-    'GMV': [1200000, 1500000, 1800000, 1600000, 2000000, 2200000],
-    '订单数': [6000, 7500, 9000, 8000, 10000, 11000],
-    '复购率': [20, 22, 25, 28, 30, 32],
-    '毛利率': [40, 41, 42, 43, 44, 45]
-}
-
-df = pd.DataFrame(data)
-print('电商月度经营数据:')
-print(df)
-
-df['GMV同比增长'] = df['GMV'].pct_change() * 100
-
-print('\n关键发现:')
-print('- GMV从1月的120万增长到6月的220万')
-print('- 复购率从1月的20%提高到6月的32%')
-print('- 毛利率从1月的40%提高到6月的45%')`;
-
-  const defaultCode = `# 示例：计算商业指标
-sales = [1000, 1500, 1200, 1800, 2000]
-costs = [600, 900, 720, 1080, 1200]
-
-gmv = sum(sales)
-total_cost = sum(costs)
-profit = gmv - total_cost
-profit_margin = (profit / gmv) * 100
-
-print('GMV:', gmv)
-print('总成本:', total_cost)
-print('利润:', profit)
-print('利润率:', profit_margin)`;
+print(f"总销售额: {total_sales}")
+print(f"总订单数: {total_orders}")
+print(f"平均订单金额: {avg_order_value:.2f}")`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,9 +67,10 @@ print('利润率:', profit_margin)`;
             <div className="bg-accent rounded-xl p-6 mb-6">
               <h2 className="text-xl font-semibold mb-4 text-primary">学习目标</h2>
               <ul className="list-disc pl-6 space-y-2 text-text">
-                <li>学会用 Python 完成商业指标计算</li>
-                <li>能计算 GMV、复购率、转化率等核心指标</li>
-                <li>能完成电商月度经营分析实战</li>
+                <li>理解核心商业指标的含义和计算方法</li>
+                <li>学习多维度数据分析的基本思路</li>
+                <li>掌握商业数据分析的常用工具和技术</li>
+                <li>能够将数据分析结果转化为商业决策</li>
               </ul>
             </div>
           </div>
@@ -134,12 +78,12 @@ print('利润率:', profit_margin)`;
           <div className="mb-10">
             <h2 className="text-xl font-semibold mb-4 text-primary">前置知识</h2>
             <div className="bg-yellow rounded-xl p-6">
-              <p className="text-text">Python 基础、Pandas 基础</p>
+              <p className="text-text">基础数学知识、对商业运营的基本理解</p>
             </div>
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">分步教学</h2>
+            <h2 className="text-xl font-semibold mb-6 text-primary">课程内容</h2>
             
             <div className="mb-8">
               <div className="flex items-center mb-4">
@@ -147,41 +91,72 @@ print('利润率:', profit_margin)`;
                 <h3 className="text-lg font-semibold text-text">核心商业指标计算</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <p className="text-text mb-4">知识点：GMV / 复购率 / 转化率计算</p>
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-business-1">{codeExample1}</pre>
+                <div className="text-text mb-4">
+                  <p className="mb-3"><strong>什么是关键绩效指标(KPI)？</strong></p>
+                  <p className="mb-3">KPI是衡量组织或业务绩效的可量化指标，帮助企业跟踪目标完成情况。</p>
+                  <p className="mb-3"><strong>常见的商业指标：</strong></p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-text mb-2">销售额(GMR)</h4>
+                      <p className="text-sm text-text">
+                        一定时期内的总销售收入，是衡量业务规模的基础指标。
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-text mb-2">平均订单价值(AOV)</h4>
+                      <p className="text-sm text-text">
+                        总销售额除以订单数，反映客户单次购买的平均金额。
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-text mb-2">转化率(CR)</h4>
+                      <p className="text-sm text-text">
+                        访客中完成购买的比例，衡量营销和用户体验效果。
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-text mb-2">复购率(RR)</h4>
+                      <p className="text-sm text-text">
+                        重复购买的客户比例，反映客户忠诚度和产品质量。
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mb-3"><strong>指标计算的注意事项：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>明确定义每个指标的计算方式</li>
+                    <li>确保数据来源和统计口径一致</li>
+                    <li>关注趋势变化而非单一数值</li>
+                    <li>将指标与业务目标结合分析</li>
+                  </ul>
                 </div>
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-text">运行结果：显示 GMV、平均订单价值、转化率、复购率等指标</p>
-                  <button
-                    onClick={() => runPython(document.getElementById('code-business-1')?.textContent || '', 'output-business-1')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-business-1" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
             <div className="mb-8">
               <div className="flex items-center mb-4">
                 <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">2</div>
-                <h3 className="text-lg font-semibold text-text">多维度分析：门店/渠道/时间</h3>
+                <h3 className="text-lg font-semibold text-text">多维度分析：门店、渠道、时间</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-business-2">{codeExample2}</pre>
+                <div className="text-text mb-4">
+                  <p className="mb-3"><strong>为什么需要多维度分析？</strong></p>
+                  <p className="mb-3">单一维度的数据只能告诉我们"发生了什么"，多维度分析才能告诉我们"为什么发生"。</p>
+                  <p className="mb-3"><strong>常见的分析维度：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2 mb-4">
+                    <li>时间维度：日、周、月、季度、年</li>
+                    <li>产品维度：类别、品牌、价格区间</li>
+                    <li>客户维度：新老客户、年龄段、地区</li>
+                    <li>渠道维度：线上、线下、不同平台</li>
+                    <li>区域维度：城市、地区、国家</li>
+                  </ul>
+                  <p className="mb-3"><strong>多维度分析的方法：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>对比分析：不同时间段或群体的指标对比</li>
+                    <li>趋势分析：观察指标随时间的变化</li>
+                    <li>占比分析：各部分在整体中的比重</li>
+                    <li>关联分析：不同指标之间的关系</li>
+                  </ul>
                 </div>
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => runPython(document.getElementById('code-business-2')?.textContent || '', 'output-business-2')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-business-2" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -191,25 +166,83 @@ print('利润率:', profit_margin)`;
                 <h3 className="text-lg font-semibold text-text">实战：电商月度经营分析</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-business-3">{codeExample3}</pre>
+                <div className="text-text mb-4">
+                  <p className="mb-3"><strong>案例背景：</strong></p>
+                  <p className="mb-3">某电商平台需要进行月度经营分析，了解业务表现并制定下月策略。</p>
+                  <p className="mb-3"><strong>经营数据示例：</strong></p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-300 mb-4">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-300 px-4 py-2">月份</th>
+                          <th className="border border-gray-300 px-4 py-2">销售额(万)</th>
+                          <th className="border border-gray-300 px-4 py-2">订单数</th>
+                          <th className="border border-gray-300 px-4 py-2">用户数</th>
+                          <th className="border border-gray-300 px-4 py-2">毛利率(%)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">1月</td>
+                          <td className="border border-gray-300 px-4 py-2">120</td>
+                          <td className="border border-gray-300 px-4 py-2">6000</td>
+                          <td className="border border-gray-300 px-4 py-2">3000</td>
+                          <td className="border border-gray-300 px-4 py-2">40</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">2月</td>
+                          <td className="border border-gray-300 px-4 py-2">150</td>
+                          <td className="border border-gray-300 px-4 py-2">7500</td>
+                          <td className="border border-gray-300 px-4 py-2">3800</td>
+                          <td className="border border-gray-300 px-4 py-2">41</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">3月</td>
+                          <td className="border border-gray-300 px-4 py-2">180</td>
+                          <td className="border border-gray-300 px-4 py-2">9000</td>
+                          <td className="border border-gray-300 px-4 py-2">4500</td>
+                          <td className="border border-gray-300 px-4 py-2">42</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">4月</td>
+                          <td className="border border-gray-300 px-4 py-2">160</td>
+                          <td className="border border-gray-300 px-4 py-2">8000</td>
+                          <td className="border border-gray-300 px-4 py-2">4000</td>
+                          <td className="border border-gray-300 px-4 py-2">43</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">5月</td>
+                          <td className="border border-gray-300 px-4 py-2">200</td>
+                          <td className="border border-gray-300 px-4 py-2">10000</td>
+                          <td className="border border-gray-300 px-4 py-2">5200</td>
+                          <td className="border border-gray-300 px-4 py-2">44</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">6月</td>
+                          <td className="border border-gray-300 px-4 py-2">220</td>
+                          <td className="border border-gray-300 px-4 py-2">11000</td>
+                          <td className="border border-gray-300 px-4 py-2">5800</td>
+                          <td className="border border-gray-300 px-4 py-2">45</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mb-3"><strong>分析重点：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>销售额和用户数的增长趋势</li>
+                    <li>平均订单金额的变化</li>
+                    <li>毛利率的提升空间</li>
+                    <li>各指标之间的关联关系</li>
+                    <li>下月业务目标的设定依据</li>
+                  </ul>
                 </div>
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => runPython(document.getElementById('code-business-3')?.textContent || '', 'output-business-3')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-business-3" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">交互式Python编辑器</h2>
-            <p className="text-text mb-4">默认预填示例代码，用户可修改运行</p>
+            <h2 className="text-xl font-semibold mb-6 text-primary">交互式Python练习</h2>
+            <p className="text-text mb-4">在这里尝试简单的Python代码，熟悉商业数据计算！</p>
             
             <div className="mb-6">
               <AceEditor
@@ -248,18 +281,17 @@ print('利润率:', profit_margin)`;
           <div>
             <h2 className="text-xl font-semibold mb-4 text-primary">课后练习</h2>
             <div className="bg-purple rounded-xl p-6">
-              <p className="text-text">用提供的门店数据完成经营分析：</p>
-              <div className="bg-gray-100 p-4 rounded-lg mt-4 font-mono text-sm">
-                <pre>{`import pandas as pd
-
-data = {
-    '门店': ['门店A', '门店B', '门店C', '门店D', '门店E'],
-    '销售额': [500000, 600000, 450000, 700000, 550000],
-    '成本': [300000, 360000, 270000, 420000, 330000]
-}
-df = pd.DataFrame(data)
-
-# 请计算每个门店的利润和利润率`}</pre>
+              <p className="text-text mb-4">思考以下问题：</p>
+              <div className="space-y-3">
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">1. 如果你是一家零售企业的数据分析员，你会重点关注哪些KPI？为什么？</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">2. 假设你发现某产品的销售额在下降，但毛利率在上升，你会如何分析这种情况？</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">3. 如果你需要向管理层汇报月度经营情况，你会如何组织你的分析报告？</p>
+                </div>
               </div>
             </div>
           </div>

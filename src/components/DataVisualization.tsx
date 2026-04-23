@@ -3,7 +3,7 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPython, runPythonCode } from '../services/pyodideService';
+import { runPythonCode } from '../services/pyodideService';
 
 const DataVisualization: React.FC = () => {
   const [code, setCode] = useState('');
@@ -38,109 +38,18 @@ const DataVisualization: React.FC = () => {
     }
   };
 
-  // Python 代码示例
-  const codeExample1 = `import matplotlib.pyplot as plt
-import numpy as np
+  const defaultCode = `# 简单的Python示例
+print("欢迎学习数据可视化！")
+print("\n在这个课程中，你将学习：")
+print("1. 基础Python语法")
+print("2. 数据可视化概念")
+print("3. 常用图表类型")
 
-x = [1,2,3,4,5]
-y = [10,20,30,25,15]
-plt.plot(x,y)
-plt.title('折线图示例')
-plt.xlabel('X轴')
-plt.ylabel('Y轴')
-
-# 在浏览器中显示图表
-import io
-import base64
-
-buf = io.BytesIO()
-plt.savefig(buf, format='png')
-buf.seek(0)
-img_str = base64.b64encode(buf.read()).decode('utf-8')
-print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
-
-  const codeExample2 = `import matplotlib.pyplot as plt
-import numpy as np
-
-categories = ['A', 'B', 'C', 'D', 'E']
-values = [10, 15, 7, 12, 9]
-
-plt.bar(categories, values)
-plt.title('柱状图示例')
-plt.xlabel('类别')
-plt.ylabel('值')
-
-# 在浏览器中显示图表
-import io
-import base64
-
-buf = io.BytesIO()
-plt.savefig(buf, format='png')
-buf.seek(0)
-img_str = base64.b64encode(buf.read()).decode('utf-8')
-print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
-
-  const codeExample3 = `import matplotlib.pyplot as plt
-import numpy as np
-
-labels = ['苹果', '香蕉', '橙子', '梨']
-sizes = [30, 25, 20, 25]
-
-plt.pie(sizes, labels=labels, autopct='%1.1f%%')
-plt.title('水果分布')
-
-# 在浏览器中显示图表
-import io
-import base64
-
-buf = io.BytesIO()
-plt.savefig(buf, format='png')
-buf.seek(0)
-img_str = base64.b64encode(buf.read()).decode('utf-8')
-print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
-
-  const codeExample4 = `import matplotlib.pyplot as plt
-import numpy as np
-
-months = ['1月', '2月', '3月', '4月', '5月', '6月']
-sales = [12000, 15000, 18000, 16000, 20000, 22000]
-
-plt.plot(months, sales, marker='o')
-plt.title('月度销售额')
-plt.xlabel('月份')
-plt.ylabel('销售额 (元)')
-plt.grid(True, alpha=0.3)
-
-# 在浏览器中显示图表
-import io
-import base64
-
-buf = io.BytesIO()
-plt.savefig(buf, format='png')
-buf.seek(0)
-img_str = base64.b64encode(buf.read()).decode('utf-8')
-print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
-
-  const defaultCode = `import matplotlib.pyplot as plt
-import numpy as np
-
-x = [1, 2, 3, 4, 5]
-y = [10, 20, 30, 25, 15]
-
-plt.plot(x, y)
-plt.title('折线图示例')
-plt.xlabel('X轴')
-plt.ylabel('Y轴')
-
-# 在浏览器中显示图表
-import io
-import base64
-
-buf = io.BytesIO()
-plt.savefig(buf, format='png')
-buf.seek(0)
-img_str = base64.b64encode(buf.read()).decode('utf-8')
-print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
+# 简单计算
+numbers = [1, 2, 3, 4, 5]
+total = sum(numbers)
+print(f"\n数字总和: {total}")
+print(f"数字列表: {numbers}")`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -152,9 +61,10 @@ print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
             <div className="bg-accent rounded-xl p-6 mb-6">
               <h2 className="text-xl font-semibold mb-4 text-primary">学习目标</h2>
               <ul className="list-disc pl-6 space-y-2 text-text">
-                <li>学会用 Python 导入 matplotlib</li>
-                <li>能绘制折线图/柱状图/饼图</li>
-                <li>能完成销售数据可视化实战</li>
+                <li>学习基础Python语法和数据结构</li>
+                <li>了解常见的数据可视化图表类型</li>
+                <li>掌握数据可视化的基本概念和最佳实践</li>
+                <li>能够理解和分析数据可视化结果</li>
               </ul>
             </div>
           </div>
@@ -162,69 +72,88 @@ print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
           <div className="mb-10">
             <h2 className="text-xl font-semibold mb-4 text-primary">前置知识</h2>
             <div className="bg-yellow rounded-xl p-6">
-              <p className="text-text">Python 基础变量/列表</p>
+              <p className="text-text">基础数学知识、简单的逻辑思维能力</p>
             </div>
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">分步教学</h2>
+            <h2 className="text-xl font-semibold mb-6 text-primary">课程内容</h2>
             
             <div className="mb-8">
               <div className="flex items-center mb-4">
                 <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">1</div>
-                <h3 className="text-lg font-semibold text-text">库导入</h3>
+                <h3 className="text-lg font-semibold text-text">数据可视化基础</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <p className="text-text mb-4">知识点：import matplotlib.pyplot as plt</p>
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-visualization-1">{codeExample1}</pre>
+                <div className="text-text mb-4">
+                  <p className="mb-3"><strong>什么是数据可视化？</strong></p>
+                  <p className="mb-3">数据可视化是将数据转换为图形或图表的过程，目的是使数据更容易理解和解释。</p>
+                  <p className="mb-3"><strong>常见的图表类型：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2 mb-3">
+                    <li>折线图：显示数据随时间的变化趋势</li>
+                    <li>柱状图：比较不同类别的数据</li>
+                    <li>饼图：显示各部分占整体的比例</li>
+                    <li>散点图：显示两个变量之间的关系</li>
+                  </ul>
+                  <p className="mb-3"><strong>数据可视化的最佳实践：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>选择合适的图表类型</li>
+                    <li>保持简洁，避免过度装饰</li>
+                    <li>使用清晰的标签和标题</li>
+                    <li>确保数据准确无误</li>
+                  </ul>
                 </div>
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-text">运行结果示意：弹出一张折线图</p>
-                  <button
-                    onClick={() => runPython(document.getElementById('code-visualization-1')?.textContent || '', 'output-visualization-1')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-visualization-1" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
             <div className="mb-8">
               <div className="flex items-center mb-4">
                 <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">2</div>
-                <h3 className="text-lg font-semibold text-text">柱状图/饼图</h3>
+                <h3 className="text-lg font-semibold text-text">常用图表详解</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <h4 className="font-medium text-text mb-3">柱状图</h4>
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-visualization-2">{codeExample2}</pre>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-text mb-2">折线图</h4>
+                    <p className="text-sm text-text mb-2">
+                      适用于显示数据随时间的变化趋势。
+                      <br />例如：每日销售额、月度温度变化
+                    </p>
+                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 text-center">
+                      <p className="text-gray-500">📈 折线图示例</p>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-text mb-2">柱状图</h4>
+                    <p className="text-sm text-text mb-2">
+                      适用于比较不同类别的数据。
+                      <br />例如：各地区销售对比、产品销量排行
+                    </p>
+                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 text-center">
+                      <p className="text-gray-500">📊 柱状图示例</p>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-text mb-2">饼图</h4>
+                    <p className="text-sm text-text mb-2">
+                      适用于显示各部分占整体的比例。
+                      <br />例如：市场份额、产品分类占比
+                    </p>
+                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 text-center">
+                      <p className="text-gray-500">🥧 饼图示例</p>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-text mb-2">散点图</h4>
+                    <p className="text-sm text-text mb-2">
+                      适用于显示两个变量之间的关系。
+                      <br />例如：广告投入与销量、年龄与收入
+                    </p>
+                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 text-center">
+                      <p className="text-gray-500">📉 散点图示例</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => runPython(document.getElementById('code-visualization-2')?.textContent || '', 'output-visualization-2')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-visualization-2" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
-                
-                <h4 className="font-medium text-text mb-3">饼图</h4>
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-visualization-3">{codeExample3}</pre>
-                </div>
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => runPython(document.getElementById('code-visualization-3')?.textContent || '', 'output-visualization-3')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-visualization-3" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
@@ -234,25 +163,75 @@ print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
                 <h3 className="text-lg font-semibold text-text">实战：电商销售数据可视化</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-visualization-4">{codeExample4}</pre>
+                <div className="text-text mb-4">
+                  <p className="mb-3"><strong>案例背景：</strong></p>
+                  <p className="mb-3">某电商平台想要分析过去6个月的销售数据，以便制定更好的营销策略。</p>
+                  <p className="mb-3"><strong>数据示例：</strong></p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-300 mb-4">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-300 px-4 py-2">月份</th>
+                          <th className="border border-gray-300 px-4 py-2">销售额（万元）</th>
+                          <th className="border border-gray-300 px-4 py-2">订单数</th>
+                          <th className="border border-gray-300 px-4 py-2">用户数</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">1月</td>
+                          <td className="border border-gray-300 px-4 py-2">120</td>
+                          <td className="border border-gray-300 px-4 py-2">6000</td>
+                          <td className="border border-gray-300 px-4 py-2">3000</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">2月</td>
+                          <td className="border border-gray-300 px-4 py-2">150</td>
+                          <td className="border border-gray-300 px-4 py-2">7500</td>
+                          <td className="border border-gray-300 px-4 py-2">3800</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">3月</td>
+                          <td className="border border-gray-300 px-4 py-2">180</td>
+                          <td className="border border-gray-300 px-4 py-2">9000</td>
+                          <td className="border border-gray-300 px-4 py-2">4500</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">4月</td>
+                          <td className="border border-gray-300 px-4 py-2">160</td>
+                          <td className="border border-gray-300 px-4 py-2">8000</td>
+                          <td className="border border-gray-300 px-4 py-2">4000</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">5月</td>
+                          <td className="border border-gray-300 px-4 py-2">200</td>
+                          <td className="border border-gray-300 px-4 py-2">10000</td>
+                          <td className="border border-gray-300 px-4 py-2">5200</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">6月</td>
+                          <td className="border border-gray-300 px-4 py-2">220</td>
+                          <td className="border border-gray-300 px-4 py-2">11000</td>
+                          <td className="border border-gray-300 px-4 py-2">5800</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mb-3"><strong>分析建议：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>使用折线图显示月度销售额趋势</li>
+                    <li>使用柱状图比较各月订单数</li>
+                    <li>观察用户增长与销售额的关系</li>
+                    <li>分析哪些月份是销售旺季</li>
+                  </ul>
                 </div>
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => runPython(document.getElementById('code-visualization-4')?.textContent || '', 'output-visualization-4')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-visualization-4" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">交互式Python编辑器</h2>
-            <p className="text-text mb-4">默认预填示例代码，用户可修改运行</p>
+            <h2 className="text-xl font-semibold mb-6 text-primary">交互式Python练习</h2>
+            <p className="text-text mb-4">在这里尝试简单的Python代码，熟悉基础语法！</p>
             
             <div className="mb-6">
               <AceEditor
@@ -291,11 +270,17 @@ print(f'\n<img src="data:image/png;base64,{img_str}" />')`;
           <div>
             <h2 className="text-xl font-semibold mb-4 text-primary">课后练习</h2>
             <div className="bg-purple rounded-xl p-6">
-              <p className="text-text">用月度数据画图：</p>
-              <div className="bg-gray-100 p-4 rounded-lg mt-4 font-mono text-sm">
-                <pre>{`months = ['1月', '2月', '3月', '4月', '5月', '6月']
-sales = [12000, 15000, 18000, 16000, 20000, 22000]
-# 请用上面的数据画一张月度销售额的折线图`}</pre>
+              <p className="text-text mb-4">思考以下问题：</p>
+              <div className="space-y-3">
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">1. 如果你有一组学生的考试成绩数据，你会选择什么图表来展示？为什么？</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">2. 假设你要展示公司过去一年的月度收入变化，你会使用哪种图表？请简要说明你的选择理由。</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">3. 如果你要比较不同产品类别的销售额占比，哪种图表最合适？</p>
+                </div>
               </div>
             </div>
           </div>

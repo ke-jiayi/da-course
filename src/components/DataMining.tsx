@@ -3,7 +3,7 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPython, runPythonCode } from '../services/pyodideService';
+import { runPythonCode } from '../services/pyodideService';
 
 const DataMining: React.FC = () => {
   const [code, setCode] = useState('');
@@ -38,78 +38,24 @@ const DataMining: React.FC = () => {
     }
   };
 
-  // Python 代码示例
-  const codeExample1 = `import pandas as pd
+  const defaultCode = `# 数据挖掘基础示例
+print("欢迎学习数据挖掘！")
+print("\n在这个课程中，你将学习：")
+print("1. 数据清洗的重要性")
+print("2. 数据探索性分析")
+print("3. 基础的数据挖掘概念")
 
-data = {'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
-        'age': [25, 30, 35, None, 45],
-        'city': ['New York', 'London', 'Paris', 'Tokyo', 'Sydney']}
-df = pd.DataFrame(data)
+# 简单的数据处理示例
+data = [25, 30, 35, None, 40, 45, None, 50]
+print(f"原始数据: {data}")
 
-print('数据基本信息:')
-print(df.info())
+# 过滤掉空值
+clean_data = [x for x in data if x is not None]
+print(f"清洗后的数据: {clean_data}")
 
-print('\n前5行数据:')
-print(df.head())`;
-
-  const codeExample2 = `import pandas as pd
-
-data = {'name': ['Alice', 'Bob', 'Alice', 'David', 'Bob'],
-        'age': [25, 30, 25, 35, 30],
-        'city': ['New York', 'London', 'New York', 'Tokyo', 'London']}
-df = pd.DataFrame(data)
-
-print('原始数据:')
-print(df)
-
-df_clean = df.drop_duplicates()
-print('\n去重后的数据:')
-print(df_clean)
-
-data2 = {'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
-         'age': [25, None, 35, 40, None],
-         'city': ['New York', 'London', None, 'Tokyo', 'Sydney']}
-df2 = pd.DataFrame(data2)
-
-print('\n原始数据2:')
-print(df2)
-
-df2['age'].fillna(df2['age'].mean(), inplace=True)
-df2['city'].fillna(df2['city'].mode()[0], inplace=True)
-
-print('\n处理后的数据2:')
-print(df2)`;
-
-  const codeExample3 = `import pandas as pd
-
-data = {
-    'user_id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    'purchase_amount': [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
-    'purchase_frequency': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-}
-df = pd.DataFrame(data)
-
-df['value_score'] = df['purchase_amount'] * 0.7 + df['purchase_frequency'] * 300
-
-print('用户数据:')
-print(df)
-
-high_value_users = df[df['value_score'] > 5000]
-print('\n高价值用户:')
-print(high_value_users)`;
-
-  const defaultCode = `import pandas as pd
-
-data = {'name': ['Alice', 'Bob', 'Charlie'], 'age': [25, None, 30], 'city': ['New York', 'London', 'Paris']}
-df = pd.DataFrame(data)
-
-print('原始数据:')
-print(df)
-
-df['age'].fillna(df['age'].mean(), inplace=True)
-
-print('\n处理后的数据:')
-print(df)`;
+# 计算平均值
+average = sum(clean_data) / len(clean_data)
+print(f"数据平均值: {average:.2f}")`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,9 +67,10 @@ print(df)`;
             <div className="bg-accent rounded-xl p-6 mb-6">
               <h2 className="text-xl font-semibold mb-4 text-primary">学习目标</h2>
               <ul className="list-disc pl-6 space-y-2 text-text">
-                <li>学会用 Pandas 读取和查看数据</li>
-                <li>能处理缺失值和重复值</li>
-                <li>能完成用户画像和高价值用户筛选</li>
+                <li>理解数据清洗的重要性和基本方法</li>
+                <li>学习处理缺失值和重复值的策略</li>
+                <li>掌握数据探索性分析的基本概念</li>
+                <li>了解数据挖掘的常用技术和应用场景</li>
               </ul>
             </div>
           </div>
@@ -131,82 +78,153 @@ print(df)`;
           <div className="mb-10">
             <h2 className="text-xl font-semibold mb-4 text-primary">前置知识</h2>
             <div className="bg-yellow rounded-xl p-6">
-              <p className="text-text">Python 基础、Pandas 基础</p>
+              <p className="text-text">基础数学知识、简单的逻辑思维能力</p>
             </div>
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">分步教学</h2>
+            <h2 className="text-xl font-semibold mb-6 text-primary">课程内容</h2>
             
             <div className="mb-8">
               <div className="flex items-center mb-4">
                 <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">1</div>
-                <h3 className="text-lg font-semibold text-text">数据读取与概览</h3>
+                <h3 className="text-lg font-semibold text-text">数据清洗基础</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <p className="text-text mb-4">知识点：info() / head() 方法</p>
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-mining-1">{codeExample1}</pre>
+                <div className="text-text mb-4">
+                  <p className="mb-3"><strong>什么是数据清洗？</strong></p>
+                  <p className="mb-3">数据清洗是发现并纠正数据中可识别错误的过程，包括处理缺失值、异常值和重复数据等。</p>
+                  <p className="mb-3"><strong>常见的数据问题：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2 mb-3">
+                    <li>缺失值：数据中缺少某些信息</li>
+                    <li>重复值：完全相同的数据出现多次</li>
+                    <li>异常值：与大多数数据明显不同的值</li>
+                    <li>格式不一致：日期、数字等格式不统一</li>
+                  </ul>
+                  <p className="mb-3"><strong>数据清洗的基本原则：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>了解数据来源和业务背景</li>
+                    <li>不要随意删除数据，理解缺失原因</li>
+                    <li>记录所有的数据处理步骤</li>
+                    <li>多次检查，确保清洗结果合理</li>
+                  </ul>
                 </div>
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-text">运行结果：显示数据的基本信息和前几行数据</p>
-                  <button
-                    onClick={() => runPython(document.getElementById('code-mining-1')?.textContent || '', 'output-mining-1')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-mining-1" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
             <div className="mb-8">
               <div className="flex items-center mb-4">
                 <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">2</div>
-                <h3 className="text-lg font-semibold text-text">重复值/缺失值处理</h3>
+                <h3 className="text-lg font-semibold text-text">处理缺失值和重复值</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-mining-2">{codeExample2}</pre>
+                <div className="text-text mb-4">
+                  <p className="mb-3"><strong>处理缺失值的方法：</strong></p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-text mb-2">删除法</h4>
+                      <p className="text-sm text-text">
+                        当缺失数据较少且随机分布时，可以直接删除包含缺失值的行或列。
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-text mb-2">填充法</h4>
+                      <p className="text-sm text-text">
+                        使用平均值、中位数、众数或业务逻辑来填充缺失值。
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-text mb-2">插值法</h4>
+                      <p className="text-sm text-text">
+                        根据相邻数据点进行估算，适用于时间序列数据。
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-text mb-2">预测法</h4>
+                      <p className="text-sm text-text">
+                        使用机器学习模型预测缺失值，适用于复杂场景。
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mb-3"><strong>处理重复值的方法：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>识别重复记录的原因</li>
+                    <li>确定保留哪一条记录（通常保留第一条或最新的一条）</li>
+                    <li>检查是否有部分重复的情况</li>
+                  </ul>
                 </div>
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => runPython(document.getElementById('code-mining-2')?.textContent || '', 'output-mining-2')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-mining-2" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
 
             <div className="mb-8">
               <div className="flex items-center mb-4">
                 <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">3</div>
-                <h3 className="text-lg font-semibold text-text">实战：用户画像与高价值用户筛选</h3>
+                <h3 className="text-lg font-semibold text-text">实战：用户画像与高价值用户识别</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 font-mono text-sm">
-                  <pre id="code-mining-3">{codeExample3}</pre>
+                <div className="text-text mb-4">
+                  <p className="mb-3"><strong>案例背景：</strong></p>
+                  <p className="mb-3">某电商平台想要分析用户数据，识别高价值用户，以便制定更精准的营销策略。</p>
+                  <p className="mb-3"><strong>用户数据示例：</strong></p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-300 mb-4">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-300 px-4 py-2">用户ID</th>
+                          <th className="border border-gray-300 px-4 py-2">总消费</th>
+                          <th className="border border-gray-300 px-4 py-2">订单数</th>
+                          <th className="border border-gray-300 px-4 py-2">最近购买</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">1</td>
+                          <td className="border border-gray-300 px-4 py-2">5000</td>
+                          <td className="border border-gray-300 px-4 py-2">15</td>
+                          <td className="border border-gray-300 px-4 py-2">2天前</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">2</td>
+                          <td className="border border-gray-300 px-4 py-2">300</td>
+                          <td className="border border-gray-300 px-4 py-2">2</td>
+                          <td className="border border-gray-300 px-4 py-2">30天前</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">3</td>
+                          <td className="border border-gray-300 px-4 py-2">8000</td>
+                          <td className="border border-gray-300 px-4 py-2">25</td>
+                          <td className="border border-gray-300 px-4 py-2">1天前</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">4</td>
+                          <td className="border border-gray-300 px-4 py-2">2000</td>
+                          <td className="border border-gray-300 px-4 py-2">8</td>
+                          <td className="border border-gray-300 px-4 py-2">7天前</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-gray-300 px-4 py-2">5</td>
+                          <td className="border border-gray-300 px-4 py-2">100</td>
+                          <td className="border border-gray-300 px-4 py-2">1</td>
+                          <td className="border border-gray-300 px-4 py-2">90天前</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mb-3"><strong>分析要点：</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>RFM模型：最近购买(Recency)、购买频率(Frequency)、消费金额(Monetary)</li>
+                    <li>高价值用户通常消费金额高、购买频率高、最近购买过</li>
+                    <li>可以根据这三个维度给用户评分和分类</li>
+                    <li>针对不同用户群体制定不同的营销策略</li>
+                  </ul>
                 </div>
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={() => runPython(document.getElementById('code-mining-3')?.textContent || '', 'output-mining-3')}
-                    className="bg-primary text-white py-1 px-4 rounded-full text-sm font-medium hover:bg-secondary transition-all duration-300"
-                  >
-                    运行
-                  </button>
-                </div>
-                <div id="output-mining-3" className="bg-gray-800 text-white p-4 rounded-lg mb-4"></div>
               </div>
             </div>
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">交互式Python编辑器</h2>
-            <p className="text-text mb-4">默认预填示例代码，用户可修改运行</p>
+            <h2 className="text-xl font-semibold mb-6 text-primary">交互式Python练习</h2>
+            <p className="text-text mb-4">在这里尝试简单的Python代码，熟悉基础数据处理！</p>
             
             <div className="mb-6">
               <AceEditor
@@ -245,16 +263,17 @@ print(df)`;
           <div>
             <h2 className="text-xl font-semibold mb-4 text-primary">课后练习</h2>
             <div className="bg-purple rounded-xl p-6">
-              <p className="text-text">用脏数据集完成清洗：</p>
-              <div className="bg-gray-100 p-4 rounded-lg mt-4 font-mono text-sm">
-                <pre>{`import pandas as pd
-
-data = {'name': ['Alice', 'Bob', 'Alice', 'David', 'Bob'],
-        'age': [25, None, 25, 35, 30],
-        'city': ['New York', 'London', 'New York', 'Tokyo', None]}
-df = pd.DataFrame(data)
-
-# 请完成去重和缺失值处理`}</pre>
+              <p className="text-text mb-4">思考以下问题：</p>
+              <div className="space-y-3">
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">1. 如果你有一份包含10%缺失值的客户数据，你会选择什么方法处理？为什么？</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">2. 假设你发现数据中有一些客户的消费金额异常高（远高于平均水平），你会如何处理这些异常值？</p>
+                </div>
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">3. 如果你是一家电商公司的数据分析师，你会从哪些维度定义和识别高价值用户？</p>
+                </div>
               </div>
             </div>
           </div>
