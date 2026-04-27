@@ -5,6 +5,7 @@ import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
 import { FaCheck, FaTimes, FaLightbulb, FaBook, FaCode, FaChartBar } from 'react-icons/fa';
+import { runPythonCode } from '../services/pyodideService';
 
 interface Task {
   id: string;
@@ -12,6 +13,7 @@ interface Task {
   description: string;
   data?: string;
   analysis?: string[];
+  answers?: string[];
 }
 
 interface TestCase {
@@ -58,6 +60,9 @@ const PracticeDetail: React.FC = () => {
   const [codeAnalysis, setCodeAnalysis] = useState<CodeAnalysis | null>(null);
   const [learningResources, setLearningResources] = useState<LearningResource[]>([]);
   const [activeTab, setActiveTab] = useState('task'); // 'task', 'code', 'analysis', 'feedback'
+  const [showAnswers, setShowAnswers] = useState(false);
+  const [result, setResult] = useState<{ success: boolean; stdout: string; stderr: string; error?: any } | null>(null);
+  const [runningCode, setRunningCode] = useState(false);
 
   useEffect(() => {
     // 检查是否是思维测试练习
@@ -84,6 +89,11 @@ const PracticeDetail: React.FC = () => {
               '数据集中有多少行和列？',
               '数据的基本统计信息是什么？',
               '数据中是否存在缺失值？'
+            ],
+            answers: [
+              '数据集有1000行和5列',
+              '可以使用df.describe()查看基本统计信息',
+              '使用df.isnull().sum()可以查看各列缺失值数量'
             ]
           },
           {
@@ -94,6 +104,11 @@ const PracticeDetail: React.FC = () => {
               '哪些列存在缺失值？',
               '缺失值的比例是多少？',
               '你会如何处理这些缺失值？'
+            ],
+            answers: [
+              'age和salary列存在缺失值',
+              'age列缺失约10%，salary列缺失约5%',
+              'age可以用平均值填充，salary可以用中位数填充'
             ]
           },
           {
@@ -104,6 +119,11 @@ const PracticeDetail: React.FC = () => {
               '如何识别异常值？',
               '数据中存在哪些异常值？',
               '你会如何处理这些异常值？'
+            ],
+            answers: [
+              '可以使用IQR方法或Z-score方法识别异常值',
+              'salary列有一些异常高的值',
+              '可以删除异常值或用中位数替换'
             ]
           },
           {
@@ -114,6 +134,11 @@ const PracticeDetail: React.FC = () => {
               '需要进行哪些数据转换？',
               '转换后的数据结构是什么样的？',
               '转换后的数据是否满足分析需求？'
+            ],
+            answers: [
+              '将department列转换为分类变量，创建salary_level等级',
+              '转换后的数据更适合分析',
+              '是的，转换后的数据可以进行更深入的分析'
             ]
           }
         ],
@@ -144,27 +169,106 @@ const PracticeDetail: React.FC = () => {
         setCode(`import pandas as pd
 import numpy as np
 
-# 加载数据
-df = pd.read_csv('data.csv')
+# 创建示例数据（替代data.csv
+data = {
+    'user_id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'age': [25, 30, None, 40, 45, None, 35, 28, 50, 42],
+    'salary': [50000, 60000, 70000, None, 90000, 100000, 55000, 65000, 200000, 80000],
+    'department': ['HR', 'IT', 'IT', 'HR', 'Finance', 'Finance', 'IT', 'HR', 'CEO', 'Finance'],
+    'join_date': ['2023-01-15', '2022-06-20', '2023-03-10', '2021-09-05', '2022-11-30', '2020-08-12', '2023-05-22', '2022-04-18', '2019-12-01', '2023-02-14']
+}
 
-# 查看数据结构
+df = pd.DataFrame(data)
+
+print("=== 数据加载完成！")
+print(f"\n1. 查看数据结构：")
 print(df.head())
-print(df.info())
+print(f"\n数据形状：{df.shape}")
 
-# 处理缺失值
-# TODO: 实现缺失值处理逻辑
+print("\n2. 处理缺失值：")
+print("缺失值统计：")
+print(df.isnull().sum())
+
+# 填充缺失值
+df['age'] = df['age'].fillna(df['age'].mean())
+df['salary'] = df['salary'].fillna(df['salary'].median())
+
+print("\n填充缺失值后的数据：")
+print(df)
+
+print("\n3. 处理异常值：")
+# 使用IQR方法识别异常值
+Q1 = df['salary'].quantile(0.25)
+Q3 = df['salary'].quantile(0.75)
+IQR = Q3 - Q1
+
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+print(f"薪资正常范围：{lower_bound:.0f} - {upper_bound:.0f}")
 
 # 处理异常值
-# TODO: 实现异常值处理逻辑
+df['salary'] = np.where((df['salary'] < lower_bound) | (df['salary'] > upper_bound), 
+                        df['salary'].median(), df['salary'])
 
+print("\n处理异常值后的数据：")
+print(df)
+
+print("\n4. 数据转换：")
 # 数据转换
-# TODO: 实现数据转换逻辑
+df['department'] = df['department'].astype('category')
+df['join_date'] = pd.to_datetime(df['join_date'])
+df['join_year'] = df['join_date'].dt.year
+
+# 创建薪资等级
+df['salary_level'] = pd.cut(df['salary'], 
+                           bins=[0, 60000, 80000, 100000, float('inf')],
+                           labels=['Low', 'Medium', 'High', 'Very High'])
+
+print("\n转换后的数据：")
+print(df)
+print("\n数据清洗与预处理完成！")
 `);
       }, 500);
     };
 
     fetchExerciseDetail();
   }, [id, navigate]);
+
+  const handleRunCode = async () => {
+    if (!code.trim()) {
+      setResult({
+        success: false,
+        stdout: '',
+        stderr: '',
+        error: {
+          type: 'InputError',
+          message: '请输入代码后再运行'
+        }
+      });
+      return;
+    }
+
+    setRunningCode(true);
+    setResult(null);
+
+    try {
+      const executionResult = await runPythonCode(code);
+      setResult(executionResult);
+    } catch (err) {
+      setResult({
+        success: false,
+        stdout: '',
+        stderr: '',
+        error: {
+          type: 'ExecutionError',
+          message: '执行出错: ' + (err as Error).message
+        }
+      });
+    } finally {
+      setRunningCode(false);
+    }
+  };
 
   const handleSubmit = () => {
     // 模拟提交和评分
@@ -341,7 +445,64 @@ print(df.info())
                 className="w-full h-full"
               />
             </div>
-            <div className="flex justify-end">
+            
+            {/* 代码运行结果 */}
+            {result && (
+              <div className="bg-gray-800 text-white p-4 rounded-lg">
+                <h4 className="font-medium mb-2">运行结果：</h4>
+                {result.success ? (
+                  <div className="space-y-2">
+                    {result.stdout && (
+                      <div>
+                        <pre className="text-green-300 whitespace-pre-wrap">{result.stdout}</pre>
+                      </div>
+                    )}
+                    {result.stderr && (
+                      <div>
+                        <h5 className="text-yellow-400 font-medium mb-1">警告：</h5>
+                        <pre className="text-gray-300 whitespace-pre-wrap">{result.stderr}</pre>
+                      </div>
+                    )}
+                    {!result.stdout && !result.stderr && (
+                      <div className="text-green-400">代码执行成功！</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {result.stdout && (
+                      <div>
+                        <pre className="text-green-300 whitespace-pre-wrap">{result.stdout}</pre>
+                      </div>
+                    )}
+                    {result.stderr && (
+                      <div>
+                        <h5 className="text-yellow-400 font-medium mb-1">警告：</h5>
+                        <pre className="text-gray-300 whitespace-pre-wrap">{result.stderr}</pre>
+                      </div>
+                    )}
+                    {result.error && (
+                      <div className="text-red-400">
+                        <h5 className="font-medium mb-1">错误：</h5>
+                        <pre className="whitespace-pre-wrap">
+                          类型：{result.error.type}
+                          消息：{result.error.message}
+                          {result.error.lineNumber !== undefined && `\n行号：${result.error.lineNumber}`}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleRunCode}
+                className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors"
+                disabled={runningCode}
+              >
+                {runningCode ? '运行中...' : '运行代码'}
+              </button>
               <button
                 onClick={handleSubmit}
                 className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -354,19 +515,33 @@ print(df.info())
 
         {activeTab === 'analysis' && (
           <div className="space-y-6">
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setShowAnswers(!showAnswers)}
+                className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+              >
+                {showAnswers ? '隐藏参考答案' : '显示参考答案'}
+              </button>
+            </div>
             {exercise.tasks.map((task) => (
               <div key={task.id} className="bg-gray-50 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">任务 {task.id}: {task.title}</h3>
                 {task.analysis && task.analysis.map((question, qIndex) => (
-                  <div key={qIndex} className="mb-3">
-                    <p className="text-gray-700 mb-2">{qIndex + 1}. {question}</p>
-                    <div className="bg-white p-3 rounded-md border border-gray-200">
+                  <div key={qIndex} className="mb-5">
+                    <p className="text-gray-700 mb-2 font-medium">{qIndex + 1}. {question}</p>
+                    <div className="bg-white p-3 rounded-md border border-gray-200 mb-2">
                       <textarea
                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         rows={3}
                         placeholder="请输入你的分析..."
                       />
                     </div>
+                    {showAnswers && task.answers && (
+                      <div className="bg-green-50 p-3 rounded-md border border-green-200">
+                        <p className="text-green-800 font-medium mb-1">参考答案：</p>
+                        <p className="text-green-700">{task.answers[qIndex]}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -477,6 +652,36 @@ print(df.info())
                 </div>
               </div>
             )}
+
+            {/* 案例分析答案对比 */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <FaLightbulb className="mr-2 text-yellow-600" />
+                案例分析答案对比
+              </h3>
+              <div className="space-y-6">
+                {exercise.tasks.map((task) => (
+                  <div key={task.id} className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-md font-semibold text-gray-800 mb-3">任务 {task.id}: {task.title}</h4>
+                    {task.analysis?.map((question, qIndex) => (
+                      <div key={qIndex} className="mb-4">
+                        <p className="text-gray-700 font-medium mb-2">{qIndex + 1}. {question}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-white p-3 rounded-md border border-gray-300">
+                            <p className="text-sm font-medium text-gray-600 mb-1">参考答案：</p>
+                            <p className="text-green-700">{task.answers?.[qIndex] || '暂无答案'}</p>
+                          </div>
+                          <div className="bg-white p-3 rounded-md border border-gray-300">
+                            <p className="text-sm font-medium text-gray-600 mb-1">你的答案（请自行填写）：</p>
+                            <p className="text-gray-500 italic">（根据你在案例分析中的填写内容进行对比）</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* 学习资源推荐 */}
             {learningResources.length > 0 && (
