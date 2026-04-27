@@ -44,24 +44,69 @@ const DataMining: React.FC = () => {
     }
   };
 
-  const defaultCode = `# 数据挖掘基础示例
-print("欢迎学习数据挖掘！")
-print("\n在这个课程中，你将学习：")
-print("1. 数据清洗的重要性")
-print("2. 数据探索性分析")
-print("3. 基础的数据挖掘概念")
+  const defaultCode = `import pandas as pd
+import numpy as np
 
-# 简单的数据处理示例
-data = [25, 30, 35, None, 40, 45, None, 50]
-print(f"原始数据: {data}")
+# 创建示例数据
+data = {
+    'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank'],
+    'age': [25, 30, None, 40, 45, None],
+    'salary': [50000, 60000, 70000, None, 90000, 100000],
+    'department': ['HR', 'IT', 'IT', 'HR', 'Finance', 'Finance']
+}
 
-# 过滤掉空值
-clean_data = [x for x in data if x is not None]
-print(f"清洗后的数据: {clean_data}")
+df = pd.DataFrame(data)
 
-# 计算平均值
-average = sum(clean_data) / len(clean_data)
-print(f"数据平均值: {average:.2f}")`;
+# 1. 查看数据结构
+print("=== 数据结构 ===")
+print(df.head())
+print("\n=== 数据信息 ===")
+print(df.info())
+
+# 2. 处理缺失值
+print("\n=== 处理缺失值 ===")
+# 计算各列缺失值数量
+print("缺失值数量:")
+print(df.isnull().sum())
+
+# 填充年龄缺失值为平均值
+df['age'] = df['age'].fillna(df['age'].mean())
+
+# 填充薪资缺失值为中位数
+df['salary'] = df['salary'].fillna(df['salary'].median())
+
+print("\n填充后的数据:")
+print(df)
+
+# 3. 处理异常值
+print("\n=== 处理异常值 ===")
+# 检查薪资是否有异常值（假设薪资范围合理值为40000-120000）
+df['salary'] = np.where((df['salary'] < 40000) | (df['salary'] > 120000), 
+                         df['salary'].median(), df['salary'])
+
+print("处理异常值后的数据:")
+print(df)
+
+# 4. 数据转换
+print("\n=== 数据转换 ===")
+# 将部门转换为分类变量
+df['department'] = df['department'].astype('category')
+
+# 创建薪资等级
+ df['salary_level'] = pd.cut(df['salary'], 
+                           bins=[0, 60000, 80000, 100000, float('inf')],
+                           labels=['Low', 'Medium', 'High', 'Very High'])
+
+print("转换后的数据:")
+print(df)
+
+# 5. 数据分析
+print("\n=== 数据分析 ===")
+# 按部门分组计算平均薪资
+print("各部门平均薪资:")
+print(df.groupby('department')['salary'].mean())
+
+print("\n练习完成！你已经成功完成了数据清洗与预处理的基本步骤。")`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -311,16 +356,46 @@ print(f"数据平均值: {average:.2f}")`;
           <div>
             <h2 className="text-xl font-semibold mb-4 text-primary">课后练习</h2>
             <div className="bg-purple rounded-xl p-6">
-              <p className="text-text mb-4">思考以下问题：</p>
-              <div className="space-y-3">
+              <p className="text-text mb-4">请完成以下练习任务：</p>
+              <div className="space-y-6">
                 <div className="bg-gray-100 p-4 rounded-lg">
-                  <p className="font-medium mb-2">1. 如果你有一份包含10%缺失值的客户数据，你会选择什么方法处理？为什么？</p>
+                  <p className="font-medium mb-2">任务1：缺失值处理</p>
+                  <p className="text-text mb-2">如果你有一份包含10%缺失值的客户数据，你会选择什么方法处理？为什么？</p>
+                  <div className="bg-white p-3 rounded mt-2">
+                    <p className="text-sm text-gray-600">提示：考虑数据的分布情况、缺失值的性质以及业务需求来选择合适的处理方法。</p>
+                  </div>
                 </div>
                 <div className="bg-gray-100 p-4 rounded-lg">
-                  <p className="font-medium mb-2">2. 假设你发现数据中有一些客户的消费金额异常高（远高于平均水平），你会如何处理这些异常值？</p>
+                  <p className="font-medium mb-2">任务2：异常值处理</p>
+                  <p className="text-text mb-2">假设你发现数据中有一些客户的消费金额异常高（远高于平均水平），你会如何处理这些异常值？</p>
+                  <div className="bg-white p-3 rounded mt-2">
+                    <p className="text-sm text-gray-600">提示：异常值处理方法包括删除、替换、保留等，需要根据异常值的原因和业务场景来决定。</p>
+                  </div>
                 </div>
                 <div className="bg-gray-100 p-4 rounded-lg">
-                  <p className="font-medium mb-2">3. 如果你是一家电商公司的数据分析师，你会从哪些维度定义和识别高价值用户？</p>
+                  <p className="font-medium mb-2">任务3：高价值用户识别</p>
+                  <p className="text-text mb-2">如果你是一家电商公司的数据分析师，你会从哪些维度定义和识别高价值用户？</p>
+                  <div className="bg-white p-3 rounded mt-2">
+                    <p className="text-sm text-gray-600">提示：可以考虑RFM模型（最近购买、购买频率、消费金额）以及其他业务相关的维度。</p>
+                  </div>
+                </div>
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <p className="font-medium mb-2">案例分析：用户数据处理</p>
+                  <p className="text-text mb-2">使用提供的示例代码，完成以下数据处理任务：</p>
+                  <ul className="list-disc pl-6 space-y-1 text-text">
+                    <li>创建包含缺失值的示例数据</li>
+                    <li>处理缺失值（填充或删除）</li>
+                    <li>识别并处理异常值</li>
+                    <li>进行数据转换和分析</li>
+                  </ul>
+                  <div className="bg-white p-3 rounded mt-2">
+                    <p className="text-sm text-gray-600">回复答案：
+                      <br />1. 缺失值处理：使用平均值填充年龄，中位数填充薪资，保持数据完整性
+                      <br />2. 异常值处理：设置合理的薪资范围，超出范围的值用中位数替换
+                      <br />3. 数据转换：将部门转换为分类变量，创建薪资等级
+                      <br />4. 数据分析：按部门分组计算平均薪资，了解各部门薪资水平
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
