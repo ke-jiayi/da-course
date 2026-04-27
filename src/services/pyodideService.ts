@@ -32,8 +32,20 @@ export async function initPyodide() {
     // 配置matplotlib，使其在前端渲染
     pyodide.runPython(`
       import matplotlib.pyplot as plt
+      import base64
+      from io import BytesIO
       plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
+      plt.rcParams['axes.unicode_minus'] = False
       plt.ioff()
+      
+      # 定义一个函数来将图表转换为base64编码的图像
+      def show_plot():
+          buffer = BytesIO()
+          plt.savefig(buffer, format='png')
+          buffer.seek(0)
+          img_str = base64.b64encode(buffer.read()).decode('utf-8')
+          plt.close()
+          return f'<img src="data:image/png;base64,{img_str}" />'
     `);
     return pyodide;
   } catch (error) {
@@ -85,6 +97,18 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
     }
     if (result !== undefined) {
       output += '\n返回值: ' + result;
+    }
+    
+    // 检查是否有matplotlib图表需要显示
+    try {
+      const has_plots = py.runPython('len(plt.get_fignums()) > 0');
+      if (has_plots) {
+        const plot_html = py.runPython('show_plot()');
+        output += '\n' + plot_html;
+      }
+    } catch (e) {
+      // 忽略图表显示错误
+      console.log('图表显示错误:', e);
     }
     
     return { 
