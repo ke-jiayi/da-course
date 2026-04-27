@@ -125,8 +125,28 @@ print(f"数字列表: {numbers}")`;
                       适用于显示数据随时间的变化趋势。
                       <br />例如：每日销售额、月度温度变化
                     </p>
-                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 text-center">
-                      <p className="text-gray-500">📈 折线图示例</p>
+                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-2">Python代码示例：</p>
+                      <pre className="bg-gray-800 text-white p-3 rounded text-xs overflow-x-auto">
+{`# 折线图示例 - 展示月度销售额趋势
+import matplotlib.pyplot as plt
+
+# 示例数据
+months = ['1月', '2月', '3月', '4月', '5月', '6月']
+sales = [120, 150, 180, 160, 200, 220]
+
+# 创建折线图
+plt.figure(figsize=(8, 4))
+plt.plot(months, sales, marker='o', linestyle='-', color='b')
+plt.title('月度销售额趋势')
+plt.xlabel('月份')
+plt.ylabel('销售额（万元）')
+plt.grid(True)
+plt.tight_layout()
+
+# 显示图表
+plt.show()`}
+                      </pre>
                     </div>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -135,8 +155,27 @@ print(f"数字列表: {numbers}")`;
                       适用于比较不同类别的数据。
                       <br />例如：各地区销售对比、产品销量排行
                     </p>
-                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 text-center">
-                      <p className="text-gray-500">📊 柱状图示例</p>
+                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-2">Python代码示例：</p>
+                      <pre className="bg-gray-800 text-white p-3 rounded text-xs overflow-x-auto">
+{`# 柱状图示例 - 比较各地区销售额
+import matplotlib.pyplot as plt
+
+# 示例数据
+regions = ['华东', '华北', '华南', '西南', '西北']
+sales = [250, 180, 220, 150, 100]
+
+# 创建柱状图
+plt.figure(figsize=(8, 4))
+plt.bar(regions, sales, color='g')
+plt.title('各地区销售额对比')
+plt.xlabel('地区')
+plt.ylabel('销售额（万元）')
+plt.tight_layout()
+
+# 显示图表
+plt.show()`}
+                      </pre>
                     </div>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -145,8 +184,25 @@ print(f"数字列表: {numbers}")`;
                       适用于显示各部分占整体的比例。
                       <br />例如：市场份额、产品分类占比
                     </p>
-                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 text-center">
-                      <p className="text-gray-500">🥧 饼图示例</p>
+                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-2">Python代码示例：</p>
+                      <pre className="bg-gray-800 text-white p-3 rounded text-xs overflow-x-auto">
+{`# 饼图示例 - 展示产品分类占比
+import matplotlib.pyplot as plt
+
+# 示例数据
+categories = ['电子产品', '服装', '食品', '图书', '其他']
+market_share = [35, 25, 20, 15, 5]
+
+# 创建饼图
+plt.figure(figsize=(6, 6))
+plt.pie(market_share, labels=categories, autopct='%1.1f%%')
+plt.title('产品分类市场占比')
+plt.tight_layout()
+
+# 显示图表
+plt.show()`}
+                      </pre>
                     </div>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -155,8 +211,30 @@ print(f"数字列表: {numbers}")`;
                       适用于显示两个变量之间的关系。
                       <br />例如：广告投入与销量、年龄与收入
                     </p>
-                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3 text-center">
-                      <p className="text-gray-500">📉 散点图示例</p>
+                    <div className="bg-white border-2 border-gray-200 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-2">Python代码示例：</p>
+                      <pre className="bg-gray-800 text-white p-3 rounded text-xs overflow-x-auto">
+{`# 散点图示例 - 展示广告投入与销量的关系
+import matplotlib.pyplot as plt
+import numpy as np
+
+# 生成示例数据
+np.random.seed(42)
+advertising = np.linspace(10, 100, 50)
+sales = 20 + 0.5 * advertising + np.random.normal(0, 10, 50)
+
+# 创建散点图
+plt.figure(figsize=(8, 4))
+plt.scatter(advertising, sales, alpha=0.6)
+plt.title('广告投入与销量关系')
+plt.xlabel('广告投入（万元）')
+plt.ylabel('销量（万元）')
+plt.grid(True)
+plt.tight_layout()
+
+# 显示图表
+plt.show()`}
+                      </pre>
                     </div>
                   </div>
                 </div>
