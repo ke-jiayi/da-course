@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化·两天速成互动实验室（纯前端/无后端）</title>
+    <script type="importmap">
+    {
+        "imports": {
+            "monaco-editor": "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/esm/vs/editor/editor.main.js"
+        }
+    }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        header p {
+            opacity: 0.9;
+        }
+        .section-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #667eea;
+        }
+        /* 思维卡片 */
+        .thinking-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .thinking-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .thinking-card:hover {
+            transform: translateY(-5px);
+        }
+        .thinking-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .thinking-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        /* 对比表 */
+        .comparison-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        .comparison-table tr:hover {
+            background: #f8f9fa;
+        }
+        /* 习题卡片 */
+        .exercises {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        .exercise-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .exercise-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .exercise-number {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .exercise-title {
+            font-size: 1.2rem;
+            color: #333;
+        }
+        .exercise-desc {
+            color: #666;
+            margin-bottom: 15px;
+            padding-left: 55px;
+        }
+        .editor-container {
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+        .editor {
+            height: 200px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-run {
+            background: #28a745;
+            color: white;
+        }
+        .btn-run:hover {
+            background: #218838;
+        }
+        .btn-answer {
+            background: #007bff;
+            color: white;
+        }
+        .btn-answer:hover {
+            background: #0069d9;
+        }
+        .output {
+            background: #1e1e1e;
+            color: #4ec9b0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            min-height: 100px;
+            overflow-x: auto;
+        }
+        .answer-section {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+            display: none;
+        }
+        .answer-section.show {
+            display: block;
+        }
+        .answer-section h4 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        .answer-code {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+        .answer-analysis {
+            color: #856404;
+            line-height: 1.6;
+        }
+        .error-hint {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            color: #721c24;
+            font-size: 0.9rem;
+        }
+        /* 响应式 */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .exercise-desc {
+                padding-left: 0;
+            }
+            .exercise-header {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>数据可视化·两天速成互动实验室（纯前端/无后端）</h1>
+            <p>使用 Pyodide 在浏览器中运行 Python，无需后端服务器</p>
+        </header>
+
+        <!-- 5大核心思维卡片 -->
+        <section>
+            <h2 class="section-title">🎯 5大专家核心思维</h2>
+            <div class="thinking-cards">
+                <div class="thinking-card">
+                    <h3>📊 图表选择思维</h3>
+                    <p>根据数据类型和分析目的选择合适的图表类型，不是所有数据都适合用折线图</p>
+                </div>
+                <div class="thinking-card">
+                    <h3>🎨 视觉层次思维</h3>
+                    <p>通过颜色、大小、位置建立视觉层级，突出重点数据，降低认知负担</p>
+                </div>
+                <div class="thinking-card">
+                    <h3>📐 比例准确思维</h3>
+                    <p>确保坐标轴比例真实反映数据差异，避免误导性视觉效果</p>
+                </div>
+                <div class="thinking-card">
+                    <h3>📝 标注清晰思维</h3>
+                    <p>图表必须包含标题、坐标轴标签、图例，让读者独立理解</p>
+                </div>
+                <div class="thinking-card">
+                    <h3>🔄 动态迭代思维</h3>
+                    <p>数据可视化是迭代过程，根据反馈不断优化图表表达</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3大争议对比表 -->
+        <section class="comparison-section">
+            <h2 class="section-title">⚖️ 3大争议点对比</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>争议点</th>
+                        <th>观点A</th>
+                        <th>观点B</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>颜色选择</td>
+                        <td>使用彩虹色（色彩丰富）</td>
+                        <td>使用单色渐变（专业简洁）</td>
+                    </tr>
+                    <tr>
+                        <td>图表复杂度</td>
+                        <td>一图多信息（高效）</td>
+                        <td>一图一主题（清晰）</td>
+                    </tr>
+                    <tr>
+                        <td>3D图表</td>
+                        <td>炫酷吸引眼球</td>
+                        <td>易产生视觉误导</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 10道习题 -->
+        <section>
+            <h2 class="section-title">💻 10道互动编程题</h2>
+            <div class="exercises" id="exercises-container">
+                <!-- 习题1 -->
+                <div class="exercise-card" data-exercise="1">
+                    <div class="exercise-header">
+                        <div class="exercise-number">1</div>
+                        <div class="exercise-title">创建基础折线图</div>
+                    </div>
+                    <p class="exercise-desc">使用 matplotlib 创建一个简单的折线图，展示月度销售额数据。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-1"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(1)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(1)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-1">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-1">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+
+months = ['1月', '2月', '3月', '4月', '5月', '6月']
+sales = [120, 150, 180, 160, 200, 220]
+
+plt.figure(figsize=(8, 4))
+plt.plot(months, sales)
+plt.title('月度销售额趋势')
+plt.xlabel('月份')
+plt.ylabel('销售额')
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，折线图适合展示时间序列数据的趋势变化。关键要素包括：创建画布、绘制折线、添加标题和坐标轴标签。</div>
+                    </div>
+                </div>
+
+                <!-- 习题2 -->
+                <div class="exercise-card" data-exercise="2">
+                    <div class="exercise-header">
+                        <div class="exercise-number">2</div>
+                        <div class="exercise-title">创建柱状图</div>
+                    </div>
+                    <p class="exercise-desc">使用 matplotlib 创建柱状图，对比不同部门的销售额。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-2"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(2)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(2)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-2">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-2">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+
+departments = ['HR', 'IT', 'Finance', 'Sales']
+sales = [80, 120, 95, 150]
+
+plt.figure(figsize=(8, 4))
+plt.bar(departments, sales, color=['red', 'green', 'blue', 'orange'])
+plt.title('各部门销售额对比')
+plt.xlabel('部门')
+plt.ylabel('销售额')
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，柱状图适合比较不同类别之间的数值差异。通过颜色区分不同部门，便于快速识别。</div>
+                    </div>
+                </div>
+
+                <!-- 习题3 -->
+                <div class="exercise-card" data-exercise="3">
+                    <div class="exercise-header">
+                        <div class="exercise-number">3</div>
+                        <div class="exercise-title">创建饼图</div>
+                    </div>
+                    <p class="exercise-desc">使用 matplotlib 创建饼图，展示产品类别的销售占比。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-3"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(3)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(3)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-3">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-3">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+
+categories = ['电子产品', '服装', '食品', '日用品']
+sales = [35, 25, 20, 20]
+
+plt.figure(figsize=(6, 6))
+plt.pie(sales, labels=categories, autopct='%1.1f%%', explode=[0.1, 0, 0, 0])
+plt.title('产品类别销售占比')
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查比例准确思维，饼图适合展示各部分占总体的比例关系。使用autopct显示百分比，explode突出重点类别。</div>
+                    </div>
+                </div>
+
+                <!-- 习题4 -->
+                <div class="exercise-card" data-exercise="4">
+                    <div class="exercise-header">
+                        <div class="exercise-number">4</div>
+                        <div class="exercise-title">创建散点图</div>
+                    </div>
+                    <p class="exercise-desc">使用 matplotlib 创建散点图，展示广告投入与销售额的关系。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-4"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(4)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(4)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-4">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-4">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
+
+ad_spend = [5, 8, 10, 12, 15, 18, 20]
+revenue = [50, 75, 90, 100, 120, 140, 150]
+
+plt.figure(figsize=(8, 4))
+plt.scatter(ad_spend, revenue, s=100, c='purple', alpha=0.7)
+z = np.polyfit(ad_spend, revenue, 1)
+p = np.poly1d(z)
+plt.plot(ad_spend, p(ad_spend), "r--")
+plt.title('广告投入与销售额关系')
+plt.xlabel('广告投入')
+plt.ylabel('销售额')
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，散点图适合展示两个变量之间的相关性。添加趋势线可以更直观地展示趋势。</div>
+                    </div>
+                </div>
+
+                <!-- 习题5 -->
+                <div class="exercise-card" data-exercise="5">
+                    <div class="exercise-header">
+                        <div class="exercise-number">5</div>
+                        <div class="exercise-title">添加数据标签</div>
+                    </div>
+                    <p class="exercise-desc">为柱状图添加数据标签，显示每个柱子的具体数值。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-5"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(5)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(5)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-5">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-5">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+
+products = ['A', 'B', 'C', 'D']
+sales = [120, 150, 90, 180]
+
+plt.figure(figsize=(8, 4))
+bars = plt.bar(products, sales)
+plt.title('产品销售对比')
+plt.xlabel('产品')
+plt.ylabel('销售额')
+
+for bar in bars:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2., height,
+             '%d' % int(height), ha='center', va='bottom')
+
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查标注清晰思维，数据标签让读者无需估算即可知道精确数值，提高信息传递效率。</div>
+                    </div>
+                </div>
+
+                <!-- 习题6 -->
+                <div class="exercise-card" data-exercise="6">
+                    <div class="exercise-header">
+                        <div class="exercise-number">6</div>
+                        <div class="exercise-title">自定义图表样式</div>
+                    </div>
+                    <p class="exercise-desc">自定义折线图的线条样式、颜色和标记点。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-6"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(6)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(6)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-6">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-6">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+
+x = [1, 2, 3, 4, 5]
+y = [10, 20, 15, 25, 22]
+
+plt.figure(figsize=(8, 4))
+plt.plot(x, y, marker='o', linestyle='--', color='red', linewidth=2, markersize=8)
+plt.title('自定义样式折线图')
+plt.xlabel('X轴')
+plt.ylabel('Y轴')
+plt.grid(True, linestyle=':', alpha=0.7)
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，通过自定义样式突出数据特征，使用虚线、标记点和网格提高可读性。</div>
+                    </div>
+                </div>
+
+                <!-- 习题7 -->
+                <div class="exercise-card" data-exercise="7">
+                    <div class="exercise-header">
+                        <div class="exercise-number">7</div>
+                        <div class="exercise-title">多系列图表</div>
+                    </div>
+                    <p class="exercise-desc">在同一图表中绘制多条折线，展示对比数据。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-7"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(7)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(7)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-7">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-7">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+
+months = ['1月', '2月', '3月', '4月', '5月']
+sales_a = [100, 120, 110, 130, 140]
+sales_b = [80, 90, 100, 110, 120]
+
+plt.figure(figsize=(8, 4))
+plt.plot(months, sales_a, marker='o', label='产品A')
+plt.plot(months, sales_b, marker='s', label='产品B')
+plt.title('产品销售对比')
+plt.xlabel('月份')
+plt.ylabel('销售额')
+plt.legend()
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，使用不同样式区分多个数据系列，添加图例帮助读者理解。</div>
+                    </div>
+                </div>
+
+                <!-- 习题8 -->
+                <div class="exercise-card" data-exercise="8">
+                    <div class="exercise-header">
+                        <div class="exercise-number">8</div>
+                        <div class="exercise-title>子图布局</div>
+                    </div>
+                    <p class="exercise-desc">创建包含多个子图的布局，同时展示多种图表类型。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-8"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(8)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(8)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-8">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-8">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+
+data = [12, 18, 25, 30, 22]
+labels = ['A', 'B', 'C', 'D', 'E']
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+
+ax1.bar(labels, data, color='skyblue')
+ax1.set_title('柱状图')
+ax1.set_xlabel('类别')
+ax1.set_ylabel('数值')
+
+ax2.pie(data, labels=labels, autopct='%1.1f%%')
+ax2.set_title('饼图')
+
+plt.tight_layout()
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，子图布局适合在同一画面展示相关数据的不同视角，便于对比分析。</div>
+                    </div>
+                </div>
+
+                <!-- 习题9 -->
+                <div class="exercise-card" data-exercise="9">
+                    <div class="exercise-header">
+                        <div class="exercise-number">9</div>
+                        <div class="exercise-title">直方图</div>
+                    </div>
+                    <p class="exercise-desc">使用 matplotlib 创建直方图，展示数据分布情况。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-9"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(9)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(9)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-9">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-9">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
+
+np.random.seed(42)
+data = np.random.normal(100, 15, 200)
+
+plt.figure(figsize=(8, 4))
+plt.hist(data, bins=15, edgecolor='black', alpha=0.7)
+plt.title('数据分布直方图')
+plt.xlabel('数值')
+plt.ylabel('频数')
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，直方图适合展示连续数据的分布情况，帮助了解数据的集中趋势和离散程度。</div>
+                    </div>
+                </div>
+
+                <!-- 习题10 -->
+                <div class="exercise-card" data-exercise="10">
+                    <div class="exercise-header">
+                        <div class="exercise-number">10</div>
+                        <div class="exercise-title">完整可视化报告</div>
+                    </div>
+                    <p class="exercise-desc">综合运用所学知识，创建一份完整的数据可视化报告。</p>
+                    <div class="editor-container">
+                        <div class="editor" id="editor-10"></div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runCode(10)">▶ 运行代码</button>
+                        <button class="btn btn-answer" onclick="toggleAnswer(10)">📋 显示答案与解析</button>
+                    </div>
+                    <div class="output" id="output-10">点击运行按钮查看输出...</div>
+                    <div class="answer-section" id="answer-10">
+                        <h4>标准答案：</h4>
+                        <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
+
+# 模拟数据
+months = ['1月', '2月', '3月', '4月', '5月', '6月']
+sales = [120, 150, 180, 160, 200, 220]
+profit = [24, 35, 45, 40, 50, 55]
+customers = [500, 620, 750, 680, 850, 920]
+
+fig = plt.figure(figsize=(14, 10))
+
+# 子图1：销售额趋势
+ax1 = fig.add_subplot(2, 2, 1)
+ax1.plot(months, sales, marker='o', color='blue')
+ax1.set_title('月度销售额趋势')
+ax1.set_xlabel('月份')
+ax1.set_ylabel('销售额')
+
+# 子图2：利润趋势
+ax2 = fig.add_subplot(2, 2, 2)
+ax2.bar(months, profit, color='green')
+ax2.set_title('月度利润')
+ax2.set_xlabel('月份')
+ax2.set_ylabel('利润')
+
+# 子图3：客户增长
+ax3 = fig.add_subplot(2, 2, 3)
+ax3.plot(months, customers, marker='s', color='orange', linestyle='--')
+ax3.set_title('客户数量增长')
+ax3.set_xlabel('月份')
+ax3.set_ylabel('客户数')
+
+# 子图4：销售构成
+ax4 = fig.add_subplot(2, 2, 4)
+categories = ['电子产品', '服装', '食品']
+cat_sales = [45, 35, 20]
+ax4.pie(cat_sales, labels=categories, autopct='%1.1f%%')
+ax4.set_title('销售构成')
+
+plt.tight_layout()
+plt.show()</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，综合运用多种图表类型创建完整的数据报告，展示数据分析的完整流程。</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script type="module">
+        import * as monaco from 'monaco-editor';
+
+        let pyodide = null;
+        const editors = {};
+        
+        // 初始化Pyodide
+        async function initPyodide() {
+            if (pyodide) return pyodide;
+            pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
+            await pyodide.loadPackage(['matplotlib', 'numpy']);
+            return pyodide;
+        }
+
+        // 初始化编辑器
+        async function initEditors() {
+            const exercises = {
+                1: `import matplotlib.pyplot as plt
+
+months = ['1月', '2月', '3月', '4月', '5月', '6月']
+sales = [120, 150, 180, 160, 200, 220]
+
+# 请在下方编写代码创建折线图：
+
+
+`,
+                2: `import matplotlib.pyplot as plt
+
+departments = ['HR', 'IT', 'Finance', 'Sales']
+sales = [80, 120, 95, 150]
+
+# 请在下方编写代码创建柱状图：
+
+
+`,
+                3: `import matplotlib.pyplot as plt
+
+categories = ['电子产品', '服装', '食品', '日用品']
+sales = [35, 25, 20, 20]
+
+# 请在下方编写代码创建饼图：
+
+
+`,
+                4: `import matplotlib.pyplot as plt
+import numpy as np
+
+ad_spend = [5, 8, 10, 12, 15, 18, 20]
+revenue = [50, 75, 90, 100, 120, 140, 150]
+
+# 请在下方编写代码创建散点图：
+
+
+`,
+                5: `import matplotlib.pyplot as plt
+
+products = ['A', 'B', 'C', 'D']
+sales = [120, 150, 90, 180]
+
+# 请在下方编写代码添加数据标签：
+
+
+`,
+                6: `import matplotlib.pyplot as plt
+
+x = [1, 2, 3, 4, 5]
+y = [10, 20, 15, 25, 22]
+
+# 请在下方编写代码自定义图表样式：
+
+
+`,
+                7: `import matplotlib.pyplot as plt
+
+months = ['1月', '2月', '3月', '4月', '5月']
+sales_a = [100, 120, 110, 130, 140]
+sales_b = [80, 90, 100, 110, 120]
+
+# 请在下方编写代码绘制多系列折线图：
+
+
+`,
+                8: `import matplotlib.pyplot as plt
+
+data = [12, 18, 25, 30, 22]
+labels = ['A', 'B', 'C', 'D', 'E']
+
+# 请在下方编写代码创建子图布局：
+
+
+`,
+                9: `import matplotlib.pyplot as plt
+import numpy as np
+
+np.random.seed(42)
+data = np.random.normal(100, 15, 200)
+
+# 请在下方编写代码创建直方图：
+
+
+`,
+                10: `import matplotlib.pyplot as plt
+import numpy as np
+
+months = ['1月', '2月', '3月', '4月', '5月', '6月']
+sales = [120, 150, 180, 160, 200, 220]
+profit = [24, 35, 45, 40, 50, 55]
+customers = [500, 620, 750, 680, 850, 920]
+
+# 请在下方编写代码创建完整可视化报告：
+
+
+`
+            };
+
+            for (let i = 1; i <= 10; i++) {
+                const savedCode = localStorage.getItem(`viz_exercise_code_${i}`);
+                editors[i] = monaco.editor.create(document.getElementById(`editor-${i}`), {
+                    value: savedCode || exercises[i],
+                    language: 'python',
+                    theme: 'vs',
+                    fontSize: 14,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    padding: { top: 16, bottom: 16 }
+                });
+
+                // 自动保存
+                editors[i].onDidChangeModelContent(() => {
+                    const code = editors[i].getValue();
+                    localStorage.setItem(`viz_exercise_code_${i}`, code);
+                });
+            }
+        }
+
+        // 运行代码
+        async function runCode(exerciseNum) {
+            const outputEl = document.getElementById(`output-${exerciseNum}`);
+            const errorHint = document.querySelector(`#exercise-${exerciseNum} .error-hint`);
+            
+            if (errorHint) errorHint.remove();
+            
+            try {
+                await initPyodide();
+                
+                const code = editors[exerciseNum].getValue();
+                const original_stdout = pyodide.runPython("import sys; sys.stdout");
+                
+                // 重定向stdout
+                pyodide.runPython(`
+import io
+import sys
+sys.stdout = io.StringIO()
+`);
+                
+                await pyodide.runPythonAsync(code);
+                
+                const output = pyodide.runPython("sys.stdout.getvalue()");
+                outputEl.textContent = output || "代码执行成功！";
+                
+            } catch (error) {
+                outputEl.textContent = `错误: ${error.message}`;
+                
+                // 添加错误提示
+                const hint = getErrorHint(exerciseNum);
+                const hintEl = document.createElement('div');
+                hintEl.className = 'error-hint';
+                hintEl.textContent = hint;
+                outputEl.parentNode.appendChild(hintEl);
+            }
+        }
+
+        // 获取错误提示
+        function getErrorHint(exerciseNum) {
+            const hints = {
+                1: '💡 提示：你缺失了「图表选择思维」- 折线图适合展示时间序列数据',
+                2: '💡 提示：你缺失了「视觉层次思维」- 使用颜色区分不同类别',
+                3: '💡 提示：你缺失了「比例准确思维」- 饼图展示各部分占比',
+                4: '💡 提示：你缺失了「图表选择思维」- 散点图展示变量相关性',
+                5: '💡 提示：你缺失了「标注清晰思维」- 添加数据标签提高可读性',
+                6: '💡 提示：你缺失了「视觉层次思维」- 自定义样式突出重点',
+                7: '💡 提示：你缺失了「视觉层次思维」- 使用图例区分多个系列',
+                8: '💡 提示：你缺失了「动态迭代思维」- 子图布局展示多角度',
+                9: '💡 提示：你缺失了「图表选择思维」- 直方图展示数据分布',
+                10: '💡 提示：你缺失了「动态迭代思维」- 综合运用多种图表类型'
+            };
+            return hints[exerciseNum] || '💡 提示：请检查代码语法';
+        }
+
+        // 切换答案显示
+        function toggleAnswer(exerciseNum) {
+            const answerEl = document.getElementById(`answer-${exerciseNum}`);
+            answerEl.classList.toggle('show');
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', initEditors);
+    </script>
+</body>
+</html>
