@@ -68,7 +68,7 @@
   - `human-judgement` TR-5.2: 响应式设计在不同屏幕尺寸下正常
   - `human-judgement` TR-5.3: 导航逻辑正常
 
-## [ ] Task 6: 提交代码并同步到 GitHub
+## [x] Task 6: 提交代码并同步到 GitHub
 - **Priority**: P1
 - **Depends On**: [Task 5]
 - **Description**: 
