@@ -95,12 +95,20 @@ const GameDetail: React.FC = () => {
     }
   }, [id]);
 
-  if (isPlaying && id === '1') {
-    return <DataDetectiveGame />;
-  }
+  const handleStartGame = () => {
+    console.log('Start game button clicked for id:', id);
+    setIsPlaying(true);
+  };
 
-  if (isPlaying && id === '2') {
-    return <SqlChallengeGame />;
+  // 根据 id 渲染对应游戏组件
+  if (isPlaying) {
+    if (id === '1') {
+      return <DataDetectiveGame />;
+    } else if (id === '2') {
+      return <SqlChallengeGame />;
+    } else if (id === '3') {
+      return <DataVizGame />;
+    }
   }
 
   if (loading) {
@@ -122,11 +130,6 @@ const GameDetail: React.FC = () => {
         </div>
       </div>
     );
-  }
-
-  // 如果是游戏3且已开始游戏，直接渲染 DataVizGame
-  if (id === '3' && isPlaying) {
-    return <DataVizGame />;
   }
 
   return (
@@ -217,20 +220,11 @@ const GameDetail: React.FC = () => {
             {/* 开始游戏 */}
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
               <button 
-                onClick={() => (id === '1' || id === '2' || id === '3') && setIsPlaying(true)}
-                className={`w-full ${(id === '1' || id === '2' || id === '3') ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-400 cursor-not-allowed'} text-white py-4 rounded-lg font-medium transition-colors text-lg flex items-center justify-center`}
+                onClick={handleStartGame}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-lg font-medium transition-colors text-lg flex items-center justify-center"
               >
-                {id === '1' || id === '2' || id === '3' ? (
-                  <>
-                    <FaPlay className="mr-2" />
-                    开始游戏
-                  </>
-                ) : (
-                  <>
-                    <FaGamepad className="mr-2" />
-                    敬请期待
-                  </>
-                )}
+                <FaPlay className="mr-2" />
+                开始游戏
               </button>
             </div>
 
