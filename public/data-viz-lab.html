@@ -47,7 +47,6 @@
             padding-left: 10px;
             border-left: 4px solid #667eea;
         }
-        /* 思维卡片 */
         .thinking-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -73,7 +72,6 @@
             color: #666;
             line-height: 1.6;
         }
-        /* 对比表 */
         .comparison-section {
             background: white;
             border-radius: 12px;
@@ -99,7 +97,6 @@
         .comparison-table tr:hover {
             background: #f8f9fa;
         }
-        /* 习题卡片 */
         .exercises {
             display: grid;
             grid-template-columns: 1fr;
@@ -222,7 +219,6 @@
             color: #721c24;
             font-size: 0.9rem;
         }
-        /* 响应式 */
         @media (max-width: 768px) {
             header h1 {
                 font-size: 1.5rem;
@@ -246,7 +242,6 @@
             <p>使用 Pyodide 在浏览器中运行 Python，无需后端服务器</p>
         </header>
 
-        <!-- 5大核心思维卡片 -->
         <section>
             <h2 class="section-title">🎯 5大专家核心思维</h2>
             <div class="thinking-cards">
@@ -256,7 +251,7 @@
                 </div>
                 <div class="thinking-card">
                     <h3>🎨 视觉层次思维</h3>
-                    <p>通过颜色、大小、位置建立视觉层级，突出重点数据，降低认知负担</p>
+                    <p>通过颜色、大小、位置建立视觉层次，突出重点数据，降低认知负担</p>
                 </div>
                 <div class="thinking-card">
                     <h3>📐 比例准确思维</h3>
@@ -273,7 +268,6 @@
             </div>
         </section>
 
-        <!-- 3大争议对比表 -->
         <section class="comparison-section">
             <h2 class="section-title">⚖️ 3大争议点对比</h2>
             <table class="comparison-table">
@@ -304,11 +298,9 @@
             </table>
         </section>
 
-        <!-- 10道习题 -->
         <section>
             <h2 class="section-title">💻 10道互动编程题</h2>
             <div class="exercises" id="exercises-container">
-                <!-- 习题1 -->
                 <div class="exercise-card" data-exercise="1">
                     <div class="exercise-header">
                         <div class="exercise-number">1</div>
@@ -326,21 +318,25 @@
                     <div class="answer-section" id="answer-1">
                         <h4>标准答案：</h4>
                         <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
 
-months = ['1月', '2月', '3月', '4月', '5月', '6月']
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 sales = [120, 150, 180, 160, 200, 220]
 
 plt.figure(figsize=(8, 4))
 plt.plot(months, sales)
-plt.title('月度销售额趋势')
-plt.xlabel('月份')
-plt.ylabel('销售额')
+plt.title('Monthly Sales Trend')
+plt.xlabel('Month')
+plt.ylabel('Sales')
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，折线图适合展示时间序列数据的趋势变化。关键要素包括：创建画布、绘制折线、添加标题和坐标轴标签。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，折线图适合展示时间序列数据的趋势变化。</div>
                     </div>
                 </div>
 
-                <!-- 习题2 -->
                 <div class="exercise-card" data-exercise="2">
                     <div class="exercise-header">
                         <div class="exercise-number">2</div>
@@ -358,21 +354,25 @@ plt.show()</div>
                     <div class="answer-section" id="answer-2">
                         <h4>标准答案：</h4>
                         <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
+
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 departments = ['HR', 'IT', 'Finance', 'Sales']
 sales = [80, 120, 95, 150]
 
 plt.figure(figsize=(8, 4))
 plt.bar(departments, sales, color=['red', 'green', 'blue', 'orange'])
-plt.title('各部门销售额对比')
-plt.xlabel('部门')
-plt.ylabel('销售额')
+plt.title('Department Sales')
+plt.xlabel('Department')
+plt.ylabel('Sales')
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，柱状图适合比较不同类别之间的数值差异。通过颜色区分不同部门，便于快速识别。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，柱状图适合比较不同类别之间的数值差异。</div>
                     </div>
                 </div>
 
-                <!-- 习题3 -->
                 <div class="exercise-card" data-exercise="3">
                     <div class="exercise-header">
                         <div class="exercise-number">3</div>
@@ -390,19 +390,23 @@ plt.show()</div>
                     <div class="answer-section" id="answer-3">
                         <h4>标准答案：</h4>
                         <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
 
-categories = ['电子产品', '服装', '食品', '日用品']
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+categories = ['Electronics', 'Clothing', 'Food', 'Daily']
 sales = [35, 25, 20, 20]
 
 plt.figure(figsize=(6, 6))
 plt.pie(sales, labels=categories, autopct='%1.1f%%', explode=[0.1, 0, 0, 0])
-plt.title('产品类别销售占比')
+plt.title('Sales Distribution')
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查比例准确思维，饼图适合展示各部分占总体的比例关系。使用autopct显示百分比，explode突出重点类别。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查比例准确思维，饼图适合展示各部分占总体的比例关系。</div>
                     </div>
                 </div>
 
-                <!-- 习题4 -->
                 <div class="exercise-card" data-exercise="4">
                     <div class="exercise-header">
                         <div class="exercise-number">4</div>
@@ -422,6 +426,10 @@ plt.show()</div>
                         <div class="answer-code">import matplotlib.pyplot as plt
 import numpy as np
 
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
 ad_spend = [5, 8, 10, 12, 15, 18, 20]
 revenue = [50, 75, 90, 100, 120, 140, 150]
 
@@ -430,15 +438,14 @@ plt.scatter(ad_spend, revenue, s=100, c='purple', alpha=0.7)
 z = np.polyfit(ad_spend, revenue, 1)
 p = np.poly1d(z)
 plt.plot(ad_spend, p(ad_spend), "r--")
-plt.title('广告投入与销售额关系')
-plt.xlabel('广告投入')
-plt.ylabel('销售额')
+plt.title('Ad Spend vs Revenue')
+plt.xlabel('Ad Spend')
+plt.ylabel('Revenue')
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，散点图适合展示两个变量之间的相关性。添加趋势线可以更直观地展示趋势。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，散点图适合展示两个变量之间的相关性。</div>
                     </div>
                 </div>
 
-                <!-- 习题5 -->
                 <div class="exercise-card" data-exercise="5">
                     <div class="exercise-header">
                         <div class="exercise-number">5</div>
@@ -456,27 +463,30 @@ plt.show()</div>
                     <div class="answer-section" id="answer-5">
                         <h4>标准答案：</h4>
                         <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
+
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 products = ['A', 'B', 'C', 'D']
 sales = [120, 150, 90, 180]
 
 plt.figure(figsize=(8, 4))
 bars = plt.bar(products, sales)
-plt.title('产品销售对比')
-plt.xlabel('产品')
-plt.ylabel('销售额')
+plt.title('Product Sales')
+plt.xlabel('Product')
+plt.ylabel('Sales')
 
 for bar in bars:
     height = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width()/2., height,
-             '%d' % int(height), ha='center', va='bottom')
+    plt.text(bar.get_x() + bar.get_width()/2., height, '%d' % int(height), ha='center', va='bottom')
 
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查标注清晰思维，数据标签让读者无需估算即可知道精确数值，提高信息传递效率。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查标注清晰思维，数据标签让读者无需估算即可知道精确数值。</div>
                     </div>
                 </div>
 
-                <!-- 习题6 -->
                 <div class="exercise-card" data-exercise="6">
                     <div class="exercise-header">
                         <div class="exercise-number">6</div>
@@ -494,22 +504,26 @@ plt.show()</div>
                     <div class="answer-section" id="answer-6">
                         <h4>标准答案：</h4>
                         <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
+
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 x = [1, 2, 3, 4, 5]
 y = [10, 20, 15, 25, 22]
 
 plt.figure(figsize=(8, 4))
 plt.plot(x, y, marker='o', linestyle='--', color='red', linewidth=2, markersize=8)
-plt.title('自定义样式折线图')
-plt.xlabel('X轴')
-plt.ylabel('Y轴')
+plt.title('Customized Line Plot')
+plt.xlabel('X')
+plt.ylabel('Y')
 plt.grid(True, linestyle=':', alpha=0.7)
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，通过自定义样式突出数据特征，使用虚线、标记点和网格提高可读性。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，通过自定义样式突出数据特征。</div>
                     </div>
                 </div>
 
-                <!-- 习题7 -->
                 <div class="exercise-card" data-exercise="7">
                     <div class="exercise-header">
                         <div class="exercise-number">7</div>
@@ -527,28 +541,32 @@ plt.show()</div>
                     <div class="answer-section" id="answer-7">
                         <h4>标准答案：</h4>
                         <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
 
-months = ['1月', '2月', '3月', '4月', '5月']
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May']
 sales_a = [100, 120, 110, 130, 140]
 sales_b = [80, 90, 100, 110, 120]
 
 plt.figure(figsize=(8, 4))
-plt.plot(months, sales_a, marker='o', label='产品A')
-plt.plot(months, sales_b, marker='s', label='产品B')
-plt.title('产品销售对比')
-plt.xlabel('月份')
-plt.ylabel('销售额')
+plt.plot(months, sales_a, marker='o', label='Product A')
+plt.plot(months, sales_b, marker='s', label='Product B')
+plt.title('Product Sales Comparison')
+plt.xlabel('Month')
+plt.ylabel('Sales')
 plt.legend()
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，使用不同样式区分多个数据系列，添加图例帮助读者理解。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，使用不同样式区分多个数据系列。</div>
                     </div>
                 </div>
 
-                <!-- 习题8 -->
                 <div class="exercise-card" data-exercise="8">
                     <div class="exercise-header">
                         <div class="exercise-number">8</div>
-                        <div class="exercise-title>子图布局</div>
+                        <div class="exercise-title">子图布局</div>
                     </div>
                     <p class="exercise-desc">创建包含多个子图的布局，同时展示多种图表类型。</p>
                     <div class="editor-container">
@@ -562,6 +580,11 @@ plt.show()</div>
                     <div class="answer-section" id="answer-8">
                         <h4>标准答案：</h4>
                         <div class="answer-code">import matplotlib.pyplot as plt
+import numpy as np
+
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 data = [12, 18, 25, 30, 22]
 labels = ['A', 'B', 'C', 'D', 'E']
@@ -569,20 +592,19 @@ labels = ['A', 'B', 'C', 'D', 'E']
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 
 ax1.bar(labels, data, color='skyblue')
-ax1.set_title('柱状图')
-ax1.set_xlabel('类别')
-ax1.set_ylabel('数值')
+ax1.set_title('Bar Plot')
+ax1.set_xlabel('Category')
+ax1.set_ylabel('Value')
 
 ax2.pie(data, labels=labels, autopct='%1.1f%%')
-ax2.set_title('饼图')
+ax2.set_title('Pie Plot')
 
 plt.tight_layout()
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，子图布局适合在同一画面展示相关数据的不同视角，便于对比分析。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，子图布局适合在同一画面展示相关数据的不同视角。</div>
                     </div>
                 </div>
 
-                <!-- 习题9 -->
                 <div class="exercise-card" data-exercise="9">
                     <div class="exercise-header">
                         <div class="exercise-number">9</div>
@@ -602,20 +624,23 @@ plt.show()</div>
                         <div class="answer-code">import matplotlib.pyplot as plt
 import numpy as np
 
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
 np.random.seed(42)
 data = np.random.normal(100, 15, 200)
 
 plt.figure(figsize=(8, 4))
 plt.hist(data, bins=15, edgecolor='black', alpha=0.7)
-plt.title('数据分布直方图')
-plt.xlabel('数值')
-plt.ylabel('频数')
+plt.title('Data Distribution')
+plt.xlabel('Value')
+plt.ylabel('Frequency')
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，直方图适合展示连续数据的分布情况，帮助了解数据的集中趋势和离散程度。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，直方图适合展示连续数据的分布情况。</div>
                     </div>
                 </div>
 
-                <!-- 习题10 -->
                 <div class="exercise-card" data-exercise="10">
                     <div class="exercise-header">
                         <div class="exercise-number">10</div>
@@ -635,45 +660,44 @@ plt.show()</div>
                         <div class="answer-code">import matplotlib.pyplot as plt
 import numpy as np
 
-# 模拟数据
-months = ['1月', '2月', '3月', '4月', '5月', '6月']
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 sales = [120, 150, 180, 160, 200, 220]
 profit = [24, 35, 45, 40, 50, 55]
 customers = [500, 620, 750, 680, 850, 920]
 
 fig = plt.figure(figsize=(14, 10))
 
-# 子图1：销售额趋势
 ax1 = fig.add_subplot(2, 2, 1)
 ax1.plot(months, sales, marker='o', color='blue')
-ax1.set_title('月度销售额趋势')
-ax1.set_xlabel('月份')
-ax1.set_ylabel('销售额')
+ax1.set_title('Monthly Sales')
+ax1.set_xlabel('Month')
+ax1.set_ylabel('Sales')
 
-# 子图2：利润趋势
 ax2 = fig.add_subplot(2, 2, 2)
 ax2.bar(months, profit, color='green')
-ax2.set_title('月度利润')
-ax2.set_xlabel('月份')
-ax2.set_ylabel('利润')
+ax2.set_title('Monthly Profit')
+ax2.set_xlabel('Month')
+ax2.set_ylabel('Profit')
 
-# 子图3：客户增长
 ax3 = fig.add_subplot(2, 2, 3)
 ax3.plot(months, customers, marker='s', color='orange', linestyle='--')
-ax3.set_title('客户数量增长')
-ax3.set_xlabel('月份')
-ax3.set_ylabel('客户数')
+ax3.set_title('Customer Growth')
+ax3.set_xlabel('Month')
+ax3.set_ylabel('Customers')
 
-# 子图4：销售构成
 ax4 = fig.add_subplot(2, 2, 4)
-categories = ['电子产品', '服装', '食品']
+categories = ['Electronics', 'Clothing', 'Food']
 cat_sales = [45, 35, 20]
 ax4.pie(cat_sales, labels=categories, autopct='%1.1f%%')
-ax4.set_title('销售构成')
+ax4.set_title('Sales Category')
 
 plt.tight_layout()
 plt.show()</div>
-                        <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，综合运用多种图表类型创建完整的数据报告，展示数据分析的完整流程。</div>
+                        <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，综合运用多种图表类型创建完整的数据报告。</div>
                     </div>
                 </div>
             </div>
@@ -686,8 +710,7 @@ plt.show()</div>
 
         let pyodide = null;
         const editors = {};
-        
-        // 初始化Pyodide
+
         async function initPyodide() {
             if (pyodide) return pyodide;
             pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
@@ -695,12 +718,16 @@ plt.show()</div>
             return pyodide;
         }
 
-        // 初始化编辑器
         async function initEditors() {
             const exercises = {
                 1: `import matplotlib.pyplot as plt
+import numpy as np
 
-months = ['1月', '2月', '3月', '4月', '5月', '6月']
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 sales = [120, 150, 180, 160, 200, 220]
 
 # 请在下方编写代码创建折线图：
@@ -708,6 +735,11 @@ sales = [120, 150, 180, 160, 200, 220]
 
 `,
                 2: `import matplotlib.pyplot as plt
+import numpy as np
+
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 departments = ['HR', 'IT', 'Finance', 'Sales']
 sales = [80, 120, 95, 150]
@@ -717,8 +749,13 @@ sales = [80, 120, 95, 150]
 
 `,
                 3: `import matplotlib.pyplot as plt
+import numpy as np
 
-categories = ['电子产品', '服装', '食品', '日用品']
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+categories = ['Electronics', 'Clothing', 'Food', 'Daily']
 sales = [35, 25, 20, 20]
 
 # 请在下方编写代码创建饼图：
@@ -728,6 +765,10 @@ sales = [35, 25, 20, 20]
                 4: `import matplotlib.pyplot as plt
 import numpy as np
 
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
 ad_spend = [5, 8, 10, 12, 15, 18, 20]
 revenue = [50, 75, 90, 100, 120, 140, 150]
 
@@ -736,6 +777,11 @@ revenue = [50, 75, 90, 100, 120, 140, 150]
 
 `,
                 5: `import matplotlib.pyplot as plt
+import numpy as np
+
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 products = ['A', 'B', 'C', 'D']
 sales = [120, 150, 90, 180]
@@ -745,6 +791,11 @@ sales = [120, 150, 90, 180]
 
 `,
                 6: `import matplotlib.pyplot as plt
+import numpy as np
+
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 x = [1, 2, 3, 4, 5]
 y = [10, 20, 15, 25, 22]
@@ -754,8 +805,13 @@ y = [10, 20, 15, 25, 22]
 
 `,
                 7: `import matplotlib.pyplot as plt
+import numpy as np
 
-months = ['1月', '2月', '3月', '4月', '5月']
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May']
 sales_a = [100, 120, 110, 130, 140]
 sales_b = [80, 90, 100, 110, 120]
 
@@ -764,6 +820,11 @@ sales_b = [80, 90, 100, 110, 120]
 
 `,
                 8: `import matplotlib.pyplot as plt
+import numpy as np
+
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
 
 data = [12, 18, 25, 30, 22]
 labels = ['A', 'B', 'C', 'D', 'E']
@@ -775,6 +836,10 @@ labels = ['A', 'B', 'C', 'D', 'E']
                 9: `import matplotlib.pyplot as plt
 import numpy as np
 
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
 np.random.seed(42)
 data = np.random.normal(100, 15, 200)
 
@@ -785,7 +850,11 @@ data = np.random.normal(100, 15, 200)
                 10: `import matplotlib.pyplot as plt
 import numpy as np
 
-months = ['1月', '2月', '3月', '4月', '5月', '6月']
+# 设置字体
+plt.rcParams['font.family'] = 'DejaVu Sans'
+plt.rcParams['axes.unicode_minus'] = False
+
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 sales = [120, 150, 180, 160, 200, 220]
 profit = [24, 35, 45, 40, 50, 55]
 customers = [500, 620, 750, 680, 850, 920]
@@ -809,7 +878,6 @@ customers = [500, 620, 750, 680, 850, 920]
                     padding: { top: 16, bottom: 16 }
                 });
 
-                // 自动保存
                 editors[i].onDidChangeModelContent(() => {
                     const code = editors[i].getValue();
                     localStorage.setItem(`viz_exercise_code_${i}`, code);
@@ -817,20 +885,16 @@ customers = [500, 620, 750, 680, 850, 920]
             }
         }
 
-        // 运行代码
         async function runCode(exerciseNum) {
             const outputEl = document.getElementById(`output-${exerciseNum}`);
-            const errorHint = document.querySelector(`#exercise-${exerciseNum} .error-hint`);
-            
+            const errorHint = document.querySelector(`.error-hint`);
             if (errorHint) errorHint.remove();
             
             try {
                 await initPyodide();
                 
                 const code = editors[exerciseNum].getValue();
-                const original_stdout = pyodide.runPython("import sys; sys.stdout");
                 
-                // 重定向stdout
                 pyodide.runPython(`
 import io
 import sys
@@ -845,7 +909,6 @@ sys.stdout = io.StringIO()
             } catch (error) {
                 outputEl.textContent = `错误: ${error.message}`;
                 
-                // 添加错误提示
                 const hint = getErrorHint(exerciseNum);
                 const hintEl = document.createElement('div');
                 hintEl.className = 'error-hint';
@@ -854,7 +917,6 @@ sys.stdout = io.StringIO()
             }
         }
 
-        // 获取错误提示
         function getErrorHint(exerciseNum) {
             const hints = {
                 1: '💡 提示：你缺失了「图表选择思维」- 折线图适合展示时间序列数据',
@@ -871,13 +933,11 @@ sys.stdout = io.StringIO()
             return hints[exerciseNum] || '💡 提示：请检查代码语法';
         }
 
-        // 切换答案显示
         function toggleAnswer(exerciseNum) {
             const answerEl = document.getElementById(`answer-${exerciseNum}`);
             answerEl.classList.toggle('show');
         }
 
-        // 初始化
         document.addEventListener('DOMContentLoaded', initEditors);
     </script>
 </body>
