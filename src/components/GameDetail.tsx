@@ -18,6 +18,8 @@ interface Game {
 
 const GameDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  console.log('GameDetail loaded, id:', id);
+  
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -86,9 +88,11 @@ const GameDetail: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log('GameDetail useEffect, id:', id);
     if (id) {
       setTimeout(() => {
         const gameData = mockGames[id];
+        console.log('Setting game data:', gameData);
         setGame(gameData);
         setLoading(false);
       }, 500);
@@ -96,12 +100,14 @@ const GameDetail: React.FC = () => {
   }, [id]);
 
   const handleStartGame = () => {
-    console.log('Start game button clicked for id:', id);
+    console.log('handleStartGame called for id:', id);
     setIsPlaying(true);
+    console.log('isPlaying set to true');
   };
 
   // 根据 id 渲染对应游戏组件
   if (isPlaying) {
+    console.log('Rendering game component for id:', id);
     if (id === '1') {
       return <DataDetectiveGame />;
     } else if (id === '2') {
@@ -132,6 +138,7 @@ const GameDetail: React.FC = () => {
     );
   }
 
+  console.log('Rendering game detail page');
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 游戏头部 */}

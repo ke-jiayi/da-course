@@ -120,12 +120,14 @@ const Games: React.FC = () => {
   }, []);
 
   const handleStartChallenge = (challengeId: string) => {
-    // 处理开始挑战的逻辑
     console.log('Starting challenge:', challengeId);
   };
 
   const handleStartGame = (gameId: string) => {
-    navigate(`/game/${gameId}`);
+    console.log('Start game button clicked for:', gameId);
+    const url = `/game/${gameId}`;
+    console.log('Navigating to:', url);
+    navigate(url);
   };
 
   if (loading) {
