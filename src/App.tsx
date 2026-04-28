@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { supabase } from './lib/supabaseClient'
 import { AuthChangeEvent, Session } from '@supabase/supabase-js'
@@ -10,31 +10,31 @@ import Register from './components/Register'
 import ForgotPassword from './components/ForgotPassword'
 import PageTransition from './components/PageTransition'
 
-// 懒加载组件
-const Courses = lazy(() => import('./components/Courses'))
-const CourseDetail = lazy(() => import('./components/CourseDetail'))
-const LearnPage = lazy(() => import('./components/LearnPage'))
-const Practice = lazy(() => import('./components/Practice'))
-const PracticeDetail = lazy(() => import('./components/PracticeDetail'))
-const Test = lazy(() => import('./components/Test'))
-const TestDetail = lazy(() => import('./components/TestDetail'))
-const Achievements = lazy(() => import('./components/Achievements'))
-const LearningRecord = lazy(() => import('./components/LearningRecord'))
-const Settings = lazy(() => import('./components/Settings'))
-const Notifications = lazy(() => import('./components/Notifications'))
-const Games = lazy(() => import('./components/Games'))
-const Leaderboard = lazy(() => import('./components/Leaderboard'))
-const DataVisualization = lazy(() => import('./components/DataVisualization'))
-const MachineLearning = lazy(() => import('./components/MachineLearning'))
-const DataMining = lazy(() => import('./components/DataMining'))
-const BusinessAnalysis = lazy(() => import('./components/BusinessAnalysis'))
-const PyodideTest = lazy(() => import('./components/PyodideTest'))
-const LearningGuide = lazy(() => import('./components/LearningGuide'))
-const Projects = lazy(() => import('./components/Projects'))
-const ProjectDetail = lazy(() => import('./components/ProjectDetail'))
-const CognitiveModule = lazy(() => import('./components/CognitiveModule'))
-const DataAnalysisTest = lazy(() => import('./components/DataAnalysisTest'))
-const GameDetail = lazy(() => import('./components/GameDetail'))
+// 直接导入组件，暂时不用懒加载
+import Courses from './components/Courses'
+import CourseDetail from './components/CourseDetail'
+import LearnPage from './components/LearnPage'
+import Practice from './components/Practice'
+import PracticeDetail from './components/PracticeDetail'
+import Test from './components/Test'
+import TestDetail from './components/TestDetail'
+import Achievements from './components/Achievements'
+import LearningRecord from './components/LearningRecord'
+import Settings from './components/Settings'
+import Notifications from './components/Notifications'
+import Games from './components/Games'
+import Leaderboard from './components/Leaderboard'
+import DataVisualization from './components/DataVisualization'
+import MachineLearning from './components/MachineLearning'
+import DataMining from './components/DataMining'
+import BusinessAnalysis from './components/BusinessAnalysis'
+import PyodideTest from './components/PyodideTest'
+import LearningGuide from './components/LearningGuide'
+import Projects from './components/Projects'
+import ProjectDetail from './components/ProjectDetail'
+import CognitiveModule from './components/CognitiveModule'
+import DataAnalysisTest from './components/DataAnalysisTest'
+import GameDetail from './components/GameDetail'
 
 type AuthView = 'login' | 'register' | 'forgotPassword'
 
@@ -122,35 +122,33 @@ function App() {
       <div className="min-h-screen flex flex-col">
         <Header user={user} onLogout={handleLogout} onLoginClick={handleOpenLogin} />
         <main className="flex-grow">
-          <Suspense fallback={<div className="flex items-center justify-center h-screen">加载中...</div>}>
-            <Routes>
-              <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-              <Route path="/courses" element={<PageTransition><Courses /></PageTransition>} />
-              <Route path="/course/:id" element={<PageTransition><CourseDetail /></PageTransition>} />
-              <Route path="/learn/:courseId/:moduleId" element={<PageTransition><LearnPage /></PageTransition>} />
-              <Route path="/practice" element={<PageTransition><Practice /></PageTransition>} />
-              <Route path="/practice/:id" element={<PageTransition><PracticeDetail /></PageTransition>} />
-              <Route path="/test" element={<PageTransition><Test /></PageTransition>} />
-              <Route path="/test/:id" element={<PageTransition><TestDetail /></PageTransition>} />
-              <Route path="/achievements" element={<PageTransition><Achievements /></PageTransition>} />
-              <Route path="/learning-record" element={<PageTransition><LearningRecord /></PageTransition>} />
-              <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
-              <Route path="/notifications" element={<PageTransition><Notifications /></PageTransition>} />
-              <Route path="/games" element={<PageTransition><Games /></PageTransition>} />
-              <Route path="/game/:id" element={<PageTransition><GameDetail /></PageTransition>} />
-              <Route path="/leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
-              <Route path="/data-visualization" element={<PageTransition><DataVisualization /></PageTransition>} />
-              <Route path="/machine-learning" element={<PageTransition><MachineLearning /></PageTransition>} />
-              <Route path="/data-mining" element={<PageTransition><DataMining /></PageTransition>} />
-              <Route path="/business-analysis" element={<PageTransition><BusinessAnalysis /></PageTransition>} />
-              <Route path="/pyodide-test" element={<PageTransition><PyodideTest /></PageTransition>} />
-              <Route path="/learning-guide" element={<PageTransition><LearningGuide /></PageTransition>} />
-              <Route path="/projects" element={<PageTransition><Projects /></PageTransition>} />
-              <Route path="/project/:id" element={<PageTransition><ProjectDetail /></PageTransition>} />
-              <Route path="/cognitive-module" element={<PageTransition><CognitiveModule /></PageTransition>} />
-              <Route path="/data-analysis-test" element={<PageTransition><DataAnalysisTest /></PageTransition>} />
-            </Routes>
-          </Suspense>
+          <Routes>
+            <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+            <Route path="/courses" element={<PageTransition><Courses /></PageTransition>} />
+            <Route path="/course/:id" element={<PageTransition><CourseDetail /></PageTransition>} />
+            <Route path="/learn/:courseId/:moduleId" element={<PageTransition><LearnPage /></PageTransition>} />
+            <Route path="/practice" element={<PageTransition><Practice /></PageTransition>} />
+            <Route path="/practice/:id" element={<PageTransition><PracticeDetail /></PageTransition>} />
+            <Route path="/test" element={<PageTransition><Test /></PageTransition>} />
+            <Route path="/test/:id" element={<PageTransition><TestDetail /></PageTransition>} />
+            <Route path="/achievements" element={<PageTransition><Achievements /></PageTransition>} />
+            <Route path="/learning-record" element={<PageTransition><LearningRecord /></PageTransition>} />
+            <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
+            <Route path="/notifications" element={<PageTransition><Notifications /></PageTransition>} />
+            <Route path="/games" element={<PageTransition><Games /></PageTransition>} />
+            <Route path="/game/:id" element={<PageTransition><GameDetail /></PageTransition>} />
+            <Route path="/leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
+            <Route path="/data-visualization" element={<PageTransition><DataVisualization /></PageTransition>} />
+            <Route path="/machine-learning" element={<PageTransition><MachineLearning /></PageTransition>} />
+            <Route path="/data-mining" element={<PageTransition><DataMining /></PageTransition>} />
+            <Route path="/business-analysis" element={<PageTransition><BusinessAnalysis /></PageTransition>} />
+            <Route path="/pyodide-test" element={<PageTransition><PyodideTest /></PageTransition>} />
+            <Route path="/learning-guide" element={<PageTransition><LearningGuide /></PageTransition>} />
+            <Route path="/projects" element={<PageTransition><Projects /></PageTransition>} />
+            <Route path="/project/:id" element={<PageTransition><ProjectDetail /></PageTransition>} />
+            <Route path="/cognitive-module" element={<PageTransition><CognitiveModule /></PageTransition>} />
+            <Route path="/data-analysis-test" element={<PageTransition><DataAnalysisTest /></PageTransition>} />
+          </Routes>
         </main>
         <Footer />
       </div>
