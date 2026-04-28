@@ -34,6 +34,7 @@ const Projects = lazy(() => import('./components/Projects'))
 const ProjectDetail = lazy(() => import('./components/ProjectDetail'))
 const CognitiveModule = lazy(() => import('./components/CognitiveModule'))
 const DataAnalysisTest = lazy(() => import('./components/DataAnalysisTest'))
+const GameDetail = lazy(() => import('./components/GameDetail'))
 
 type AuthView = 'login' | 'register' | 'forgotPassword'
 
@@ -136,6 +137,7 @@ function App() {
               <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
               <Route path="/notifications" element={<PageTransition><Notifications /></PageTransition>} />
               <Route path="/games" element={<PageTransition><Games /></PageTransition>} />
+              <Route path="/game/:id" element={<PageTransition><GameDetail /></PageTransition>} />
               <Route path="/leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
               <Route path="/data-visualization" element={<PageTransition><DataVisualization /></PageTransition>} />
               <Route path="/machine-learning" element={<PageTransition><MachineLearning /></PageTransition>} />
