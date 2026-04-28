@@ -6,7 +6,7 @@ import 'ace-builds/src-noconflict/ext-language_tools';
 import { runPythonCode } from '../services/pyodideService';
 
 const MachineLearning: React.FC = () => {
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(defaultCode);
   const [result, setResult] = useState<{ success: boolean; stdout: string; stderr: string; error?: any; } | null>(null);
 
   const handleCodeChange = (newCode: string) => {
@@ -63,15 +63,15 @@ print("\n观察发现，y 是 x 的 2 倍！")
 print("这是一个简单的线性关系")`;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-cute p-6 md:p-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-6 text-primary">Python编程 机器学习算法练习</h1>
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+          <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">Python编程 机器学习算法练习</h1>
           
           <div className="mb-10">
-            <div className="bg-accent rounded-xl p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4 text-primary">学习目标</h2>
-              <ul className="list-disc pl-6 space-y-2 text-text">
+            <div className="bg-green-100 rounded-xl p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">学习目标</h2>
+              <ul className="list-disc pl-6 space-y-2 text-gray-700">
                 <li>理解机器学习的基本概念和原理</li>
                 <li>掌握监督学习和无监督学习的区别</li>
                 <li>了解常见的机器学习算法类型</li>
@@ -81,47 +81,47 @@ print("这是一个简单的线性关系")`;
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-4 text-primary">前置知识</h2>
-            <div className="bg-yellow rounded-xl p-6">
-              <p className="text-text">基础数学知识（代数、统计）、基础编程思维</p>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">前置知识</h2>
+            <div className="bg-yellow-100 rounded-xl p-6">
+              <p className="text-gray-700">基础数学知识（代数、统计）、基础编程思维</p>
             </div>
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">课程内容</h2>
+            <h2 className="text-xl font-semibold mb-6 text-gray-800">课程内容</h2>
             
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">1</div>
-                <h3 className="text-lg font-semibold text-text">机器学习基础概念</h3>
+                <div className="bg-pink-400 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">1</div>
+                <h3 className="text-lg font-semibold text-gray-800">机器学习基础概念</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="text-text mb-4">
+                <div className="text-gray-700 mb-4">
                   <p className="mb-3"><strong>什么是机器学习？</strong></p>
                   <p className="mb-3">机器学习是人工智能的一个分支，它使计算机系统能够通过经验自动改进，而无需明确编程。</p>
                   <p className="mb-3"><strong>机器学习的类型：</strong></p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">监督学习</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">监督学习</h4>
+                      <p className="text-sm text-gray-700">
                         使用标记数据进行训练，学习输入与输出之间的映射关系。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">无监督学习</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">无监督学习</h4>
+                      <p className="text-sm text-gray-700">
                         使用未标记数据，发现数据中的隐藏模式和结构。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">强化学习</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">强化学习</h4>
+                      <p className="text-sm text-gray-700">
                         通过奖励和惩罚机制，让智能体学习最优决策策略。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">深度学习</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">深度学习</h4>
+                      <p className="text-sm text-gray-700">
                         使用多层神经网络，自动学习复杂的特征表示。
                       </p>
                     </div>
@@ -140,11 +140,11 @@ print("这是一个简单的线性关系")`;
 
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">2</div>
-                <h3 className="text-lg font-semibold text-text">线性回归实战</h3>
+                <div className="bg-pink-400 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">2</div>
+                <h3 className="text-lg font-semibold text-gray-800">线性回归实战</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="text-text mb-4">
+                <div className="text-gray-700 mb-4">
                   <p className="mb-3"><strong>什么是线性回归？</strong></p>
                   <p className="mb-3">线性回归是最基础的监督学习算法，用于预测连续值。</p>
                   <p className="mb-3"><strong>工作原理：</strong></p>
@@ -166,36 +166,36 @@ print("这是一个简单的线性关系")`;
 
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">3</div>
-                <h3 className="text-lg font-semibold text-text">分类算法入门</h3>
+                <div className="bg-pink-400 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">3</div>
+                <h3 className="text-lg font-semibold text-gray-800">分类算法入门</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="text-text mb-4">
+                <div className="text-gray-700 mb-4">
                   <p className="mb-3"><strong>什么是分类？</strong></p>
                   <p className="mb-3">分类用于预测离散标签，如"是/否"、"类别A/B/C"等。</p>
                   <p className="mb-3"><strong>常用分类算法：</strong></p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">逻辑回归</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">逻辑回归</h4>
+                      <p className="text-sm text-gray-700">
                         虽然名字叫回归，但实际用于分类，特别是二分类问题。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">K-近邻(KNN)</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">K-近邻(KNN)</h4>
+                      <p className="text-sm text-gray-700">
                         基于相似度的简单算法，不需要训练过程。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">决策树</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">决策树</h4>
+                      <p className="text-sm text-gray-700">
                         树形结构，直观易理解，可处理分类和回归任务。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">随机森林</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">随机森林</h4>
+                      <p className="text-sm text-gray-700">
                         集成多个决策树，性能更稳定，防止过拟合。
                       </p>
                     </div>
@@ -213,11 +213,11 @@ print("这是一个简单的线性关系")`;
 
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">4</div>
-                <h3 className="text-lg font-semibold text-text">模型优化方法</h3>
+                <div className="bg-pink-400 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">4</div>
+                <h3 className="text-lg font-semibold text-gray-800">模型优化方法</h3>
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="text-text mb-4">
+                <div className="text-gray-700 mb-4">
                   <p className="mb-3"><strong>过拟合和欠拟合：</strong></p>
                   <ul className="list-disc pl-6 space-y-2 mb-4">
                     <li>过拟合：在训练集表现好，在测试集表现差</li>
@@ -226,26 +226,26 @@ print("这是一个简单的线性关系")`;
                   <p className="mb-3"><strong>防止过拟合的方法：</strong></p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">增加数据</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">增加数据</h4>
+                      <p className="text-sm text-gray-700">
                         更多数据能帮助模型学习更通用的规律。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">简化模型</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">简化模型</h4>
+                      <p className="text-sm text-gray-700">
                         减少模型复杂度，避免记住噪音。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">正则化</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">正则化</h4>
+                      <p className="text-sm text-gray-700">
                         加入惩罚项，约束模型复杂度。
                       </p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">集成学习</h4>
-                      <p className="text-sm text-text">
+                      <h4 className="font-medium text-gray-800 mb-2">集成学习</h4>
+                      <p className="text-sm text-gray-700">
                         结合多个模型的预测结果，提高稳定性。
                       </p>
                     </div>
@@ -262,8 +262,8 @@ print("这是一个简单的线性关系")`;
           </div>
 
           <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">交互式Python练习</h2>
-            <p className="text-text mb-4">在这里尝试简单的Python代码，熟悉基础计算！</p>
+            <h2 className="text-xl font-semibold mb-6 text-gray-800">交互式Python练习</h2>
+            <p className="text-gray-700 mb-4">在这里尝试简单的Python代码，熟悉基础计算！</p>
             
             <div className="mb-6">
               <AceEditor
@@ -275,7 +275,6 @@ print("这是一个简单的线性关系")`;
                 editorProps={{
                   $blockScrolling: true
                 }}
-                placeholder={defaultCode}
                 className="rounded-lg shadow-sm"
                 style={{ height: '300px', width: '100%' }}
               />
@@ -284,7 +283,7 @@ print("这是一个简单的线性关系")`;
             <div className="mb-6">
               <button
                 onClick={handleRunCode}
-                className="bg-primary text-white py-3 px-8 rounded-full font-bold hover:bg-secondary transition-all duration-300 shadow-button hover:shadow-button-hover transform hover:-translate-y-0.5"
+                className="bg-pink-400 text-white py-3 px-8 rounded-full font-bold hover:bg-pink-500 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 运行代码
               </button>
@@ -342,9 +341,9 @@ print("这是一个简单的线性关系")`;
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold mb-4 text-primary">课后练习</h2>
-            <div className="bg-purple rounded-xl p-6">
-              <p className="text-text mb-4">思考以下问题：</p>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">课后练习</h2>
+            <div className="bg-purple-100 rounded-xl p-6">
+              <p className="text-gray-700 mb-4">思考以下问题：</p>
               <div className="space-y-3">
                 <div className="bg-gray-100 p-4 rounded-lg">
                   <p className="font-medium mb-2">1. 假设你要预测房价，你会收集哪些特征？为什么？</p>
