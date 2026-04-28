@@ -5,6 +5,24 @@ import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
 import { runPythonCode } from '../services/pyodideService';
 
+const defaultCode = `# 机器学习基础示例
+print("欢迎学习机器学习！")
+print("\n在这个课程中，你将学习：")
+print("1. 机器学习基本概念")
+print("2. 监督与非监督学习")
+print("3. 模型评估方法")
+
+# 简单的数值计算示例
+X = [1, 2, 3, 4, 5]
+y = [2, 4, 6, 8, 10]
+
+print("特征值 X:", X)
+print("目标值 y:", y)
+
+# 计算简单的关系
+print("\n观察发现，y 是 x 的 2 倍！")
+print("这是一个简单的线性关系")`;
+
 const MachineLearning: React.FC = () => {
   const [code, setCode] = useState(defaultCode);
   const [result, setResult] = useState<{ success: boolean; stdout: string; stderr: string; error?: any; } | null>(null);
@@ -43,24 +61,6 @@ const MachineLearning: React.FC = () => {
       });
     }
   };
-
-  const defaultCode = `# 机器学习基础示例
-print("欢迎学习机器学习！")
-print("\n在这个课程中，你将学习：")
-print("1. 机器学习基本概念")
-print("2. 监督与非监督学习")
-print("3. 模型评估方法")
-
-# 简单的数值计算示例
-X = [1, 2, 3, 4, 5]
-y = [2, 4, 6, 8, 10]
-
-print("特征值 X:", X)
-print("目标值 y:", y)
-
-# 计算简单的关系
-print("\n观察发现，y 是 x 的 2 倍！")
-print("这是一个简单的线性关系")`;
 
   return (
     <div className="min-h-screen bg-gray-50">
