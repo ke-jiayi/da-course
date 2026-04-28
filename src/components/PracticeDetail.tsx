@@ -170,9 +170,9 @@ data = {
 df = pd.DataFrame(data)
 
 print("=== Data Loading ===")
-print(f"\n1. Data structure:")
+print("\n1. Data structure:")
 print(df.head())
-print(f"\nData shape: {df.shape}")
+print("Data shape:", df.shape)
 
 print("\n2. Handling missing values:")
 print("Missing value counts:")
@@ -190,7 +190,7 @@ Q3 = df['salary'].quantile(0.75)
 IQR = Q3 - Q1
 lower_bound = Q1 - 1.5 * IQR
 upper_bound = Q3 + 1.5 * IQR
-print(f"Salary normal range: {lower_bound:.0f} - {upper_bound:.0f}")
+print("Salary normal range:", lower_bound, "-", upper_bound)
 
 df['salary'] = np.where((df['salary'] < lower_bound) | (df['salary'] > upper_bound), 
                         df['salary'].median(), df['salary'])
@@ -294,11 +294,9 @@ import numpy as np
 
 print("=== Data Visualization ===")
 
-# Example data
 months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 sales = [120, 150, 180, 160, 200, 220]
 
-# 1. Line plot
 plt.figure(figsize=(8, 4))
 plt.plot(months, sales, marker='o', linestyle='-', color='b')
 plt.title('Monthly Sales')
@@ -309,7 +307,6 @@ plt.tight_layout()
 plt.savefig('/tmp/line_plot.png')
 print("Line plot created!")
 
-# 2. Bar plot
 departments = ['HR', 'IT', 'Finance', 'Sales']
 dept_sales = [80, 120, 95, 150]
 plt.figure(figsize=(8, 4))
@@ -321,7 +318,6 @@ plt.tight_layout()
 plt.savefig('/tmp/bar_plot.png')
 print("Bar plot created!")
 
-# 3. Pie plot
 categories = ['Electronics', 'Clothing', 'Food', 'Daily']
 category_sales = [35, 25, 20, 20]
 plt.figure(figsize=(6, 6))
@@ -331,7 +327,6 @@ plt.tight_layout()
 plt.savefig('/tmp/pie_plot.png')
 print("Pie plot created!")
 
-# 4. Scatter plot
 ad_spend = [5, 8, 10, 12, 15, 18, 20]
 revenue = [50, 75, 90, 100, 120, 140, 150]
 plt.figure(figsize=(8, 4))
@@ -346,7 +341,7 @@ plt.tight_layout()
 plt.savefig('/tmp/scatter_plot.png')
 print("Scatter plot created!")
 
-print("\nAll plots done!")
+print("All plots done!")
 `;
           break;
 
@@ -434,44 +429,44 @@ from sklearn.preprocessing import StandardScaler
 
 print("=== Machine Learning ===")
 
-print("\n1. Loading data")
+print("1. Loading data")
 iris = load_iris()
 X, y = iris.data, iris.target
 
-print(f"Features shape: {X.shape}")
-print(f"Labels shape: {y.shape}")
-print(f"Feature names: {iris.feature_names}")
-print(f"Class names: {iris.target_names}")
+print("Features shape:", X.shape)
+print("Labels shape:", y.shape)
+print("Feature names:", iris.feature_names)
+print("Class names:", iris.target_names)
 
-print("\n2. Splitting train/test set")
+print("2. Splitting train/test set")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-print(f"Train size: {X_train.shape[0]}")
-print(f"Test size: {X_test.shape[0]}")
+print("Train size:", X_train.shape[0])
+print("Test size:", X_test.shape[0])
 
-print("\n3. Data normalization")
+print("3. Data normalization")
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 print("Normalization done!")
 
-print("\n4. Training model")
+print("4. Training model")
 model = LogisticRegression(max_iter=200)
 model.fit(X_train_scaled, y_train)
 print("Model trained!")
 
-print("\n5. Evaluating model")
+print("5. Evaluating model")
 y_pred = model.predict(X_test_scaled)
 accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy:.4f}")
-print("\nClassification report:")
+print("Accuracy:", accuracy)
+print("Classification report:")
 print(classification_report(y_test, y_pred, target_names=iris.target_names))
 
-print("\n6. Cross validation")
+print("6. Cross validation")
 cv_scores = cross_val_score(model, X, y, cv=5)
-print(f"CV scores: {cv_scores}")
-print(f"Mean score: {cv_scores.mean():.4f}")
+print("CV scores:", cv_scores)
+print("Mean score:", cv_scores.mean())
 
-print("\nML training done!")
+print("ML training done!")
 `;
           break;
 
@@ -557,17 +552,17 @@ import matplotlib.pyplot as plt
 
 print("=== Time Series Analysis ===")
 
-print("\n1. Creating time series data")
+print("1. Creating time series data")
 dates = pd.date_range(start='2023-01-01', periods=24, freq='M')
 np.random.seed(42)
 sales = np.random.normal(100, 10, 24) + np.linspace(0, 20, 24) + np.sin(np.linspace(0, 4*np.pi, 24)) * 5
 
 df = pd.DataFrame({'sales': sales}, index=dates)
-print(f"Data shape: {df.shape}")
-print("\nData preview:")
+print("Data shape:", df.shape)
+print("Data preview:")
 print(df.head())
 
-print("\n2. Time series visualization")
+print("2. Time series visualization")
 plt.figure(figsize=(12, 6))
 plt.plot(df.index, df['sales'], label='Original data')
 plt.plot(df.index, df['sales'].rolling(window=3).mean(), label='3-month moving avg', color='orange')
@@ -581,13 +576,13 @@ plt.tight_layout()
 plt.savefig('/tmp/ts_plot.png')
 print("Time series plot created!")
 
-print("\n3. Calculating statistics")
-print(f"Mean: {df['sales'].mean():.2f}")
-print(f"Standard deviation: {df['sales'].std():.2f}")
-print(f"Minimum: {df['sales'].min():.2f}")
-print(f"Maximum: {df['sales'].max():.2f}")
+print("3. Calculating statistics")
+print("Mean:", df['sales'].mean())
+print("Standard deviation:", df['sales'].std())
+print("Minimum:", df['sales'].min())
+print("Maximum:", df['sales'].max())
 
-print("\n4. Differencing")
+print("4. Differencing")
 df['diff_1'] = df['sales'].diff()
 df['diff_2'] = df['sales'].diff().diff()
 
@@ -608,20 +603,20 @@ plt.tight_layout()
 plt.savefig('/tmp/ts_diff.png')
 print("Difference plot created!")
 
-print("\n5. Simple forecasting")
+print("5. Simple forecasting")
 last_value = df['sales'].iloc[-1]
-print(f"Last value: {last_value:.2f}")
-print(f"Next period forecast (simple): {last_value:.2f}")
+print("Last value:", last_value)
+print("Next period forecast (simple):", last_value)
 
 mean_value = df['sales'].mean()
-print(f"Historical mean: {mean_value:.2f}")
-print(f"Next period forecast (mean): {mean_value:.2f}")
+print("Historical mean:", mean_value)
+print("Next period forecast (mean):", mean_value)
 
 rolling_mean = df['sales'].rolling(window=3).mean().iloc[-1]
-print(f"3-month moving avg: {rolling_mean:.2f}")
-print(f"Next period forecast (moving avg): {rolling_mean:.2f}")
+print("3-month moving avg:", rolling_mean)
+print("Next period forecast (moving avg):", rolling_mean)
 
-print("\nTime series analysis done!")
+print("Time series analysis done!")
 `;
           break;
 
