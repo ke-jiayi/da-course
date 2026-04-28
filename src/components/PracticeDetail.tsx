@@ -159,7 +159,6 @@ const PracticeDetail: React.FC = () => {
           defaultCode = `import pandas as pd
 import numpy as np
 
-# 创建示例数据
 data = {
     'user_id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     'age': [25, 30, None, 40, 45, None, 35, 28, 50, 42],
@@ -170,37 +169,36 @@ data = {
 
 df = pd.DataFrame(data)
 
-print("=== 数据加载完成！")
-print(f"\n1. 查看数据结构：")
+print("=== Data Loading ===")
+print(f"\n1. Data structure:")
 print(df.head())
-print(f"\n数据形状：{df.shape}")
+print(f"\nData shape: {df.shape}")
 
-print("\n2. 处理缺失值：")
-print("缺失值统计：")
+print("\n2. Handling missing values:")
+print("Missing value counts:")
 print(df.isnull().sum())
 
-# 填充缺失值
 df['age'] = df['age'].fillna(df['age'].mean())
 df['salary'] = df['salary'].fillna(df['salary'].median())
 
-print("\n填充缺失值后的数据：")
+print("\nData after filling missing values:")
 print(df)
 
-print("\n3. 处理异常值：")
+print("\n3. Handling outliers:")
 Q1 = df['salary'].quantile(0.25)
 Q3 = df['salary'].quantile(0.75)
 IQR = Q3 - Q1
 lower_bound = Q1 - 1.5 * IQR
 upper_bound = Q3 + 1.5 * IQR
-print(f"薪资正常范围：{lower_bound:.0f} - {upper_bound:.0f}")
+print(f"Salary normal range: {lower_bound:.0f} - {upper_bound:.0f}")
 
 df['salary'] = np.where((df['salary'] < lower_bound) | (df['salary'] > upper_bound), 
                         df['salary'].median(), df['salary'])
 
-print("\n处理异常值后的数据：")
+print("\nData after handling outliers:")
 print(df)
 
-print("\n4. 数据转换：")
+print("\n4. Data transformation:")
 df['department'] = df['department'].astype('category')
 df['join_date'] = pd.to_datetime(df['join_date'])
 df['join_year'] = df['join_date'].dt.year
@@ -209,9 +207,9 @@ df['salary_level'] = pd.cut(df['salary'],
                            bins=[0, 60000, 80000, 100000, float('inf')],
                            labels=['Low', 'Medium', 'High', 'Very High'])
 
-print("\n转换后的数据：")
+print("\nData after transformation:")
 print(df)
-print("\n数据清洗与预处理完成！")
+print("\nData cleaning done!")
 `;
           break;
 
@@ -292,66 +290,63 @@ print("\n数据清洗与预处理完成！")
             ]
           };
           defaultCode = `import matplotlib.pyplot as plt
+import numpy as np
 
-# 示例数据
-months = ['1月', '2月', '3月', '4月', '5月', '6月']
+print("=== Data Visualization ===")
+
+# Example data
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 sales = [120, 150, 180, 160, 200, 220]
 
-# 1. 创建折线图
-print("=== 创建折线图 ===")
+# 1. Line plot
 plt.figure(figsize=(8, 4))
 plt.plot(months, sales, marker='o', linestyle='-', color='b')
-plt.title('月度销售额趋势')
-plt.xlabel('月份')
-plt.ylabel('销售额（万元）')
+plt.title('Monthly Sales')
+plt.xlabel('Month')
+plt.ylabel('Sales (K)')
 plt.grid(True)
 plt.tight_layout()
 plt.savefig('/tmp/line_plot.png')
-print("折线图创建完成！")
+print("Line plot created!")
 
-# 2. 创建柱状图
-print("\n=== 创建柱状图 ===")
+# 2. Bar plot
 departments = ['HR', 'IT', 'Finance', 'Sales']
 dept_sales = [80, 120, 95, 150]
 plt.figure(figsize=(8, 4))
 plt.bar(departments, dept_sales, color=['red', 'green', 'blue', 'orange'])
-plt.title('各部门销售额对比')
-plt.xlabel('部门')
-plt.ylabel('销售额（万元）')
+plt.title('Department Sales')
+plt.xlabel('Department')
+plt.ylabel('Sales (K)')
 plt.tight_layout()
 plt.savefig('/tmp/bar_plot.png')
-print("柱状图创建完成！")
+print("Bar plot created!")
 
-# 3. 创建饼图
-print("\n=== 创建饼图 ===")
-categories = ['电子产品', '服装', '食品', '日用品']
+# 3. Pie plot
+categories = ['Electronics', 'Clothing', 'Food', 'Daily']
 category_sales = [35, 25, 20, 20]
 plt.figure(figsize=(6, 6))
 plt.pie(category_sales, labels=categories, autopct='%1.1f%%', explode=[0.1, 0, 0, 0])
-plt.title('产品类别销售占比')
+plt.title('Category Sales')
 plt.tight_layout()
 plt.savefig('/tmp/pie_plot.png')
-print("饼图创建完成！")
+print("Pie plot created!")
 
-# 4. 创建散点图
-print("\n=== 创建散点图 ===")
-import numpy as np
+# 4. Scatter plot
 ad_spend = [5, 8, 10, 12, 15, 18, 20]
 revenue = [50, 75, 90, 100, 120, 140, 150]
 plt.figure(figsize=(8, 4))
 plt.scatter(ad_spend, revenue, s=100, c='purple', alpha=0.7)
-# 添加趋势线
 z = np.polyfit(ad_spend, revenue, 1)
 p = np.poly1d(z)
 plt.plot(ad_spend, p(ad_spend), "r--")
-plt.title('广告投入与销售额关系')
-plt.xlabel('广告投入（万元）')
-plt.ylabel('销售额（万元）')
+plt.title('Ad Spend vs Revenue')
+plt.xlabel('Ad Spend (K)')
+plt.ylabel('Revenue (K)')
 plt.tight_layout()
 plt.savefig('/tmp/scatter_plot.png')
-print("散点图创建完成！")
+print("Scatter plot created!")
 
-print("\n所有图表创建完成！")
+print("\nAll plots done!")
 `;
           break;
 
@@ -437,52 +432,46 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.preprocessing import StandardScaler
 
-print("=== 机器学习模型训练 ===")
+print("=== Machine Learning ===")
 
-# 1. 加载数据集
-print("\n1. 加载数据")
+print("\n1. Loading data")
 iris = load_iris()
 X, y = iris.data, iris.target
 
-print(f"特征形状: {X.shape}")
-print(f"标签形状: {y.shape}")
-print(f"特征名称: {iris.feature_names}")
-print(f"类别名称: {iris.target_names}")
+print(f"Features shape: {X.shape}")
+print(f"Labels shape: {y.shape}")
+print(f"Feature names: {iris.feature_names}")
+print(f"Class names: {iris.target_names}")
 
-# 2. 划分训练集和测试集
-print("\n2. 划分训练集和测试集")
+print("\n2. Splitting train/test set")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-print(f"训练集大小: {X_train.shape[0]}")
-print(f"测试集大小: {X_test.shape[0]}")
+print(f"Train size: {X_train.shape[0]}")
+print(f"Test size: {X_test.shape[0]}")
 
-# 3. 数据标准化
-print("\n3. 数据标准化")
+print("\n3. Data normalization")
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
-print("标准化完成！")
+print("Normalization done!")
 
-# 4. 训练模型
-print("\n4. 训练逻辑回归模型")
+print("\n4. Training model")
 model = LogisticRegression(max_iter=200)
 model.fit(X_train_scaled, y_train)
-print("模型训练完成！")
+print("Model trained!")
 
-# 5. 模型评估
-print("\n5. 模型评估")
+print("\n5. Evaluating model")
 y_pred = model.predict(X_test_scaled)
 accuracy = accuracy_score(y_test, y_pred)
-print(f"准确率: {accuracy:.4f}")
-print("\n分类报告:")
+print(f"Accuracy: {accuracy:.4f}")
+print("\nClassification report:")
 print(classification_report(y_test, y_pred, target_names=iris.target_names))
 
-# 6. 交叉验证
-print("\n6. 交叉验证")
+print("\n6. Cross validation")
 cv_scores = cross_val_score(model, X, y, cv=5)
-print(f"交叉验证得分: {cv_scores}")
-print(f"平均得分: {cv_scores.mean():.4f}")
+print(f"CV scores: {cv_scores}")
+print(f"Mean score: {cv_scores.mean():.4f}")
 
-print("\n机器学习模型训练完成！")
+print("\nML training done!")
 `;
           break;
 
@@ -566,81 +555,73 @@ print("\n机器学习模型训练完成！")
 import numpy as np
 import matplotlib.pyplot as plt
 
-print("=== 时间序列分析 ===")
+print("=== Time Series Analysis ===")
 
-# 1. 创建时间序列数据
-print("\n1. 创建时间序列数据")
+print("\n1. Creating time series data")
 dates = pd.date_range(start='2023-01-01', periods=24, freq='M')
 np.random.seed(42)
 sales = np.random.normal(100, 10, 24) + np.linspace(0, 20, 24) + np.sin(np.linspace(0, 4*np.pi, 24)) * 5
 
 df = pd.DataFrame({'sales': sales}, index=dates)
-print(f"数据形状: {df.shape}")
-print("\n数据预览:")
+print(f"Data shape: {df.shape}")
+print("\nData preview:")
 print(df.head())
 
-# 2. 时间序列可视化
-print("\n2. 时间序列可视化")
+print("\n2. Time series visualization")
 plt.figure(figsize=(12, 6))
-plt.plot(df.index, df['sales'], label='原始数据')
-plt.plot(df.index, df['sales'].rolling(window=3).mean(), label='3期滚动平均', color='orange')
-plt.plot(df.index, df['sales'].rolling(window=6).mean(), label='6期滚动平均', color='green')
-plt.title('月度销售数据趋势')
-plt.xlabel('日期')
-plt.ylabel('销售额')
+plt.plot(df.index, df['sales'], label='Original data')
+plt.plot(df.index, df['sales'].rolling(window=3).mean(), label='3-month moving avg', color='orange')
+plt.plot(df.index, df['sales'].rolling(window=6).mean(), label='6-month moving avg', color='green')
+plt.title('Monthly Sales Trend')
+plt.xlabel('Date')
+plt.ylabel('Sales')
 plt.legend()
 plt.xticks(rotation=45)
 plt.tight_layout()
 plt.savefig('/tmp/ts_plot.png')
-print("时间序列图创建完成！")
+print("Time series plot created!")
 
-# 3. 计算统计量
-print("\n3. 计算统计量")
-print(f"均值: {df['sales'].mean():.2f}")
-print(f"标准差: {df['sales'].std():.2f}")
-print(f"最小值: {df['sales'].min():.2f}")
-print(f"最大值: {df['sales'].max():.2f}")
+print("\n3. Calculating statistics")
+print(f"Mean: {df['sales'].mean():.2f}")
+print(f"Standard deviation: {df['sales'].std():.2f}")
+print(f"Minimum: {df['sales'].min():.2f}")
+print(f"Maximum: {df['sales'].max():.2f}")
 
-# 4. 差分处理
-print("\n4. 差分处理")
+print("\n4. Differencing")
 df['diff_1'] = df['sales'].diff()
 df['diff_2'] = df['sales'].diff().diff()
 
 plt.figure(figsize=(12, 8))
 plt.subplot(3, 1, 1)
 plt.plot(df['sales'])
-plt.title('原始序列')
+plt.title('Original series')
 
 plt.subplot(3, 1, 2)
 plt.plot(df['diff_1'])
-plt.title('一阶差分')
+plt.title('First difference')
 
 plt.subplot(3, 1, 3)
 plt.plot(df['diff_2'])
-plt.title('二阶差分')
+plt.title('Second difference')
 
 plt.tight_layout()
 plt.savefig('/tmp/ts_diff.png')
-print("差分图创建完成！")
+print("Difference plot created!")
 
-# 5. 简单预测
-print("\n5. 简单预测")
-# 使用最后一个值作为预测
+print("\n5. Simple forecasting")
 last_value = df['sales'].iloc[-1]
-print(f"最后一个值: {last_value:.2f}")
-print(f"下一期预测值（简单预测）: {last_value:.2f}")
+print(f"Last value: {last_value:.2f}")
+print(f"Next period forecast (simple): {last_value:.2f}")
 
-# 使用均值作为预测
 mean_value = df['sales'].mean()
-print(f"历史均值: {mean_value:.2f}")
-print(f"下一期预测值（均值预测）: {mean_value:.2f}")
+print(f"Historical mean: {mean_value:.2f}")
+print(f"Next period forecast (mean): {mean_value:.2f}")
 
-# 使用移动平均作为预测
 rolling_mean = df['sales'].rolling(window=3).mean().iloc[-1]
-print(f"3期移动平均: {rolling_mean:.2f}")
-print(f"下一期预测值（移动平均）: {rolling_mean:.2f}")
+print(f"3-month moving avg: {rolling_mean:.2f}")
+print(f"Next period forecast (moving avg): {rolling_mean:.2f}")
 
-print("\n时间序列分析完成！")
+print("\nTime series analysis done!")
 `;
           break;
 
