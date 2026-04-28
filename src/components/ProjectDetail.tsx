@@ -162,6 +162,8 @@ df = pd.DataFrame(data)`,
           description: '使用matplotlib创建销售额和利润的折线图',
           code: `import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 创建示例数据集
@@ -181,7 +183,8 @@ plt.xlabel('月份')
 plt.ylabel('金额')
 plt.legend()
 plt.grid(True)
-plt.show()`
+plt.savefig('monthly_sales_profit.png', dpi=150, bbox_inches='tight')
+print("图表已保存为 monthly_sales_profit.png")`
         },
         {
           id: 2,
@@ -189,6 +192,8 @@ plt.show()`
           description: '使用matplotlib创建销售额的柱状图',
           code: `import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 创建示例数据集
@@ -206,7 +211,8 @@ plt.title('月度销售额')
 plt.xlabel('月份')
 plt.ylabel('销售额')
 plt.grid(axis='y')
-plt.show()`
+plt.savefig('monthly_sales_bar.png', dpi=150, bbox_inches='tight')
+print("图表已保存为 monthly_sales_bar.png")`
         },
         {
           id: 3,
@@ -214,6 +220,8 @@ plt.show()`
           description: '使用matplotlib创建销售额的饼图',
           code: `import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 创建示例数据集
@@ -228,7 +236,8 @@ df = pd.DataFrame(data)
 plt.figure(figsize=(8, 8))
 plt.pie(df['sales'], labels=df['month'], autopct='%1.1f%%')
 plt.title('月度销售额占比')
-plt.show()`
+plt.savefig('monthly_sales_pie.png', dpi=150, bbox_inches='tight')
+print("图表已保存为 monthly_sales_pie.png")`
         }
       ],
       practice: `import pandas as pd
@@ -1117,6 +1126,8 @@ print(df.describe())`,
           description: '对时间序列数据进行可视化分析',
           code: `import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 创建示例时间序列数据
@@ -1133,7 +1144,8 @@ plt.title('时间序列数据')
 plt.xlabel('日期')
 plt.ylabel('值')
 plt.grid(True)
-plt.show()`
+plt.savefig('time_series.png', dpi=150, bbox_inches='tight')
+print("图表已保存为 time_series.png")`
         },
         {
           id: 2,

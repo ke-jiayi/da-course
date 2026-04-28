@@ -8,6 +8,8 @@ import 'ace-builds/src-noconflict/ext-language_tools';
 const PyodideTest: React.FC = () => {
   const [code, setCode] = useState(`import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 创建示例数据
@@ -30,7 +32,8 @@ plt.title('Sample Plot')
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.grid(True)
-plt.show()`);
+plt.savefig('sample_plot.png', dpi=150, bbox_inches='tight')
+print('\\n图表已保存为 sample_plot.png')`);
   const [result, setResult] = useState<PythonExecutionResult | null>(null);
   const [loading, setLoading] = useState(false);
 
