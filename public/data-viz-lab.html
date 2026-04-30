@@ -334,7 +334,7 @@ plt.plot(months, sales)
 plt.title('Monthly Sales Trend')
 plt.xlabel('Month')
 plt.ylabel('Sales')
-plt.savefig('monthly_sales_trend.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/monthly_sales_trend.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 monthly_sales_trend.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，折线图适合展示时间序列数据的趋势变化。</div>
                     </div>
@@ -373,7 +373,7 @@ plt.bar(departments, sales, color=['red', 'green', 'blue', 'orange'])
 plt.title('Department Sales')
 plt.xlabel('Department')
 plt.ylabel('Sales')
-plt.savefig('department_sales.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/department_sales.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 department_sales.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，柱状图适合比较不同类别之间的数值差异。</div>
                     </div>
@@ -410,7 +410,7 @@ sales = [35, 25, 20, 20]
 plt.figure(figsize=(6, 6))
 plt.pie(sales, labels=categories, autopct='%1.1f%%', explode=[0.1, 0, 0, 0])
 plt.title('Sales Distribution')
-plt.savefig('sales_distribution.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/sales_distribution.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 sales_distribution.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查比例准确思维，饼图适合展示各部分占总体的比例关系。</div>
                     </div>
@@ -452,7 +452,7 @@ plt.plot(ad_spend, p(ad_spend), "r--")
 plt.title('Ad Spend vs Revenue')
 plt.xlabel('Ad Spend')
 plt.ylabel('Revenue')
-plt.savefig('ad_spend_revenue.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/ad_spend_revenue.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 ad_spend_revenue.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，散点图适合展示两个变量之间的相关性。</div>
                     </div>
@@ -496,7 +496,7 @@ for bar in bars:
     height = bar.get_height()
     plt.text(bar.get_x() + bar.get_width()/2., height, '%d' % int(height), ha='center', va='bottom')
 
-plt.savefig('product_sales_labeled.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/product_sales_labeled.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 product_sales_labeled.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查标注清晰思维，数据标签让读者无需估算即可知道精确数值。</div>
                     </div>
@@ -536,7 +536,7 @@ plt.title('Customized Line Plot')
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.grid(True, linestyle=':', alpha=0.7)
-plt.savefig('customized_line_plot.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/customized_line_plot.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 customized_line_plot.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，通过自定义样式突出数据特征。</div>
                     </div>
@@ -578,7 +578,7 @@ plt.title('Product Sales Comparison')
 plt.xlabel('Month')
 plt.ylabel('Sales')
 plt.legend()
-plt.savefig('product_comparison.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/product_comparison.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 product_comparison.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，使用不同样式区分多个数据系列。</div>
                     </div>
@@ -623,7 +623,7 @@ ax2.pie(data, labels=labels, autopct='%1.1f%%')
 ax2.set_title('Pie Plot')
 
 plt.tight_layout()
-plt.savefig('subplot_layout.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/subplot_layout.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 subplot_layout.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，子图布局适合在同一画面展示相关数据的不同视角。</div>
                     </div>
@@ -662,7 +662,7 @@ plt.hist(data, bins=15, edgecolor='black', alpha=0.7)
 plt.title('Data Distribution')
 plt.xlabel('Value')
 plt.ylabel('Frequency')
-plt.savefig('data_distribution.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/data_distribution.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 data_distribution.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，直方图适合展示连续数据的分布情况。</div>
                     </div>
@@ -725,7 +725,7 @@ ax4.pie(cat_sales, labels=categories, autopct='%1.1f%%')
 ax4.set_title('Sales Category')
 
 plt.tight_layout()
-plt.savefig('complete_report.png', dpi=150, bbox_inches='tight')
+plt.savefig('/tmp/complete_report.png', dpi=150, bbox_inches='tight')
 print("图表已保存为 complete_report.png")</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，综合运用多种图表类型创建完整的数据报告。</div>
                     </div>
