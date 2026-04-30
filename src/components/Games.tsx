@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaGamepad, FaTrophy, FaStar, FaFire } from 'react-icons/fa';
 
 interface GameChallenge {
@@ -23,6 +24,7 @@ interface LearningGame {
 }
 
 const Games: React.FC = () => {
+  const navigate = useNavigate();
   const [challenges, setChallenges] = useState<GameChallenge[]>([]);
   const [games, setGames] = useState<LearningGame[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,13 +120,14 @@ const Games: React.FC = () => {
   }, []);
 
   const handleStartChallenge = (challengeId: string) => {
-    // 处理开始挑战的逻辑
     console.log('Starting challenge:', challengeId);
   };
 
   const handleStartGame = (gameId: string) => {
-    // 处理开始游戏的逻辑
-    console.log('Starting game:', gameId);
+    console.log('Start game button clicked for:', gameId);
+    const url = `/game/${gameId}`;
+    console.log('Navigating to:', url);
+    navigate(url);
   };
 
   if (loading) {

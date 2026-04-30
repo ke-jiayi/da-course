@@ -129,6 +129,8 @@ print(f"数字列表: {numbers}")`;
                       <p className="text-sm font-medium mb-2">Python代码示例：</p>
                       <pre className="bg-gray-800 text-white p-3 rounded text-xs overflow-x-auto">
 {`# 折线图示例 - 展示月度销售额趋势
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 示例数据
@@ -144,8 +146,9 @@ plt.ylabel('销售额（万元）')
 plt.grid(True)
 plt.tight_layout()
 
-# 显示图表
-plt.show()`}
+# 保存图表
+plt.savefig('monthly_sales_trend.png', dpi=150, bbox_inches='tight')
+print("图表已保存为 monthly_sales_trend.png")`}
                       </pre>
                     </div>
                   </div>
@@ -159,6 +162,8 @@ plt.show()`}
                       <p className="text-sm font-medium mb-2">Python代码示例：</p>
                       <pre className="bg-gray-800 text-white p-3 rounded text-xs overflow-x-auto">
 {`# 柱状图示例 - 比较各地区销售额
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 示例数据
@@ -173,8 +178,9 @@ plt.xlabel('地区')
 plt.ylabel('销售额（万元）')
 plt.tight_layout()
 
-# 显示图表
-plt.show()`}
+# 保存图表
+plt.savefig('region_sales_comparison.png', dpi=150, bbox_inches='tight')
+print("图表已保存为 region_sales_comparison.png")`}
                       </pre>
                     </div>
                   </div>
@@ -188,6 +194,8 @@ plt.show()`}
                       <p className="text-sm font-medium mb-2">Python代码示例：</p>
                       <pre className="bg-gray-800 text-white p-3 rounded text-xs overflow-x-auto">
 {`# 饼图示例 - 展示产品分类占比
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 示例数据
@@ -200,8 +208,9 @@ plt.pie(market_share, labels=categories, autopct='%1.1f%%')
 plt.title('产品分类市场占比')
 plt.tight_layout()
 
-# 显示图表
-plt.show()`}
+# 保存图表
+plt.savefig('product_market_share.png', dpi=150, bbox_inches='tight')
+print("图表已保存为 product_market_share.png")`}
                       </pre>
                     </div>
                   </div>
@@ -215,6 +224,8 @@ plt.show()`}
                       <p className="text-sm font-medium mb-2">Python代码示例：</p>
                       <pre className="bg-gray-800 text-white p-3 rounded text-xs overflow-x-auto">
 {`# 散点图示例 - 展示广告投入与销量的关系
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -232,8 +243,9 @@ plt.ylabel('销量（万元）')
 plt.grid(True)
 plt.tight_layout()
 
-# 显示图表
-plt.show()`}
+# 保存图表
+plt.savefig('ad_sales_scatter.png', dpi=150, bbox_inches='tight')
+print("图表已保存为 ad_sales_scatter.png")`}
                       </pre>
                     </div>
                   </div>
