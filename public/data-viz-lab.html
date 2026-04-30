@@ -317,10 +317,13 @@
                     <div class="output" id="output-1">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-1">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -332,7 +335,13 @@ plt.plot(months, sales)
 plt.title('Monthly Sales Trend')
 plt.xlabel('Month')
 plt.ylabel('Sales')
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，折线图适合展示时间序列数据的趋势变化。</div>
                     </div>
                 </div>
@@ -353,10 +362,13 @@ plt.show()</div>
                     <div class="output" id="output-2">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-2">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -368,7 +380,13 @@ plt.bar(departments, sales, color=['red', 'green', 'blue', 'orange'])
 plt.title('Department Sales')
 plt.xlabel('Department')
 plt.ylabel('Sales')
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，柱状图适合比较不同类别之间的数值差异。</div>
                     </div>
                 </div>
@@ -389,10 +407,13 @@ plt.show()</div>
                     <div class="output" id="output-3">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-3">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -402,7 +423,13 @@ sales = [35, 25, 20, 20]
 plt.figure(figsize=(6, 6))
 plt.pie(sales, labels=categories, autopct='%1.1f%%', explode=[0.1, 0, 0, 0])
 plt.title('Sales Distribution')
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查比例准确思维，饼图适合展示各部分占总体的比例关系。</div>
                     </div>
                 </div>
@@ -423,10 +450,13 @@ plt.show()</div>
                     <div class="output" id="output-4">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-4">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -441,7 +471,13 @@ plt.plot(ad_spend, p(ad_spend), "r--")
 plt.title('Ad Spend vs Revenue')
 plt.xlabel('Ad Spend')
 plt.ylabel('Revenue')
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，散点图适合展示两个变量之间的相关性。</div>
                     </div>
                 </div>
@@ -462,10 +498,13 @@ plt.show()</div>
                     <div class="output" id="output-5">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-5">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -482,7 +521,12 @@ for bar in bars:
     height = bar.get_height()
     plt.text(bar.get_x() + bar.get_width()/2., height, '%d' % int(height), ha='center', va='bottom')
 
-plt.show()</div>
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查标注清晰思维，数据标签让读者无需估算即可知道精确数值。</div>
                     </div>
                 </div>
@@ -503,10 +547,13 @@ plt.show()</div>
                     <div class="output" id="output-6">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-6">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -519,7 +566,13 @@ plt.title('Customized Line Plot')
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.grid(True, linestyle=':', alpha=0.7)
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，通过自定义样式突出数据特征。</div>
                     </div>
                 </div>
@@ -540,10 +593,13 @@ plt.show()</div>
                     <div class="output" id="output-7">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-7">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -558,7 +614,13 @@ plt.title('Product Sales Comparison')
 plt.xlabel('Month')
 plt.ylabel('Sales')
 plt.legend()
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查视觉层次思维，使用不同样式区分多个数据系列。</div>
                     </div>
                 </div>
@@ -579,10 +641,13 @@ plt.show()</div>
                     <div class="output" id="output-8">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-8">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -600,7 +665,13 @@ ax2.pie(data, labels=labels, autopct='%1.1f%%')
 ax2.set_title('Pie Plot')
 
 plt.tight_layout()
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，子图布局适合在同一画面展示相关数据的不同视角。</div>
                     </div>
                 </div>
@@ -621,10 +692,13 @@ plt.show()</div>
                     <div class="output" id="output-9">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-9">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -636,7 +710,13 @@ plt.hist(data, bins=15, edgecolor='black', alpha=0.7)
 plt.title('Data Distribution')
 plt.xlabel('Value')
 plt.ylabel('Frequency')
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查图表选择思维，直方图适合展示连续数据的分布情况。</div>
                     </div>
                 </div>
@@ -657,10 +737,13 @@ plt.show()</div>
                     <div class="output" id="output-10">点击运行按钮查看输出...</div>
                     <div class="answer-section" id="answer-10">
                         <h4>标准答案：</h4>
-                        <div class="answer-code">import matplotlib.pyplot as plt
+                        <div class="answer-code">import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -696,7 +779,13 @@ ax4.pie(cat_sales, labels=categories, autopct='%1.1f%%')
 ax4.set_title('Sales Category')
 
 plt.tight_layout()
-plt.show()</div>
+
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()</div>
                         <div class="answer-analysis"><strong>解析：</strong>考查动态迭代思维，综合运用多种图表类型创建完整的数据报告。</div>
                     </div>
                 </div>
@@ -722,8 +811,9 @@ plt.show()</div>
             const exercises = {
                 1: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -731,13 +821,25 @@ months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 sales = [120, 150, 180, 160, 200, 220]
 
 # 请在下方编写代码创建折线图：
+plt.figure(figsize=(8, 4))
+plt.plot(months, sales)
+plt.title('Monthly Sales Trend')
+plt.xlabel('Month')
+plt.ylabel('Sales')
 
-
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 2: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -745,13 +847,25 @@ departments = ['HR', 'IT', 'Finance', 'Sales']
 sales = [80, 120, 95, 150]
 
 # 请在下方编写代码创建柱状图：
+plt.figure(figsize=(8, 4))
+plt.bar(departments, sales, color=['red', 'green', 'blue', 'orange'])
+plt.title('Department Sales')
+plt.xlabel('Department')
+plt.ylabel('Sales')
 
-
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 3: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -759,13 +873,23 @@ categories = ['Electronics', 'Clothing', 'Food', 'Daily']
 sales = [35, 25, 20, 20]
 
 # 请在下方编写代码创建饼图：
+plt.figure(figsize=(6, 6))
+plt.pie(sales, labels=categories, autopct='%1.1f%%', explode=[0.1, 0, 0, 0])
+plt.title('Sales Distribution')
 
-
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 4: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -773,13 +897,28 @@ ad_spend = [5, 8, 10, 12, 15, 18, 20]
 revenue = [50, 75, 90, 100, 120, 140, 150]
 
 # 请在下方编写代码创建散点图：
+plt.figure(figsize=(8, 4))
+plt.scatter(ad_spend, revenue, s=100, c='purple', alpha=0.7)
+z = np.polyfit(ad_spend, revenue, 1)
+p = np.poly1d(z)
+plt.plot(ad_spend, p(ad_spend), "r--")
+plt.title('Ad Spend vs Revenue')
+plt.xlabel('Ad Spend')
+plt.ylabel('Revenue')
 
-
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 5: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -787,13 +926,29 @@ products = ['A', 'B', 'C', 'D']
 sales = [120, 150, 90, 180]
 
 # 请在下方编写代码添加数据标签：
+plt.figure(figsize=(8, 4))
+bars = plt.bar(products, sales)
+plt.title('Product Sales')
+plt.xlabel('Product')
+plt.ylabel('Sales')
 
+for bar in bars:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2., height, '%d' % int(height), ha='center', va='bottom')
 
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 6: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -801,13 +956,26 @@ x = [1, 2, 3, 4, 5]
 y = [10, 20, 15, 25, 22]
 
 # 请在下方编写代码自定义图表样式：
+plt.figure(figsize=(8, 4))
+plt.plot(x, y, marker='o', linestyle='--', color='red', linewidth=2, markersize=8)
+plt.title('Customized Line Plot')
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.grid(True, linestyle=':', alpha=0.7)
 
-
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 7: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -816,13 +984,27 @@ sales_a = [100, 120, 110, 130, 140]
 sales_b = [80, 90, 100, 110, 120]
 
 # 请在下方编写代码绘制多系列折线图：
+plt.figure(figsize=(8, 4))
+plt.plot(months, sales_a, marker='o', label='Product A')
+plt.plot(months, sales_b, marker='s', label='Product B')
+plt.title('Product Sales Comparison')
+plt.xlabel('Month')
+plt.ylabel('Sales')
+plt.legend()
 
-
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 8: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -830,13 +1012,31 @@ data = [12, 18, 25, 30, 22]
 labels = ['A', 'B', 'C', 'D', 'E']
 
 # 请在下方编写代码创建子图布局：
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
 
+ax1.bar(labels, data, color='skyblue')
+ax1.set_title('Bar Plot')
+ax1.set_xlabel('Category')
+ax1.set_ylabel('Value')
 
+ax2.pie(data, labels=labels, autopct='%1.1f%%')
+ax2.set_title('Pie Plot')
+
+plt.tight_layout()
+
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 9: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -844,13 +1044,25 @@ np.random.seed(42)
 data = np.random.normal(100, 15, 200)
 
 # 请在下方编写代码创建直方图：
+plt.figure(figsize=(8, 4))
+plt.hist(data, bins=15, edgecolor='black', alpha=0.7)
+plt.title('Data Distribution')
+plt.xlabel('Value')
+plt.ylabel('Frequency')
 
-
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `,
                 10: `import matplotlib.pyplot as plt
 import numpy as np
+import base64
+from io import BytesIO
 
-# 设置字体
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -860,8 +1072,41 @@ profit = [24, 35, 45, 40, 50, 55]
 customers = [500, 620, 750, 680, 850, 920]
 
 # 请在下方编写代码创建完整可视化报告：
+fig = plt.figure(figsize=(14, 10))
 
+ax1 = fig.add_subplot(2, 2, 1)
+ax1.plot(months, sales, marker='o', color='blue')
+ax1.set_title('Monthly Sales')
+ax1.set_xlabel('Month')
+ax1.set_ylabel('Sales')
 
+ax2 = fig.add_subplot(2, 2, 2)
+ax2.bar(months, profit, color='green')
+ax2.set_title('Monthly Profit')
+ax2.set_xlabel('Month')
+ax2.set_ylabel('Profit')
+
+ax3 = fig.add_subplot(2, 2, 3)
+ax3.plot(months, customers, marker='s', color='orange', linestyle='--')
+ax3.set_title('Customer Growth')
+ax3.set_xlabel('Month')
+ax3.set_ylabel('Customers')
+
+ax4 = fig.add_subplot(2, 2, 4)
+categories = ['Electronics', 'Clothing', 'Food']
+cat_sales = [45, 35, 20]
+ax4.pie(cat_sales, labels=categories, autopct='%1.1f%%')
+ax4.set_title('Sales Category')
+
+plt.tight_layout()
+
+# 保存图片并显示
+buf = BytesIO()
+plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+buf.seek(0)
+img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+print(f'[IMAGE]{img_base64}[/IMAGE]')
+plt.close()
 `
             };
 
@@ -890,6 +1135,9 @@ customers = [500, 620, 750, 680, 850, 920]
             const errorHint = document.querySelector(`.error-hint`);
             if (errorHint) errorHint.remove();
             
+            const existingImg = outputEl.querySelector('img');
+            if (existingImg) existingImg.remove();
+            
             try {
                 await initPyodide();
                 
@@ -898,13 +1146,36 @@ customers = [500, 620, 750, 680, 850, 920]
                 pyodide.runPython(`
 import io
 import sys
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
+
 sys.stdout = io.StringIO()
 `);
                 
                 await pyodide.runPythonAsync(code);
                 
-                const output = pyodide.runPython("sys.stdout.getvalue()");
-                outputEl.textContent = output || "代码执行成功！";
+                let output = pyodide.runPython("sys.stdout.getvalue()");
+                
+                const imageRegex = /\[IMAGE\]([a-zA-Z0-9+/=]+)\[\/IMAGE\]/;
+                const match = output.match(imageRegex);
+                
+                if (match) {
+                    const base64Data = match[1];
+                    output = output.replace(imageRegex, '').trim();
+                    outputEl.textContent = output || "图表生成成功！";
+                    
+                    const img = document.createElement('img');
+                    img.src = `data:image/png;base64,${base64Data}`;
+                    img.style.maxWidth = '100%';
+                    img.style.marginTop = '10px';
+                    img.style.borderRadius = '8px';
+                    outputEl.appendChild(img);
+                } else {
+                    outputEl.textContent = output || "代码执行成功！";
+                }
                 
             } catch (error) {
                 outputEl.textContent = `错误: ${error.message}`;

@@ -1,0 +1,4 @@
+- [x] 所有10个练习运行后能显示图表图片
+- [x] 示例代码包含 matplotlib.use('Agg')
+- [x] 示例代码使用 plt.savefig() 代替 plt.show()
+- [x] 前端能正确显示 base64 编码的图片
