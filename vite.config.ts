@@ -7,6 +7,7 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      external: ['pyodide'],
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
@@ -17,5 +18,8 @@ export default defineConfig({
         }
       }
     }
+  },
+  optimizeDeps: {
+    exclude: ['pyodide']
   }
 })
