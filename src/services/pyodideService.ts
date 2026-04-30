@@ -1,6 +1,10 @@
-import { loadPyodide } from 'pyodide';
+// 动态加载 Pyodide
+declare global {
+  interface Window {
+    loadPyodide: any;
+  }
+}
 
-// 定义返回结果的类型
 export interface PythonExecutionResult {
   success: boolean;
   output?: string;
@@ -15,37 +19,44 @@ export interface PythonExecutionResult {
   };
 }
 
-// 全局Pyodide实例
 let pyodide: any = null;
 
-// 初始化Pyodide，预装所需库
+async function loadPyodideScript(): Promise<any> {
+  if (!window.loadPyodide) {
+    return new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Pyodide'));
+      document.head.appendChild(script);
+    });
+  }
+}
+
 export async function initPyodide() {
   if (pyodide) return pyodide;
   try {
-    pyodide = await loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/'
+    await loadPyodideScript();
+    pyodide = await window.loadPyodide({
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/'
     });
-    // 预装核心库 - 只加载Pyodide支持的包
-    await pyodide.loadPackage([
-      'pandas', 'numpy', 'matplotlib', 'scikit-learn'
-    ]);
-    // 配置matplotlib，使其在前端渲染
+    await pyodide.loadPackage(['pandas', 'numpy', 'matplotlib', 'scikit-learn']);
     pyodide.runPython(`
-      import matplotlib.pyplot as plt
-      import base64
-      from io import BytesIO
-      plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
-      plt.rcParams['axes.unicode_minus'] = False
-      plt.ioff()
-      
-      # 定义一个函数来将图表转换为base64编码的图像
-      def show_plot():
-          buffer = BytesIO()
-          plt.savefig(buffer, format='png')
-          buffer.seek(0)
-          img_str = base64.b64encode(buffer.read()).decode('utf-8')
-          plt.close()
-          return f'<img src="data:image/png;base64,{img_str}" />'
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
+plt.rcParams['axes.unicode_minus'] = False
+plt.ioff()
+
+def show_plot():
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    img_str = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close()
+    return f'<img src="data:image/png;base64,{img_str}" style="max-width:100%;margin-top:10px;" />'
     `);
     return pyodide;
   } catch (error) {
@@ -54,7 +65,6 @@ export async function initPyodide() {
   }
 }
 
-// 运行Python代码
 export async function runPythonCode(code: string): Promise<PythonExecutionResult> {
   const py = await initPyodide();
   
@@ -62,35 +72,27 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
   let stderr = '';
   
   try {
-    // 使用Pyodide的sys.stdout和sys.stderr重定向
     py.runPython(`
-      import sys
-      from io import StringIO
-      
-      original_stdout = sys.stdout
-      original_stderr = sys.stderr
-      
-      sys.stdout = captured_stdout = StringIO()
-      sys.stderr = captured_stderr = StringIO()
+import sys
+from io import StringIO
+original_stdout = sys.stdout
+original_stderr = sys.stderr
+sys.stdout = captured_stdout = StringIO()
+sys.stderr = captured_stderr = StringIO()
     `);
     
     let result;
     try {
-      // 执行用户代码
       result = await py.runPythonAsync(code);
     } finally {
-      // 获取捕获的输出
       stdout = py.runPython('captured_stdout.getvalue()') || '';
       stderr = py.runPython('captured_stderr.getvalue()') || '';
-      
-      // 恢复原始输出
       py.runPython(`
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
+sys.stdout = original_stdout
+sys.stderr = original_stderr
       `);
     }
     
-    // 构建输出
     let output = stdout;
     if (stderr) {
       output += '\n错误输出:\n' + stderr;
@@ -99,7 +101,6 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
       output += '\n返回值: ' + result;
     }
     
-    // 检查是否有matplotlib图表需要显示
     try {
       const has_plots = py.runPython('len(plt.get_fignums()) > 0');
       if (has_plots) {
@@ -107,7 +108,6 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
         output += '\n' + plot_html;
       }
     } catch (e) {
-      // 忽略图表显示错误
       console.log('图表显示错误:', e);
     }
     
@@ -119,7 +119,6 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
       stderr
     };
   } catch (error: any) {
-    // 获取详细的错误信息
     const errorInfo = {
       type: error.name || 'Error',
       message: error.message || '未知错误',
@@ -127,12 +126,10 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
       lineNumber: error.lineno
     };
     
-    // 尝试获取 Pyodide 特有的错误信息
     if (error.type) {
       errorInfo.type = error.type;
     }
     
-    // 确保在错误时也返回 stdout 和 stderr
     return { 
       success: false, 
       stdout,
@@ -142,7 +139,6 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
   }
 }
 
-// 运行Python代码并输出结果到指定元素
 export async function runPython(code: string, outputElementId: string) {
   const outputElement = document.getElementById(outputElementId);
   if (!outputElement) {
@@ -150,7 +146,6 @@ export async function runPython(code: string, outputElementId: string) {
     return;
   }
   
-  // 显示加载状态
   outputElement.innerHTML = '<div class="text-gray-500">正在执行代码...</div>';
   
   try {
@@ -159,19 +154,14 @@ export async function runPython(code: string, outputElementId: string) {
     console.log('执行结果:', result);
     
     if (result.success) {
-      // 构建输出内容，包含stdout、stderr和返回值
       let displayOutput = result.output || '';
       
-      // 检查输出是否包含HTML
       if (displayOutput && displayOutput.includes('<img')) {
-        // 直接设置为HTML内容
         outputElement.innerHTML = displayOutput;
       } else {
-        // 否则使用pre标签
         outputElement.innerHTML = `<pre class="text-sm">${displayOutput || '无输出'}</pre>`;
       }
     } else {
-      // 构建详细的错误信息
       let errorDisplay = '';
       
       if (result.stdout) {
