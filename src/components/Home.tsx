@@ -31,6 +31,48 @@ const Home: React.FC = () => {
       description: "利用数据分析技能解决商业问题，制定决策",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=business%20analytics%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/business-analysis"
+    },
+    {
+      id: 5,
+      title: "数据清洗实战",
+      description: "掌握数据清洗的核心技术，处理缺失值、异常值和重复数据",
+      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20cleaning%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
+      link: "/data-cleaning"
+    },
+    {
+      id: 6,
+      title: "分组聚合分析",
+      description: "学习数据分组和聚合操作，掌握SQL和Pandas中的聚合技巧",
+      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=group%20aggregation%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
+      link: "/group-aggregation"
+    },
+    {
+      id: 7,
+      title: "购物篮分析",
+      description: "学习关联规则挖掘，发现商品之间的关联关系",
+      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=market%20basket%20analysis%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
+      link: "/market-basket"
+    },
+    {
+      id: 8,
+      title: "A/B测试分析",
+      description: "掌握A/B测试的设计与分析方法，做出数据驱动的决策",
+      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=ab%20testing%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
+      link: "/ab-testing"
+    },
+    {
+      id: 9,
+      title: "时间序列分析",
+      description: "学习时间序列数据的分析方法，掌握预测和趋势分析技术",
+      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=time%20series%20analysis%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
+      link: "/time-series"
+    },
+    {
+      id: 10,
+      title: "异常值检测",
+      description: "学习异常检测算法，识别数据中的异常模式和离群点",
+      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=anomaly%20detection%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
+      link: "/anomaly-detection"
     }
   ]
 
@@ -83,7 +125,7 @@ const Home: React.FC = () => {
       <section id="courses" className="py-16 md:py-20 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-12 md:mb-16 text-center text-text">课程分类</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8">
             {courseCategories.map((category) => (
               <div key={category.id} className="bg-yellow rounded-2xl overflow-hidden shadow-cute hover:shadow-cute-hover transition-all duration-300 transform hover:-translate-y-2">
                 <LazyImage 
