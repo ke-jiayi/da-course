@@ -134,8 +134,8 @@ print('\\n图表已保存为 sample_plot.png')`);
                       <pre className="whitespace-pre-wrap">
                         类型: {result.error.type}
                         消息: {result.error.message}
-                        {result.error.lineNumber !== undefined && `\n行号: ${result.error.lineNumber}`}
-                        {result.error.stack && `\n\n堆栈跟踪:\n${result.error.stack}`}
+                        {(result.error as any).lineNumber !== undefined && `\n行号: ${(result.error as any).lineNumber}`}
+                        {(result.error as any).stack && `\n\n堆栈跟踪:\n${(result.error as any).stack}`}
                       </pre>
                     </div>
                   )}

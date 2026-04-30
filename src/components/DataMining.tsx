@@ -1,13 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPythonCode } from '../services/pyodideService';
+import { runPythonCode, isPyodideReady, initPyodide } from '../services/pyodideService';
 
 const DataMining: React.FC = () => {
   const [code, setCode] = useState('');
-  const [result, setResult] = useState<{ success: boolean; stdout: string; stderr: string; error?: any; } | null>(null);
+  const [result, setResult] = useState<{ success: boolean; output?: string; stdout: string; stderr: string; error?: any; } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pyodideStatus, setPyodideStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [activeProject, setActiveProject] = useState(0);
+
+  useEffect(() => {
+    const checkPyodide = async () => {
+      if (isPyodideReady()) {
+        setPyodideStatus('ready');
+        return;
+      }
+
+      try {
+        await initPyodide();
+        setPyodideStatus('ready');
+      } catch (error) {
+        console.error('Pyodide 初始化失败:', error);
+        setPyodideStatus('error');
+      }
+    };
+
+    checkPyodide();
+  }, []);
 
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
@@ -28,6 +50,22 @@ const DataMining: React.FC = () => {
       return;
     }
 
+    if (pyodideStatus !== 'ready') {
+      setResult({
+        success: false,
+        stdout: '',
+        stderr: '',
+        error: {
+          type: 'SystemError',
+          message: 'Python 环境正在初始化，请稍候...'
+        }
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setResult(null);
+
     try {
       const executionResult = await runPythonCode(code);
       setResult(executionResult);
@@ -41,311 +79,373 @@ const DataMining: React.FC = () => {
           message: '执行出错: ' + (err as Error).message
         }
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const defaultCode = `import pandas as pd
-import numpy as np
+  const defaultCode = `# 数据清洗与预处理练习
+print("欢迎学习数据清洗！")
+print("=" * 40)
 
-# 创建示例数据
-data = {
-    'name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank'],
-    'age': [25, 30, None, 40, 45, None],
-    'salary': [50000, 60000, 70000, None, 90000, 100000],
-    'department': ['HR', 'IT', 'IT', 'HR', 'Finance', 'Finance']
-}
+# 1. 简单数据处理
+data = [10, 25, 30, 45, 50, None, 70, 85]
 
-df = pd.DataFrame(data)
+# 计算统计信息
+valid_data = [x for x in data if x is not None]
+total = sum(valid_data)
+count = len(valid_data)
+average = total / count
 
-# 1. 查看数据结构
-print("=== 数据结构 ===")
-print(df.head())
-print("\n=== 数据信息 ===")
-print(df.info())
+print(f"原始数据: {data}")
+print(f"有效数据: {valid_data}")
+print(f"数据总和: {total}")
+print(f"数据个数: {count}")
+print(f"平均值: {average:.2f}")
 
-# 2. 处理缺失值
-print("\n=== 处理缺失值 ===")
-# 计算各列缺失值数量
-print("缺失值数量:")
-print(df.isnull().sum())
+# 2. 数据分类
+categories = ["电子产品", "服装", "食品", "图书"]
+prices = [2999, 599, 89, 45]
 
-# 填充年龄缺失值为平均值
-df['age'] = df['age'].fillna(df['age'].mean())
+print("\\n产品分类:")
+for cat, price in zip(categories, prices):
+    level = "高" if price > 1000 else "中" if price > 100 else "低"
+    print(f"  {cat}: ¥{price} ({level}价位)")
 
-# 填充薪资缺失值为中位数
-df['salary'] = df['salary'].fillna(df['salary'].median())
+# 3. 数据筛选
+high_value = [p for p in prices if p > 100]
+print(f"\\n高价位产品数: {len(high_value)}")
 
-print("\n填充后的数据:")
-print(df)
+print("\\n✓ 练习完成！尝试修改数据看看效果")`;
 
-# 3. 处理异常值
-print("\n=== 处理异常值 ===")
-# 检查薪资是否有异常值（假设薪资范围合理值为40000-120000）
-df['salary'] = np.where((df['salary'] < 40000) | (df['salary'] > 120000), 
-                         df['salary'].median(), df['salary'])
-
-print("处理异常值后的数据:")
-print(df)
-
-# 4. 数据转换
-print("\n=== 数据转换 ===")
-# 将部门转换为分类变量
-df['department'] = df['department'].astype('category')
-
-# 创建薪资等级
- df['salary_level'] = pd.cut(df['salary'], 
-                           bins=[0, 60000, 80000, 100000, float('inf')],
-                           labels=['Low', 'Medium', 'High', 'Very High'])
-
-print("转换后的数据:")
-print(df)
-
-# 5. 数据分析
-print("\n=== 数据分析 ===")
-# 按部门分组计算平均薪资
-print("各部门平均薪资:")
-print(df.groupby('department')['salary'].mean())
-
-print("\n练习完成！你已经成功完成了数据清洗与预处理的基本步骤。")`;
+  const projects = [
+    {
+      id: 1,
+      title: '数据清洗基础',
+      description: '学习处理缺失值、异常值和重复数据的方法'
+    },
+    {
+      id: 2,
+      title: '项目实战：用户分析',
+      description: '进行用户数据清洗，构建用户画像'
+    },
+    {
+      id: 3,
+      title: '数据预处理',
+      description: '学习数据转换、标准化和特征工程基础'
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-cute p-6 md:p-8">
-          <h1 className="text-2xl md:text-3xl font-bold mb-6 text-primary">Python编程 数据清洗与数据挖掘</h1>
-          
-          <div className="mb-10">
-            <div className="bg-accent rounded-xl p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4 text-primary">学习目标</h2>
-              <ul className="list-disc pl-6 space-y-2 text-text">
-                <li>理解数据清洗的重要性和基本方法</li>
-                <li>学习处理缺失值和重复值的策略</li>
-                <li>掌握数据探索性分析的基本概念</li>
-                <li>了解数据挖掘的常用技术和应用场景</li>
-              </ul>
-            </div>
+        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+          <div className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 数据清洗与数据挖掘</h1>
+            <p className="text-text">学习数据预处理技术，掌握数据清洗的基本方法</p>
           </div>
 
-          <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-4 text-primary">前置知识</h2>
-            <div className="bg-yellow rounded-xl p-6">
-              <p className="text-text">基础数学知识、简单的逻辑思维能力</p>
-            </div>
-          </div>
-
-          <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">课程内容</h2>
-            
-            <div className="mb-8">
-              <div className="flex items-center mb-4">
-                <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">1</div>
-                <h3 className="text-lg font-semibold text-text">数据清洗基础</h3>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="text-text mb-4">
-                  <p className="mb-3"><strong>什么是数据清洗？</strong></p>
-                  <p className="mb-3">数据清洗是发现并纠正数据中可识别错误的过程，包括处理缺失值、异常值和重复数据等。</p>
-                  <p className="mb-3"><strong>常见的数据问题：</strong></p>
-                  <ul className="list-disc pl-6 space-y-2 mb-3">
-                    <li>缺失值：数据中缺少某些信息</li>
-                    <li>重复值：完全相同的数据出现多次</li>
-                    <li>异常值：与大多数数据明显不同的值</li>
-                    <li>格式不一致：日期、数字等格式不统一</li>
-                  </ul>
-                  <p className="mb-3"><strong>数据清洗的基本原则：</strong></p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>了解数据来源和业务背景</li>
-                    <li>不要随意删除数据，理解缺失原因</li>
-                    <li>记录所有的数据处理步骤</li>
-                    <li>多次检查，确保清洗结果合理</li>
-                  </ul>
+          {pyodideStatus === 'loading' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
+                <div>
+                  <p className="font-semibold text-blue-800">正在初始化 Python 环境...</p>
+                  <p className="text-sm text-blue-600">首次加载需要下载必要的库，请耐心等待</p>
                 </div>
               </div>
             </div>
+          )}
 
-            <div className="mb-8">
-              <div className="flex items-center mb-4">
-                <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">2</div>
-                <h3 className="text-lg font-semibold text-text">处理缺失值和重复值</h3>
+          {pyodideStatus === 'error' && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-medium text-red-800">环境加载失败</h3>
+                  <p className="mt-1 text-sm text-red-600">请检查网络连接后刷新页面重试</p>
+                </div>
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="text-text mb-4">
-                  <p className="mb-3"><strong>处理缺失值的方法：</strong></p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">删除法</h4>
-                      <p className="text-sm text-text">
-                        当缺失数据较少且随机分布时，可以直接删除包含缺失值的行或列。
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">填充法</h4>
-                      <p className="text-sm text-text">
-                        使用平均值、中位数、众数或业务逻辑来填充缺失值。
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">插值法</h4>
-                      <p className="text-sm text-text">
-                        根据相邻数据点进行估算，适用于时间序列数据。
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-text mb-2">预测法</h4>
-                      <p className="text-sm text-text">
-                        使用机器学习模型预测缺失值，适用于复杂场景。
-                      </p>
+            </div>
+          )}
+
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 text-primary">📚 学习路径</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {projects.map((project) => (
+                <button
+                  key={project.id}
+                  onClick={() => setActiveProject(project.id - 1)}
+                  className={`p-4 rounded-xl text-left transition-all ${
+                    activeProject === project.id - 1
+                      ? 'bg-primary text-white shadow-lg transform scale-105'
+                      : 'bg-gray-50 hover:bg-gray-100 shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center mb-2">
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                      activeProject === project.id - 1
+                        ? 'bg-white text-primary'
+                        : 'bg-primary text-white'
+                    }`}>
+                      {project.id}
+                    </span>
+                    <h3 className="font-semibold">{project.title}</h3>
+                  </div>
+                  <p className={`text-sm ${
+                    activeProject === project.id - 1
+                      ? 'text-blue-100'
+                      : 'text-gray-600'
+                  }`}>
+                    {project.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-8 bg-accent rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4 text-primary">🎯 学习目标</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start">
+                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-text text-sm">理解数据清洗的重要性和基本原则</p>
+              </div>
+              <div className="flex items-start">
+                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-text text-sm">掌握处理缺失值和异常值的策略</p>
+              </div>
+              <div className="flex items-start">
+                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-text text-sm">学会识别和处理重复数据</p>
+              </div>
+              <div className="flex items-start">
+                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-text text-sm">了解数据预处理在数据分析中的角色</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 text-primary">💡 知识要点</h2>
+            <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
+              {activeProject === 0 && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">什么是数据清洗？</h3>
+                    <p className="text-text mb-3">数据清洗是发现并纠正数据中可识别错误的过程，是数据分析前至关重要的一步。</p>
+                    <div className="bg-green-50 rounded-lg p-4">
+                      <p className="text-sm font-medium text-green-800 mb-2">💡 常见的数据问题</p>
+                      <ul className="text-sm text-green-700 space-y-1">
+                        <li>• <strong>缺失值</strong>：数据中缺少某些信息</li>
+                        <li>• <strong>重复值</strong>：完全相同的数据出现多次</li>
+                        <li>• <strong>异常值</strong>：与大多数数据明显不同的值</li>
+                        <li>• <strong>格式不一致</strong>：日期、数字等格式不统一</li>
+                      </ul>
                     </div>
                   </div>
-                  <p className="mb-3"><strong>处理重复值的方法：</strong></p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>识别重复记录的原因</li>
-                    <li>确定保留哪一条记录（通常保留第一条或最新的一条）</li>
-                    <li>检查是否有部分重复的情况</li>
-                  </ul>
                 </div>
-              </div>
-            </div>
+              )}
 
-            <div className="mb-8">
-              <div className="flex items-center mb-4">
-                <div className="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center mr-3">3</div>
-                <h3 className="text-lg font-semibold text-text">实战：用户画像与高价值用户识别</h3>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="text-text mb-4">
-                  <p className="mb-3"><strong>案例背景：</strong></p>
-                  <p className="mb-3">某电商平台想要分析用户数据，识别高价值用户，以便制定更精准的营销策略。</p>
-                  <p className="mb-3"><strong>用户数据示例：</strong></p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300 mb-4">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="border border-gray-300 px-4 py-2">用户ID</th>
-                          <th className="border border-gray-300 px-4 py-2">总消费</th>
-                          <th className="border border-gray-300 px-4 py-2">订单数</th>
-                          <th className="border border-gray-300 px-4 py-2">最近购买</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="border border-gray-300 px-4 py-2">1</td>
-                          <td className="border border-gray-300 px-4 py-2">5000</td>
-                          <td className="border border-gray-300 px-4 py-2">15</td>
-                          <td className="border border-gray-300 px-4 py-2">2天前</td>
-                        </tr>
-                        <tr>
-                          <td className="border border-gray-300 px-4 py-2">2</td>
-                          <td className="border border-gray-300 px-4 py-2">300</td>
-                          <td className="border border-gray-300 px-4 py-2">2</td>
-                          <td className="border border-gray-300 px-4 py-2">30天前</td>
-                        </tr>
-                        <tr>
-                          <td className="border border-gray-300 px-4 py-2">3</td>
-                          <td className="border border-gray-300 px-4 py-2">8000</td>
-                          <td className="border border-gray-300 px-4 py-2">25</td>
-                          <td className="border border-gray-300 px-4 py-2">1天前</td>
-                        </tr>
-                        <tr>
-                          <td className="border border-gray-300 px-4 py-2">4</td>
-                          <td className="border border-gray-300 px-4 py-2">2000</td>
-                          <td className="border border-gray-300 px-4 py-2">8</td>
-                          <td className="border border-gray-300 px-4 py-2">7天前</td>
-                        </tr>
-                        <tr>
-                          <td className="border border-gray-300 px-4 py-2">5</td>
-                          <td className="border border-gray-300 px-4 py-2">100</td>
-                          <td className="border border-gray-300 px-4 py-2">1</td>
-                          <td className="border border-gray-300 px-4 py-2">90天前</td>
-                        </tr>
-                      </tbody>
-                    </table>
+              {activeProject === 1 && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">📊 用户画像分析案例</h3>
+                    <p className="text-text mb-3">通过数据清洗构建用户画像，识别高价值用户。</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-300 mb-4">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border border-gray-300 px-4 py-2">用户ID</th>
+                            <th className="border border-gray-300 px-4 py-2">消费金额</th>
+                            <th className="border border-gray-300 px-4 py-2">订单数</th>
+                            <th className="border border-gray-300 px-4 py-2">用户等级</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">U001</td>
+                            <td className="border border-gray-300 px-4 py-2">¥5,000</td>
+                            <td className="border border-gray-300 px-4 py-2">15</td>
+                            <td className="border border-gray-300 px-4 py-2">⭐⭐⭐</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">U002</td>
+                            <td className="border border-gray-300 px-4 py-2">¥300</td>
+                            <td className="border border-gray-300 px-4 py-2">2</td>
+                            <td className="border border-gray-300 px-4 py-2">⭐</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">U003</td>
+                            <td className="border border-gray-300 px-4 py-2">¥8,000</td>
+                            <td className="border border-gray-300 px-4 py-2">25</td>
+                            <td className="border border-gray-300 px-4 py-2">⭐⭐⭐⭐</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                  <p className="mb-3"><strong>分析要点：</strong></p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>RFM模型：最近购买(Recency)、购买频率(Frequency)、消费金额(Monetary)</li>
-                    <li>高价值用户通常消费金额高、购买频率高、最近购买过</li>
-                    <li>可以根据这三个维度给用户评分和分类</li>
-                    <li>针对不同用户群体制定不同的营销策略</li>
-                  </ul>
                 </div>
-              </div>
+              )}
+
+              {activeProject === 2 && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">🔧 数据预处理技术</h3>
+                    <p className="text-text mb-3">数据预处理为后续分析做好准备，包括数据转换、标准化等。</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-primary mb-2">数据清洗</h4>
+                        <p className="text-sm text-text mb-2">处理缺失值、异常值、重复值</p>
+                        <p className="text-xs text-gray-600">确保数据质量可靠</p>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-primary mb-2">数据转换</h4>
+                        <p className="text-sm text-text mb-2">类型转换、编码、归一化</p>
+                        <p className="text-xs text-gray-600">统一数据格式</p>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-primary mb-2">特征工程</h4>
+                        <p className="text-sm text-text mb-2">特征选择、特征构造</p>
+                        <p className="text-xs text-gray-600">提升模型效果</p>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-primary mb-2">数据集成</h4>
+                        <p className="text-sm text-text mb-2">合并多个数据源</p>
+                        <p className="text-xs text-gray-600">构建完整数据集</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="mb-10">
-            <h2 className="text-xl font-semibold mb-6 text-primary">交互式Python练习</h2>
-            <p className="text-text mb-4">在这里尝试简单的Python代码，熟悉基础数据处理！</p>
-            
-            <div className="mb-6">
-              <AceEditor
-                mode="python"
-                theme="monokai"
-                value={code}
-                onChange={handleCodeChange}
-                name="data-mining-editor"
-                editorProps={{
-                  $blockScrolling: true
-                }}
-                placeholder={defaultCode}
-                className="rounded-lg shadow-sm"
-                style={{ height: '300px', width: '100%' }}
-              />
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-6 text-primary">💻 动手练习</h2>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6">
+              <p className="text-text mb-4">在下方编辑器中尝试修改代码，体验数据清洗的过程！</p>
+              
+              <div className="mb-4">
+                <AceEditor
+                  mode="python"
+                  theme="monokai"
+                  value={code || defaultCode}
+                  onChange={handleCodeChange}
+                  name="data-mining-editor"
+                  editorProps={{
+                    $blockScrolling: true
+                  }}
+                  className="rounded-lg shadow-md"
+                  style={{ height: '350px', width: '100%' }}
+                />
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleRunCode}
+                  disabled={isLoading || pyodideStatus !== 'ready'}
+                  className={`px-8 py-3 rounded-full font-bold transition-all shadow-lg ${
+                    isLoading || pyodideStatus !== 'ready'
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-primary text-white hover:bg-secondary hover:shadow-button-hover transform hover:-translate-y-0.5'
+                  }`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      运行中...
+                    </span>
+                  ) : (
+                    '▶ 运行代码'
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setCode(defaultCode);
+                    setResult(null);
+                  }}
+                  className="px-6 py-3 rounded-full font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
+                >
+                  重置代码
+                </button>
+              </div>
             </div>
             
-            <div className="mb-6">
-              <button
-                onClick={handleRunCode}
-                className="bg-primary text-white py-3 px-8 rounded-full font-bold hover:bg-secondary transition-all duration-300 shadow-button hover:shadow-button-hover transform hover:-translate-y-0.5"
-              >
-                运行代码
-              </button>
-            </div>
-            
-            <div className="bg-gray-800 text-white p-4 rounded-lg">
+            <div className="mt-6 bg-gray-900 text-white rounded-xl p-6 shadow-lg">
+              <div className="flex items-center mb-4">
+                <div className="flex space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <span className="ml-4 text-sm text-gray-400">运行结果</span>
+              </div>
+              
               {!result ? (
-                <div className="text-gray-400">运行结果将显示在这里</div>
+                <div className="text-gray-400 flex items-center justify-center py-8">
+                  <span className="text-2xl mr-2">⌨️</span>
+                  <span>点击"运行代码"查看输出结果</span>
+                </div>
               ) : result.success ? (
                 <div className="space-y-3">
-                  {result.stdout && (
+                  {result.output && (
                     <div>
-                      <h3 className="text-green-400 font-semibold mb-1">标准输出:</h3>
-                      <pre className="text-gray-100 whitespace-pre-wrap">{result.stdout}</pre>
+                      <pre className="text-green-400 whitespace-pre-wrap font-mono text-sm">{result.output}</pre>
                     </div>
                   )}
-                  {result.stderr && (
-                    <div>
-                      <h3 className="text-yellow-400 font-semibold mb-1">标准错误:</h3>
-                      <pre className="text-gray-100 whitespace-pre-wrap">{result.stderr}</pre>
+                  {!result.output && !result.stdout && (
+                    <div className="text-green-400 flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      代码执行成功！
                     </div>
-                  )}
-                  {!result.stdout && !result.stderr && (
-                    <div className="text-green-400">代码执行成功！</div>
                   )}
                 </div>
               ) : (
                 <div className="space-y-3">
+                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <svg className="w-6 h-6 text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="flex-1">
+                        <h4 className="text-red-400 font-semibold mb-1">
+                          {result.error?.type || '执行错误'}
+                        </h4>
+                        <p className="text-red-300 text-sm">{result.error?.message}</p>
+                        {result.error?.lineNumber && (
+                          <p className="text-red-400 text-xs mt-2">📍 错误位置: 第 {result.error.lineNumber} 行</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   {result.stdout && (
-                    <div>
-                      <h3 className="text-green-400 font-semibold mb-1">标准输出:</h3>
-                      <pre className="text-gray-100 whitespace-pre-wrap">{result.stdout}</pre>
-                    </div>
-                  )}
-                  {result.stderr && (
-                    <div>
-                      <h3 className="text-yellow-400 font-semibold mb-1">标准错误:</h3>
-                      <pre className="text-gray-100 whitespace-pre-wrap">{result.stderr}</pre>
-                    </div>
-                  )}
-                  {result.error && (
-                    <div className="text-red-400">
-                      <h3 className="font-semibold mb-1">错误信息:</h3>
-                      <pre className="whitespace-pre-wrap">
-                        类型: {result.error.type}
-                        消息: {result.error.message}
-                        {result.error.lineNumber !== undefined && `\n行号: ${result.error.lineNumber}`}
-                        {result.error.stack && `\n\n堆栈跟踪:\n${result.error.stack}`}
-                      </pre>
+                    <div className="text-gray-400 text-sm">
+                      <p className="font-semibold mb-1">标准输出:</p>
+                      <pre className="text-gray-300 whitespace-pre-wrap">{result.stdout}</pre>
                     </div>
                   )}
                 </div>
@@ -353,50 +453,16 @@ print("\n练习完成！你已经成功完成了数据清洗与预处理的基�
             </div>
           </div>
 
-          <div>
-            <h2 className="text-xl font-semibold mb-4 text-primary">课后练习</h2>
-            <div className="bg-purple rounded-xl p-6">
-              <p className="text-text mb-4">请完成以下练习任务：</p>
-              <div className="space-y-6">
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <p className="font-medium mb-2">任务1：缺失值处理</p>
-                  <p className="text-text mb-2">如果你有一份包含10%缺失值的客户数据，你会选择什么方法处理？为什么？</p>
-                  <div className="bg-white p-3 rounded mt-2">
-                    <p className="text-sm text-gray-600">提示：考虑数据的分布情况、缺失值的性质以及业务需求来选择合适的处理方法。</p>
-                  </div>
-                </div>
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <p className="font-medium mb-2">任务2：异常值处理</p>
-                  <p className="text-text mb-2">假设你发现数据中有一些客户的消费金额异常高（远高于平均水平），你会如何处理这些异常值？</p>
-                  <div className="bg-white p-3 rounded mt-2">
-                    <p className="text-sm text-gray-600">提示：异常值处理方法包括删除、替换、保留等，需要根据异常值的原因和业务场景来决定。</p>
-                  </div>
-                </div>
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <p className="font-medium mb-2">任务3：高价值用户识别</p>
-                  <p className="text-text mb-2">如果你是一家电商公司的数据分析师，你会从哪些维度定义和识别高价值用户？</p>
-                  <div className="bg-white p-3 rounded mt-2">
-                    <p className="text-sm text-gray-600">提示：可以考虑RFM模型（最近购买、购买频率、消费金额）以及其他业务相关的维度。</p>
-                  </div>
-                </div>
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <p className="font-medium mb-2">案例分析：用户数据处理</p>
-                  <p className="text-text mb-2">使用提供的示例代码，完成以下数据处理任务：</p>
-                  <ul className="list-disc pl-6 space-y-1 text-text">
-                    <li>创建包含缺失值的示例数据</li>
-                    <li>处理缺失值（填充或删除）</li>
-                    <li>识别并处理异常值</li>
-                    <li>进行数据转换和分析</li>
-                  </ul>
-                  <div className="bg-white p-3 rounded mt-2">
-                    <p className="text-sm text-gray-600">回复答案：
-                      <br />1. 缺失值处理：使用平均值填充年龄，中位数填充薪资，保持数据完整性
-                      <br />2. 异常值处理：设置合理的薪资范围，超出范围的值用中位数替换
-                      <br />3. 数据转换：将部门转换为分类变量，创建薪资等级
-                      <br />4. 数据分析：按部门分组计算平均薪资，了解各部门薪资水平
-                    </p>
-                  </div>
-                </div>
+          <div className="bg-purple rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
+            <div className="space-y-3">
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <p className="font-medium mb-2">1. 如何选择缺失值的处理方法？</p>
+                <p className="text-sm text-gray-600">提示：考虑缺失原因（随机缺失还是系统性缺失）、缺失比例和数据分布</p>
+              </div>
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <p className="font-medium mb-2">2. 异常值一定要删除吗？</p>
+                <p className="text-sm text-gray-600">提示：有时异常值本身包含重要信息，需要根据业务场景判断</p>
               </div>
             </div>
           </div>
