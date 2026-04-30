@@ -84,7 +84,17 @@ const DataMining: React.FC = () => {
     }
   };
 
-  const defaultCode = `# 数据清洗与预处理练习
+  const placeholderCode = `# 在这里编写你的代码
+# 点击"显示参考答案"按钮可以查看示例代码
+
+# 提示：
+# 1. 可以尝试处理包含缺失值的数据
+# 2. 可以计算数据的统计信息
+# 3. 可以对数据进行分类和筛选
+
+`;
+
+  const answerCode = `# 数据清洗与预处理练习
 print("欢迎学习数据清洗！")
 print("=" * 40)
 
@@ -350,7 +360,7 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
                 <AceEditor
                   mode="python"
                   theme="monokai"
-                  value={code || defaultCode}
+                  value={code || placeholderCode}
                   onChange={handleCodeChange}
                   name="data-mining-editor"
                   editorProps={{
@@ -383,7 +393,17 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
                 
                 <button
                   onClick={() => {
-                    setCode(defaultCode);
+                    setCode(answerCode);
+                    setResult(null);
+                  }}
+                  className="px-6 py-3 rounded-full font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all"
+                >
+                  💡 显示参考答案
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setCode(placeholderCode);
                     setResult(null);
                   }}
                   className="px-6 py-3 rounded-full font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"

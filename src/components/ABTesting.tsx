@@ -5,7 +5,7 @@ import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
 import { runPythonCode, isPyodideReady, initPyodide } from '../services/pyodideService';
 
-const DataVisualization: React.FC = () => {
+const ABTesting: React.FC = () => {
   const [code, setCode] = useState('');
   const [result, setResult] = useState<{ success: boolean; output?: string; stdout: string; stderr: string; error?: any; } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -84,78 +84,88 @@ const DataVisualization: React.FC = () => {
     }
   };
 
-  const placeholderCode = `# 在这里编写你的代码
-# 点击"显示参考答案"按钮可以查看示例代码
+  const defaultCode = `# A/B测试分析练习
+import math
 
-# 提示：
-# 1. 可以尝试计算一组数字的总和和平均值
-# 2. 可以创建产品列表并打印
-# 3. 可以计算增长率
-
-`;
-
-  const answerCode = `# 数据可视化基础练习
-print("欢迎学习数据可视化！")
+print("欢迎学习A/B测试分析！")
 print("=" * 40)
 
-# 1. 基础计算
-numbers = [10, 25, 30, 45, 50]
-total = sum(numbers)
-average = total / len(numbers)
-print(f"数字列表: {numbers}")
-print(f"总和: {total}")
-print(f"平均值: {average}")
+# 1. 实验数据
+control_visitors = 1000
+control_conversions = 100
 
-# 2. 简单的数据处理
-products = ["手机", "电脑", "平板", "耳机"]
-prices = [2999, 5999, 2499, 599]
+treatment_visitors = 1000
+treatment_conversions = 120
 
-print("\\n产品列表:")
-for i, (product, price) in enumerate(zip(products, prices), 1):
-    print(f"  {i}. {product}: ¥{price}")
+# 2. 计算转化率
+control_rate = control_conversions / control_visitors
+treatment_rate = treatment_conversions / treatment_visitors
 
-# 3. 计算增长率
-sales_2023 = 120000
-sales_2024 = 156000
-growth_rate = (sales_2024 - sales_2023) / sales_2023 * 100
-print(f"\\n销售额增长率: {growth_rate:.1f}%")
+print(f"对照组:")
+print(f"  访问量: {control_visitors}")
+print(f"  转化数: {control_conversions}")
+print(f"  转化率: {control_rate*100:.2f}%")
 
-print("\\n✓ 练习完成！尝试修改代码看看效果")`;
+print(f"\n实验组:")
+print(f"  访问量: {treatment_visitors}")
+print(f"  转化数: {treatment_conversions}")
+print(f"  转化率: {treatment_rate*100:.2f}%")
+
+# 3. 计算提升率
+lift = (treatment_rate - control_rate) / control_rate * 100
+print(f"\n相对提升: {lift:.1f}%")
+
+# 4. 计算标准误差
+def standard_error(p, n):
+    return math.sqrt(p * (1 - p) / n)
+
+se_control = standard_error(control_rate, control_visitors)
+se_treatment = standard_error(treatment_rate, treatment_visitors)
+
+# 5. Z检验
+se_diff = math.sqrt(se_control**2 + se_treatment**2)
+z_score = (treatment_rate - control_rate) / se_diff
+
+print(f"\n统计检验:")
+print(f"  Z分数: {z_score:.3f}")
+print(f"  结论: {'显著' if abs(z_score) > 1.96 else '不显著'} (95%置信水平)")
+
+print("\n✓ A/B测试分析完成！")`;
 
   const projects = [
     {
       id: 1,
-      title: '基础概念',
-      description: '学习数据可视化的基本概念和常见图表类型'
+      title: 'A/B测试基础',
+      description: '学习A/B测试的基本概念和流程'
     },
     {
       id: 2,
-      title: '项目实战：销售数据分析',
-      description: '使用Python进行电商销售数据的分析与可视化'
+      title: '统计显著性',
+      description: '掌握统计检验和显著性判断'
     },
     {
       id: 3,
-      title: '图表类型详解',
-      description: '深入了解折线图、柱状图、饼图和散点图的应用场景'
+      title: '实验设计',
+      description: '学习如何设计有效的A/B测试'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-sky-100">
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
           <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 数据可视化实战</h1>
-            <p className="text-text">学习使用Python进行数据可视化，掌握常见图表的创建方法</p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 A/B测试分析</h1>
+            <p className="text-text">掌握A/B测试的设计与分析方法，做出数据驱动的决策</p>
           </div>
 
           {pyodideStatus === 'loading' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-6 mb-8">
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
                 <div>
-                  <p className="font-semibold text-blue-800">正在初始化 Python 环境...</p>
-                  <p className="text-sm text-blue-600">首次加载需要下载必要的库，请耐心等待</p>
+                  <p className="font-semibold text-cyan-800">正在初始化 Python 环境...</p>
+                  <p className="text-sm text-cyan-600">首次加载需要下载必要的库，请耐心等待</p>
                 </div>
               </div>
             </div>
@@ -202,7 +212,7 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
                   </div>
                   <p className={`text-sm ${
                     activeProject === project.id - 1
-                      ? 'text-blue-100'
+                      ? 'text-cyan-100'
                       : 'text-gray-600'
                   }`}>
                     {project.description}
@@ -216,36 +226,36 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
             <h2 className="text-xl font-semibold mb-4 text-primary">🎯 学习目标</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-cyan-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-text text-sm">理解数据可视化的重要性和最佳实践</p>
+                <p className="text-text text-sm">理解A/B测试的基本原理和流程</p>
               </div>
               <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-cyan-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-text text-sm">掌握常见图表类型的特点和适用场景</p>
+                <p className="text-text text-sm">掌握统计显著性的判断方法</p>
               </div>
               <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-cyan-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-text text-sm">学会使用Python处理和展示数据</p>
+                <p className="text-text text-sm">学会设计有效的实验方案</p>
               </div>
               <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-cyan-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-text text-sm">能够根据数据特点选择合适的可视化方式</p>
+                <p className="text-text text-sm">能够解读和应用测试结果</p>
               </div>
             </div>
           </div>
@@ -256,15 +266,15 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
               {activeProject === 0 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">什么是数据可视化？</h3>
-                    <p className="text-text mb-3">数据可视化是将数据转换为图形或图表的过程，目的是使数据更容易理解和解释。</p>
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-blue-800 mb-2">💡 为什么重要？</p>
-                      <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• 人眼对视觉信息的处理速度比文字快得多</li>
-                        <li>• 帮助发现数据中的模式和趋势</li>
-                        <li>• 让复杂数据变得直观易懂</li>
-                        <li>• 有效支持商业决策和沟通</li>
+                    <h3 className="font-semibold text-lg mb-2">什么是A/B测试？</h3>
+                    <p className="text-text mb-3">A/B测试是一种对比实验方法，通过比较两个版本的效果来做出数据驱动的决策。</p>
+                    <div className="bg-cyan-50 rounded-lg p-4">
+                      <p className="text-sm font-medium text-cyan-800 mb-2">💡 核心要素</p>
+                      <ul className="text-sm text-cyan-700 space-y-1">
+                        <li>• 对照组(A)：当前版本</li>
+                        <li>• 实验组(B)：新版本</li>
+                        <li>• 随机分流：确保公平性</li>
+                        <li>• 指标衡量：评估效果</li>
                       </ul>
                     </div>
                   </div>
@@ -274,39 +284,15 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
               {activeProject === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 电商销售数据分析案例</h3>
-                    <p className="text-text mb-3">让我们分析一个月的销售数据，了解业务表现。</p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">产品</th>
-                            <th className="border border-gray-300 px-4 py-2">销量</th>
-                            <th className="border border-gray-300 px-4 py-2">单价</th>
-                            <th className="border border-gray-300 px-4 py-2">销售额</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">手机</td>
-                            <td className="border border-gray-300 px-4 py-2">120</td>
-                            <td className="border border-gray-300 px-4 py-2">¥2999</td>
-                            <td className="border border-gray-300 px-4 py-2">¥359,880</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">电脑</td>
-                            <td className="border border-gray-300 px-4 py-2">85</td>
-                            <td className="border border-gray-300 px-4 py-2">¥5999</td>
-                            <td className="border border-gray-300 px-4 py-2">¥509,915</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">平板</td>
-                            <td className="border border-gray-300 px-4 py-2">156</td>
-                            <td className="border border-gray-300 px-4 py-2">¥2499</td>
-                            <td className="border border-gray-300 px-4 py-2">¥389,844</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <h3 className="font-semibold text-lg mb-2">📊 统计显著性</h3>
+                    <p className="text-text mb-3">统计显著性帮助我们判断观察到的差异是否由随机因素造成。</p>
+                    <div className="bg-cyan-50 rounded-lg p-4">
+                      <p className="text-sm font-medium text-cyan-800 mb-2">关键概念</p>
+                      <ul className="text-sm text-cyan-700 space-y-1">
+                        <li>• P值：结果由随机造成的概率</li>
+                        <li>• 置信水平：通常使用95%</li>
+                        <li>• Z检验：比较两组比例差异</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -315,28 +301,16 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
               {activeProject === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">📈 常见图表类型</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">折线图</h4>
-                        <p className="text-sm text-text mb-2">展示数据随时间的变化趋势</p>
-                        <p className="text-xs text-gray-600">适用：销售趋势、温度变化、股票走势</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">柱状图</h4>
-                        <p className="text-sm text-text mb-2">比较不同类别的数据大小</p>
-                        <p className="text-xs text-gray-600">适用：销量排行、地区对比、占比比较</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">饼图</h4>
-                        <p className="text-sm text-text mb-2">显示各部分占整体的比例</p>
-                        <p className="text-xs text-gray-600">适用：市场份额、预算分配、分类统计</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">散点图</h4>
-                        <p className="text-sm text-text mb-2">展示两个变量之间的关系</p>
-                        <p className="text-xs text-gray-600">适用：广告投入vs销量、身高vs体重</p>
-                      </div>
+                    <h3 className="font-semibold text-lg mb-2">🔬 实验设计</h3>
+                    <p className="text-text mb-3">良好的实验设计是获得可靠结论的基础。</p>
+                    <div className="bg-cyan-50 rounded-lg p-4">
+                      <p className="text-sm font-medium text-cyan-800 mb-2">设计要点</p>
+                      <ul className="text-sm text-cyan-700 space-y-1">
+                        <li>• 明确假设和指标</li>
+                        <li>• 计算所需样本量</li>
+                        <li>• 确保随机分配</li>
+                        <li>• 控制外部变量</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -346,16 +320,16 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
 
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-6 text-primary">💻 动手练习</h2>
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
-              <p className="text-text mb-4">在下方编辑器中尝试修改代码，体验数据处理的乐趣！</p>
+            <div className="bg-gradient-to-r from-cyan-50 to-sky-50 rounded-xl p-6">
+              <p className="text-text mb-4">在下方编辑器中尝试修改代码，体验A/B测试分析的过程！</p>
               
               <div className="mb-4">
                 <AceEditor
                   mode="python"
                   theme="monokai"
-                  value={code || placeholderCode}
+                  value={code || defaultCode}
                   onChange={handleCodeChange}
-                  name="data-visualization-editor"
+                  name="ab-testing-editor"
                   editorProps={{
                     $blockScrolling: true
                   }}
@@ -386,17 +360,7 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
                 
                 <button
                   onClick={() => {
-                    setCode(answerCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all"
-                >
-                  💡 显示参考答案
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setCode(placeholderCode);
+                    setCode(defaultCode);
                     setResult(null);
                   }}
                   className="px-6 py-3 rounded-full font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
@@ -428,14 +392,6 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
                       <pre className="text-green-400 whitespace-pre-wrap font-mono text-sm">{result.output}</pre>
                     </div>
                   )}
-                  {!result.output && !result.stdout && (
-                    <div className="text-green-400 flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      代码执行成功！
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -449,34 +405,11 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
                           {result.error?.type || '执行错误'}
                         </h4>
                         <p className="text-red-300 text-sm">{result.error?.message}</p>
-                        {result.error?.lineNumber && (
-                          <p className="text-red-400 text-xs mt-2">📍 错误位置: 第 {result.error.lineNumber} 行</p>
-                        )}
                       </div>
                     </div>
                   </div>
-                  {result.stdout && (
-                    <div className="text-gray-400 text-sm">
-                      <p className="font-semibold mb-1">标准输出:</p>
-                      <pre className="text-gray-300 whitespace-pre-wrap">{result.stdout}</pre>
-                    </div>
-                  )}
                 </div>
               )}
-            </div>
-          </div>
-
-          <div className="bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
-            <div className="space-y-3">
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">1. 如何选择合适的图表类型？</p>
-                <p className="text-sm text-gray-600">提示：考虑数据的特点（类别、时间、关系）和你想传达的信息</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">2. 数据可视化有哪些常见误区？</p>
-                <p className="text-sm text-gray-600">提示：避免截断坐标轴、选择合适的比例、使用误导性的颜色</p>
-              </div>
             </div>
           </div>
         </div>
@@ -485,4 +418,4 @@ print("\\n✓ 练习完成！尝试修改代码看看效果")`;
   );
 };
 
-export default DataVisualization;
+export default ABTesting;

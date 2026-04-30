@@ -28,6 +28,12 @@ import DataVisualization from './components/DataVisualization'
 import MachineLearning from './components/MachineLearning'
 import DataMining from './components/DataMining'
 import BusinessAnalysis from './components/BusinessAnalysis'
+import DataCleaning from './components/DataCleaning'
+import GroupAggregation from './components/GroupAggregation'
+import MarketBasket from './components/MarketBasket'
+import ABTesting from './components/ABTesting'
+import TimeSeries from './components/TimeSeries'
+import AnomalyDetection from './components/AnomalyDetection'
 import PyodideTest from './components/PyodideTest'
 import LearningGuide from './components/LearningGuide'
 import Projects from './components/Projects'
@@ -142,6 +148,12 @@ function App() {
             <Route path="/machine-learning" element={<PageTransition><MachineLearning /></PageTransition>} />
             <Route path="/data-mining" element={<PageTransition><DataMining /></PageTransition>} />
             <Route path="/business-analysis" element={<PageTransition><BusinessAnalysis /></PageTransition>} />
+            <Route path="/data-cleaning" element={<PageTransition><DataCleaning /></PageTransition>} />
+            <Route path="/group-aggregation" element={<PageTransition><GroupAggregation /></PageTransition>} />
+            <Route path="/market-basket" element={<PageTransition><MarketBasket /></PageTransition>} />
+            <Route path="/ab-testing" element={<PageTransition><ABTesting /></PageTransition>} />
+            <Route path="/time-series" element={<PageTransition><TimeSeries /></PageTransition>} />
+            <Route path="/anomaly-detection" element={<PageTransition><AnomalyDetection /></PageTransition>} />
             <Route path="/pyodide-test" element={<PageTransition><PyodideTest /></PageTransition>} />
             <Route path="/learning-guide" element={<PageTransition><LearningGuide /></PageTransition>} />
             <Route path="/projects" element={<PageTransition><Projects /></PageTransition>} />

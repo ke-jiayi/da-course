@@ -10,7 +10,17 @@ const projects = [
     id: 1,
     title: '项目一：房价预测',
     description: '使用线性回归预测房价',
-    code: `# 线性回归预测房价
+    placeholderCode: `# 在这里编写你的代码
+# 点击"显示参考答案"按钮可以查看示例代码
+
+# 提示：
+# 1. 创建房屋面积数据 X 和对应价格 y
+# 2. 计算均值
+# 3. 使用公式计算斜率 w 和截距 b
+# 4. 使用模型进行预测
+
+`,
+    answerCode: `# 线性回归预测房价
 import numpy as np
 
 # 模拟数据：房屋面积（平方米）
@@ -58,7 +68,17 @@ print(f"   (越接近1越好)")
     id: 2,
     title: '项目二：水果分类',
     description: '使用KNN算法分类水果',
-    code: `# KNN 水果分类器
+    placeholderCode: `# 在这里编写你的代码
+# 点击"显示参考答案"按钮可以查看示例代码
+
+# 提示：
+# 1. 创建水果特征数据（重量、直径）
+# 2. 定义欧几里得距离函数
+# 3. 实现KNN预测函数
+# 4. 对测试样本进行分类
+
+`,
+    answerCode: `# KNN 水果分类器
 import numpy as np
 
 # 水果特征数据 [重量(克), 直径(厘米)]
@@ -127,7 +147,17 @@ print("✅ 分类完成！")
     id: 3,
     title: '项目三：客户分群',
     description: '使用K-Means聚类分析客户',
-    code: `# K-Means 客户分群
+    placeholderCode: `# 在这里编写你的代码
+# 点击"显示参考答案"按钮可以查看示例代码
+
+# 提示：
+# 1. 创建客户数据（月消费、月登录次数）
+# 2. 定义欧几里得距离函数
+# 3. 实现K-Means聚类算法
+# 4. 分析聚类结果
+
+`,
+    answerCode: `# K-Means 客户分群
 import numpy as np
 
 # 客户数据 [月消费, 月登录次数]
@@ -211,7 +241,7 @@ print("✅ 客户分群完成！")
 
 const MachineLearning: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState(0);
-  const [code, setCode] = useState(projects[0].code);
+  const [code, setCode] = useState(projects[0].placeholderCode);
   const [result, setResult] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -238,7 +268,7 @@ const MachineLearning: React.FC = () => {
 
   const handleProjectSelect = (index: number) => {
     setSelectedProject(index);
-    setCode(projects[index].code);
+    setCode(projects[index].placeholderCode);
     setResult(null);
     setErrorDetails(null);
   };
@@ -371,6 +401,28 @@ const MachineLearning: React.FC = () => {
               ) : (
                 '▶ 运行代码'
               )}
+            </button>
+            
+            <button
+              onClick={() => {
+                setCode(projects[selectedProject].answerCode);
+                setResult(null);
+                setErrorDetails(null);
+              }}
+              className="py-4 px-8 rounded-xl font-bold text-lg bg-blue-500 text-white hover:bg-blue-600 transition-all duration-300 shadow-lg"
+            >
+              💡 显示参考答案
+            </button>
+            
+            <button
+              onClick={() => {
+                setCode(projects[selectedProject].placeholderCode);
+                setResult(null);
+                setErrorDetails(null);
+              }}
+              className="py-4 px-8 rounded-xl font-bold text-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all duration-300"
+            >
+              重置代码
             </button>
           </div>
 

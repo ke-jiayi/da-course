@@ -20,60 +20,84 @@ const Courses: React.FC = () => {
   // 模拟课程数据
   const mockCourses: Course[] = [
     {
-      id: '1',
-      title: '数据分析基础',
-      description: '学习数据分析的基本概念和方法',
+      id: 'data-visualization',
+      title: '数据可视化',
+      description: '学习使用图表和可视化工具展示数据，掌握数据可视化的核心技巧',
       difficulty: 'beginner',
-      duration: 10,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20analysis%20fundamentals%20course%20cover&image_size=square'
+      duration: 12,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20visualization%20course%20cover&image_size=square'
     },
     {
-      id: '2',
-      title: 'Python数据分析',
-      description: '使用Python进行数据处理和分析',
+      id: 'machine-learning',
+      title: '机器学习',
+      description: '了解机器学习的基本原理和算法，掌握常用机器学习方法',
+      difficulty: 'intermediate',
+      duration: 20,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Machine%20learning%20course%20cover&image_size=square'
+    },
+    {
+      id: 'data-mining',
+      title: '数据挖掘',
+      description: '学习数据挖掘的核心技术和方法，发现数据中的隐藏模式',
+      difficulty: 'intermediate',
+      duration: 18,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20mining%20course%20cover&image_size=square'
+    },
+    {
+      id: 'business-analysis',
+      title: '商业分析',
+      description: '运用数据分析解决商业问题，提升商业决策能力',
       difficulty: 'intermediate',
       duration: 15,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Python%20data%20analysis%20course%20cover&image_size=square'
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Business%20analysis%20course%20cover&image_size=square'
     },
     {
-      id: '3',
-      title: '机器学习入门',
-      description: '了解机器学习的基本原理和应用',
+      id: 'data-cleaning',
+      title: '数据清洗实战',
+      description: '掌握数据清洗的核心技术，处理缺失值、异常值和重复数据',
+      difficulty: 'beginner',
+      duration: 10,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20cleaning%20course%20cover&image_size=square'
+    },
+    {
+      id: 'group-aggregation',
+      title: '分组聚合分析',
+      description: '学习数据分组和聚合操作，掌握SQL和Pandas中的聚合技巧',
+      difficulty: 'beginner',
+      duration: 8,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Group%20aggregation%20analysis%20course%20cover&image_size=square'
+    },
+    {
+      id: 'market-basket',
+      title: '购物篮分析',
+      description: '学习关联规则挖掘，发现商品之间的关联关系',
       difficulty: 'intermediate',
-      duration: 20,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Machine%20learning%20introduction%20course%20cover&image_size=square'
+      duration: 12,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Market%20basket%20analysis%20course%20cover&image_size=square'
     },
     {
-      id: '4',
-      title: '深度学习高级',
-      description: '深入学习深度学习算法和模型',
+      id: 'ab-testing',
+      title: 'A/B测试分析',
+      description: '掌握A/B测试的设计与分析方法，做出数据驱动的决策',
+      difficulty: 'intermediate',
+      duration: 14,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=AB%20testing%20analysis%20course%20cover&image_size=square'
+    },
+    {
+      id: 'time-series',
+      title: '时间序列分析',
+      description: '学习时间序列数据的分析方法，掌握预测和趋势分析技术',
       difficulty: 'advanced',
-      duration: 25,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Advanced%20deep%20learning%20course%20cover&image_size=square'
+      duration: 16,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Time%20series%20analysis%20course%20cover&image_size=square'
     },
     {
-      id: '5',
-      title: '数据可视化高级技巧',
-      description: '学习高级数据可视化技术和工具，创建专业的数据可视化作品',
+      id: 'anomaly-detection',
+      title: '异常值检测',
+      description: '学习异常检测算法，识别数据中的异常模式和离群点',
       difficulty: 'advanced',
-      duration: 18,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Advanced%20data%20visualization%20techniques%20course%20cover&image_size=square'
-    },
-    {
-      id: '6',
-      title: '机器学习应用案例',
-      description: '通过实际案例学习机器学习在各个领域的应用',
-      difficulty: 'intermediate',
-      duration: 22,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Machine%20learning%20application%20cases%20course%20cover&image_size=square'
-    },
-    {
-      id: '7',
-      title: '商业数据分析实战',
-      description: '学习如何使用数据分析解决实际商业问题',
-      difficulty: 'intermediate',
-      duration: 20,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Business%20data%20analysis%20case%20study%20course%20cover&image_size=square'
+      duration: 14,
+      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Anomaly%20detection%20course%20cover&image_size=square'
     }
   ];
 
