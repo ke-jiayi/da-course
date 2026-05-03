@@ -7,7 +7,9 @@ interface Course {
   description: string;
   difficulty: string;
   duration: number;
-  image: string;
+  image?: string;
+  gradient: string;
+  icon: string;
 }
 
 const Courses: React.FC = () => {
@@ -25,7 +27,8 @@ const Courses: React.FC = () => {
       description: '学习使用图表和可视化工具展示数据，掌握数据可视化的核心技巧',
       difficulty: 'beginner',
       duration: 12,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20visualization%20course%20cover&image_size=square'
+      gradient: 'from-blue-400 to-purple-500',
+      icon: '📊'
     },
     {
       id: 'machine-learning',
@@ -33,7 +36,8 @@ const Courses: React.FC = () => {
       description: '了解机器学习的基本原理和算法，掌握常用机器学习方法',
       difficulty: 'intermediate',
       duration: 20,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Machine%20learning%20course%20cover&image_size=square'
+      gradient: 'from-purple-400 to-pink-500',
+      icon: '🤖'
     },
     {
       id: 'data-mining',
@@ -41,7 +45,8 @@ const Courses: React.FC = () => {
       description: '学习数据挖掘的核心技术和方法，发现数据中的隐藏模式',
       difficulty: 'intermediate',
       duration: 18,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20mining%20course%20cover&image_size=square'
+      gradient: 'from-amber-400 to-orange-500',
+      icon: '⛏️'
     },
     {
       id: 'business-analysis',
@@ -49,7 +54,8 @@ const Courses: React.FC = () => {
       description: '运用数据分析解决商业问题，提升商业决策能力',
       difficulty: 'intermediate',
       duration: 15,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Business%20analysis%20course%20cover&image_size=square'
+      gradient: 'from-emerald-400 to-teal-500',
+      icon: '💼'
     },
     {
       id: 'data-cleaning',
@@ -57,7 +63,8 @@ const Courses: React.FC = () => {
       description: '掌握数据清洗的核心技术，处理缺失值、异常值和重复数据',
       difficulty: 'beginner',
       duration: 10,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Data%20cleaning%20course%20cover&image_size=square'
+      gradient: 'from-cyan-400 to-blue-500',
+      icon: '🧹'
     },
     {
       id: 'group-aggregation',
@@ -65,7 +72,8 @@ const Courses: React.FC = () => {
       description: '学习数据分组和聚合操作，掌握SQL和Pandas中的聚合技巧',
       difficulty: 'beginner',
       duration: 8,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Group%20aggregation%20analysis%20course%20cover&image_size=square'
+      gradient: 'from-green-400 to-emerald-500',
+      icon: '📈'
     },
     {
       id: 'market-basket',
@@ -73,7 +81,8 @@ const Courses: React.FC = () => {
       description: '学习关联规则挖掘，发现商品之间的关联关系',
       difficulty: 'intermediate',
       duration: 12,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Market%20basket%20analysis%20course%20cover&image_size=square'
+      gradient: 'from-rose-400 to-pink-500',
+      icon: '🛒'
     },
     {
       id: 'ab-testing',
@@ -81,7 +90,8 @@ const Courses: React.FC = () => {
       description: '掌握A/B测试的设计与分析方法，做出数据驱动的决策',
       difficulty: 'intermediate',
       duration: 14,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=AB%20testing%20analysis%20course%20cover&image_size=square'
+      gradient: 'from-violet-400 to-purple-500',
+      icon: '🧪'
     },
     {
       id: 'time-series',
@@ -89,7 +99,8 @@ const Courses: React.FC = () => {
       description: '学习时间序列数据的分析方法，掌握预测和趋势分析技术',
       difficulty: 'advanced',
       duration: 16,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Time%20series%20analysis%20course%20cover&image_size=square'
+      gradient: 'from-indigo-400 to-blue-500',
+      icon: '📉'
     },
     {
       id: 'anomaly-detection',
@@ -97,7 +108,8 @@ const Courses: React.FC = () => {
       description: '学习异常检测算法，识别数据中的异常模式和离群点',
       difficulty: 'advanced',
       duration: 14,
-      image: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Anomaly%20detection%20course%20cover&image_size=square'
+      gradient: 'from-red-400 to-orange-500',
+      icon: '🔍'
     }
   ];
 
@@ -179,11 +191,11 @@ const Courses: React.FC = () => {
         {filteredAndSortedCourses.map(course => (
           <Link to={`/courses/${course.id}`} key={course.id} className="block">
             <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <img 
-                src={course.image} 
-                alt={course.title} 
-                className="w-full h-40 sm:h-48 object-cover"
-              />
+              <div className={`relative w-full h-40 sm:h-48 bg-gradient-to-br ${course.gradient} flex items-center justify-center`}>
+                <div className="text-center">
+                  <div className="text-6xl sm:text-7xl drop-shadow-lg">{course.icon}</div>
+                </div>
+              </div>
               <div className="p-4">
                 <h3 className="text-base sm:text-lg font-semibold mb-2">{course.title}</h3>
                 <p className="text-gray-600 mb-4 line-clamp-2">{course.description}</p>
