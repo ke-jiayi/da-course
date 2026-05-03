@@ -22,7 +22,6 @@ import Achievements from './components/Achievements'
 import LearningRecord from './components/LearningRecord'
 import Settings from './components/Settings'
 import Notifications from './components/Notifications'
-import Games from './components/Games'
 import Leaderboard from './components/Leaderboard'
 import DataVisualization from './components/DataVisualization'
 import MachineLearning from './components/MachineLearning'
@@ -40,7 +39,6 @@ import Projects from './components/Projects'
 import ProjectDetail from './components/ProjectDetail'
 import CognitiveModule from './components/CognitiveModule'
 import DataAnalysisTest from './components/DataAnalysisTest'
-import GameDetail from './components/GameDetail'
 
 type AuthView = 'login' | 'register' | 'forgotPassword'
 
@@ -141,8 +139,6 @@ function App() {
             <Route path="/learning-record" element={<PageTransition><LearningRecord /></PageTransition>} />
             <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
             <Route path="/notifications" element={<PageTransition><Notifications /></PageTransition>} />
-            <Route path="/games" element={<PageTransition><Games /></PageTransition>} />
-            <Route path="/game/:id" element={<PageTransition><GameDetail /></PageTransition>} />
             <Route path="/leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
             <Route path="/data-visualization" element={<PageTransition><DataVisualization /></PageTransition>} />
             <Route path="/machine-learning" element={<PageTransition><MachineLearning /></PageTransition>} />
