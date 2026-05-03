@@ -102,13 +102,13 @@ avg_sales = sum(sales) / len(sales)
 max_sales = max(sales)
 min_sales = min(sales)
 
-print(f"\n基本统计:")
+print(f"\\n基本统计:")
 print(f"  平均销售额: {avg_sales:.1f}万元")
 print(f"  最高销售额: {max_sales}万元 ({months[sales.index(max_sales)]})")
 print(f"  最低销售额: {min_sales}万元 ({months[sales.index(min_sales)]})")
 
 # 3. 计算环比增长率
-print("\n环比增长率:")
+print("\\n环比增长率:")
 growth_rates = []
 for i in range(1, len(sales)):
     rate = (sales[i] - sales[i-1]) / sales[i-1] * 100
@@ -116,7 +116,7 @@ for i in range(1, len(sales)):
     print(f"  {months[i]}: {rate:+.1f}%")
 
 # 4. 计算移动平均（3个月）
-print("\n3个月移动平均:")
+print("\\n3个月移动平均:")
 ma_3 = []
 for i in range(2, len(sales)):
     ma = (sales[i-2] + sales[i-1] + sales[i]) / 3
@@ -126,25 +126,88 @@ for i in range(2, len(sales)):
 # 5. 简单趋势预测（线性增长）
 avg_growth = sum(growth_rates) / len(growth_rates)
 next_month = sales[-1] * (1 + avg_growth/100)
-print(f"\n预测下月销售额: {next_month:.1f}万元")
+print(f"\\n预测下月销售额: {next_month:.1f}万元")
 
-print("\n✓ 时间序列分析完成！")`;
+print("\\n✓ 时间序列分析完成！")`;
+
+  const answerCode = `# 移动平均计算示例
+print("移动平均法 - 平滑时间序列")
+print("=" * 40)
+
+# 模拟某公司近12个月的销售数据（单位：万元）
+sales_data = [42, 48, 55, 51, 58, 65, 70, 68, 75, 82, 88, 95]
+months = ["1月", "2月", "3月", "4月", "5月", "6月",
+          "7月", "8月", "9月", "10月", "11月", "12月"]
+
+print("原始销售数据:")
+for m, s in zip(months, sales_data):
+    print(f"  {m}: {s}万元")
+
+# 1. 计算简单移动平均（SMA）- 3个月窗口
+print("\\n【3个月简单移动平均】")
+sma_3 = []
+for i in range(len(sales_data) - 2):
+    ma = sum(sales_data[i:i+3]) / 3
+    sma_3.append(ma)
+    print(f"  {months[i+2]}: {ma:.2f}万元")
+
+# 2. 计算加权移动平均（WMA）- 3个月窗口，权重[1,2,3]
+print("\\n【3个月加权移动平均】")
+weights = [1, 2, 3]
+wma_3 = []
+for i in range(len(sales_data) - 2):
+    weighted_sum = sum(sales_data[i:i+3][j] * weights[j] for j in range(3))
+    ma = weighted_sum / sum(weights)
+    wma_3.append(ma)
+    print(f"  {months[i+2]}: {ma:.2f}万元")
+
+# 3. 简单趋势分析 - 计算增长率
+print("\\n【月环比增长率分析】")
+growth_rates = []
+for i in range(1, len(sales_data)):
+    rate = (sales_data[i] - sales_data[i-1]) / sales_data[i-1] * 100
+    growth_rates.append(rate)
+    trend = "↑" if rate > 0 else "↓"
+    print(f"  {months[i]}: {rate:+.2f}% {trend}")
+
+# 4. 简单预测 - 基于平均增长率
+avg_growth = sum(growth_rates) / len(growth_rates)
+next_month_prediction = sales_data[-1] * (1 + avg_growth/100)
+print(f"\\n【预测下月销售额】")
+print(f"  基于历史增长率预测: {next_month_prediction:.2f}万元")
+print(f"  平均月增长率: {avg_growth:.2f}%")
+
+# 5. 季节性分析示例
+print("\\n【季节性因素分析】")
+# 假设Q4是销售旺季
+quarters = {
+    "Q1": [42, 48, 55],
+    "Q2": [51, 58, 65],
+    "Q3": [70, 68, 75],
+    "Q4": [82, 88, 95]
+}
+for q, values in quarters.items():
+    avg = sum(values) / len(values)
+    print(f"  {q}平均: {avg:.2f}万元")
+
+print("\\n✓ 完整的时间序列分析完成！")
+print("提示：尝试修改数据，观察分析结果的变化！")`;
 
   const projects = [
     {
       id: 1,
-      title: '时间序列基础',
-      description: '学习时间序列数据的特点和组成'
+      title: '基础概念',
+      description: '趋势、季节性、周期性和随机性'
     },
     {
       id: 2,
-      title: '趋势分析',
-      description: '识别和分析时间序列中的趋势'
+      title: '实战案例：销售预测',
+      description: '使用移动平均法进行销售预测'
     },
     {
       id: 3,
-      title: '预测方法',
-      description: '掌握常用的时间序列预测技术'
+      title: '高级技巧',
+      description: '指数平滑与趋势分析方法'
     }
   ];
 
@@ -264,16 +327,49 @@ print("\n✓ 时间序列分析完成！")`;
               {activeProject === 0 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">时间序列的组成</h3>
-                    <p className="text-text mb-3">时间序列数据通常由趋势、季节性、周期性和随机性四个部分组成。</p>
-                    <div className="bg-indigo-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-indigo-800 mb-2">💡 四大要素</p>
+                    <h3 className="font-semibold text-lg mb-2">时间序列的四大组成要素</h3>
+                    <p className="text-text mb-3">时间序列数据通常由趋势、季节性、周期性和随机性四个部分组成，理解这些要素是进行时间序列分析的基础。</p>
+                    <div className="bg-indigo-50 rounded-lg p-4 mb-4">
+                      <p className="text-sm font-medium text-indigo-800 mb-2">💡 核心概念</p>
                       <ul className="text-sm text-indigo-700 space-y-1">
-                        <li>• 趋势(T)：长期上升或下降的方向</li>
-                        <li>• 季节性(S)：周期性的重复模式</li>
-                        <li>• 周期性(C)：非固定周期的波动</li>
-                        <li>• 随机性(R)：不可预测的随机波动</li>
+                        <li>• 趋势(Trend, T)：长期上升或下降的方向，反映整体发展态势</li>
+                        <li>• 季节性(Seasonal, S)：周期性的重复模式，如春夏秋冬、节假日</li>
+                        <li>• 周期性(Cyclical, C)：非固定周期的波动，通常与经济周期相关</li>
+                        <li>• 随机性(Residual, R)：不可预测的随机波动，又称残差或噪声</li>
                       </ul>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-300">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border border-gray-300 px-4 py-2">要素</th>
+                            <th className="border border-gray-300 px-4 py-2">周期</th>
+                            <th className="border border-gray-300 px-4 py-2">示例</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2 font-medium">趋势</td>
+                            <td className="border border-gray-300 px-4 py-2">长期（数年以上）</td>
+                            <td className="border border-gray-300 px-4 py-2">公司营收持续增长</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2 font-medium">季节性</td>
+                            <td className="border border-gray-300 px-4 py-2">固定周期（年/月/周）</td>
+                            <td className="border border-gray-300 px-4 py-2">空调夏季销量上升</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2 font-medium">周期性</td>
+                            <td className="border border-gray-300 px-4 py-2">不固定（数年）</td>
+                            <td className="border border-gray-300 px-4 py-2">经济危机周期</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2 font-medium">随机性</td>
+                            <td className="border border-gray-300 px-4 py-2">无规律</td>
+                            <td className="border border-gray-300 px-4 py-2">突发事件影响</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -282,15 +378,66 @@ print("\n✓ 时间序列分析完成！")`;
               {activeProject === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">📈 趋势分析</h3>
-                    <p className="text-text mb-3">趋势分析帮助我们理解数据的长期发展方向。</p>
+                    <h3 className="font-semibold text-lg mb-2">📊 销售预测实战案例</h3>
+                    <p className="text-text mb-3">某电商公司2023年月度销售额数据，让我们用移动平均法进行预测分析。</p>
+                    <div className="overflow-x-auto mb-4">
+                      <table className="w-full border-collapse border border-gray-300">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border border-gray-300 px-4 py-2">月份</th>
+                            <th className="border border-gray-300 px-4 py-2">销售额(万元)</th>
+                            <th className="border border-gray-300 px-4 py-2">环比增长</th>
+                            <th className="border border-gray-300 px-4 py-2">3月移动平均</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">1月</td>
+                            <td className="border border-gray-300 px-4 py-2">120</td>
+                            <td className="border border-gray-300 px-4 py-2">-</td>
+                            <td className="border border-gray-300 px-4 py-2">-</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">2月</td>
+                            <td className="border border-gray-300 px-4 py-2">135</td>
+                            <td className="border border-gray-300 px-4 py-2">+12.5%</td>
+                            <td className="border border-gray-300 px-4 py-2">-</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">3月</td>
+                            <td className="border border-gray-300 px-4 py-2">150</td>
+                            <td className="border border-gray-300 px-4 py-2">+11.1%</td>
+                            <td className="border border-gray-300 px-4 py-2">135.0</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">4月</td>
+                            <td className="border border-gray-300 px-4 py-2">145</td>
+                            <td className="border border-gray-300 px-4 py-2">-3.3%</td>
+                            <td className="border border-gray-300 px-4 py-2">143.3</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">...</td>
+                            <td className="border border-gray-300 px-4 py-2">...</td>
+                            <td className="border border-gray-300 px-4 py-2">...</td>
+                            <td className="border border-gray-300 px-4 py-2">...</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">12月</td>
+                            <td className="border border-gray-300 px-4 py-2">230</td>
+                            <td className="border border-gray-300 px-4 py-2">+9.5%</td>
+                            <td className="border border-gray-300 px-4 py-2">208.3</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                     <div className="bg-indigo-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-indigo-800 mb-2">分析方法</p>
-                      <ul className="text-sm text-indigo-700 space-y-1">
-                        <li>• 移动平均法：平滑短期波动</li>
-                        <li>• 线性回归：拟合趋势线</li>
-                        <li>• 指数平滑：加权平均方法</li>
-                      </ul>
+                      <p className="text-sm font-medium text-indigo-800 mb-2">💡 移动平均法公式</p>
+                      <p className="text-sm text-indigo-700 mb-2">
+                        <strong>简单移动平均(SMA)：</strong>MAₙ = (X₁ + X₂ + ... + Xₙ) / n
+                      </p>
+                      <p className="text-sm text-indigo-700">
+                        <strong>加权移动平均(WMA)：</strong>WMA = Σ(Xᵢ × Wᵢ) / ΣWᵢ
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -299,14 +446,37 @@ print("\n✓ 时间序列分析完成！")`;
               {activeProject === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">🔮 预测方法</h3>
-                    <p className="text-text mb-3">时间序列预测是根据历史数据预测未来值的技术。</p>
+                    <h3 className="font-semibold text-lg mb-2">🔮 高级预测方法</h3>
+                    <p className="text-text mb-3">掌握更精确的时间序列预测技术，提升预测准确性。</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-primary mb-2">指数平滑法</h4>
+                        <p className="text-sm text-text mb-2">给予近期数据更高权重</p>
+                        <div className="bg-white p-3 rounded border">
+                          <code className="text-xs text-gray-700">
+                            Sₜ = α·Xₜ₋₁ + (1-α)·Sₜ₋₁
+                          </code>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-2">α: 平滑系数 (0-1)</p>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-primary mb-2">趋势分析</h4>
+                        <p className="text-sm text-text mb-2">线性回归拟合趋势线</p>
+                        <div className="bg-white p-3 rounded border">
+                          <code className="text-xs text-gray-700">
+                            ŷ = β₀ + β₁·t
+                          </code>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-2">β₀: 截距, β₁: 斜率</p>
+                      </div>
+                    </div>
                     <div className="bg-indigo-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-indigo-800 mb-2">常用模型</p>
+                      <p className="text-sm font-medium text-indigo-800 mb-2">💡 方法选择建议</p>
                       <ul className="text-sm text-indigo-700 space-y-1">
-                        <li>• ARIMA：自回归积分滑动平均</li>
-                        <li>• 指数平滑：简单有效的预测方法</li>
-                        <li>• Prophet：Facebook开源的预测工具</li>
+                        <li>• 数据波动小 → 简单移动平均</li>
+                        <li>• 数据趋势明显 → 指数平滑或趋势分析</li>
+                        <li>• 数据有季节性 → 季节性分解或SARIMA</li>
+                        <li>• 复杂模式 → ARIMA、Prophet、深度学习模型</li>
                       </ul>
                     </div>
                   </div>
@@ -353,6 +523,16 @@ print("\n✓ 时间序列分析完成！")`;
                   ) : (
                     '▶ 运行代码'
                   )}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setCode(answerCode);
+                    setResult(null);
+                  }}
+                  className="px-6 py-3 rounded-full font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all"
+                >
+                  💡 显示参考答案
                 </button>
                 
                 <button
@@ -407,6 +587,24 @@ print("\n✓ 时间序列分析完成！")`;
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="bg-purple rounded-xl p-6">
+            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
+            <div className="space-y-3">
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <p className="font-medium mb-2">1. 为什么移动平均能够平滑时间序列中的波动？</p>
+                <p className="text-sm text-gray-600">提示：考虑多个数据点的平均如何减少随机因素的影响</p>
+              </div>
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <p className="font-medium mb-2">2. 如何选择合适的移动平均窗口大小？</p>
+                <p className="text-sm text-gray-600">提示：考虑数据的周期性和对平滑程度的要求</p>
+              </div>
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <p className="font-medium mb-2">3. 简单预测方法有哪些局限性？</p>
+                <p className="text-sm text-gray-600">提示：考虑数据模式变化、季节性因素和长期预测</p>
+              </div>
             </div>
           </div>
         </div>

@@ -18,9 +18,9 @@
   - [x] SubTask 4.1: 修改现有4个课程，隐藏答案并添加显示按钮
   - [x] SubTask 4.2: 确保6个新课程都有参考答案功能
 
-- [ ] Task 5: 测试和部署
-  - [ ] SubTask 5.1: 本地测试所有课程页面
-  - [ ] SubTask 5.2: 部署到 Cloudflare Pages
+- [x] Task 5: 测试和部署
+  - [x] SubTask 5.1: 本地测试所有课程页面
+  - [x] SubTask 5.2: 部署到 Cloudflare Pages
 
 # Task Dependencies
 - Task 1 必须在 Task 2 之前完成
