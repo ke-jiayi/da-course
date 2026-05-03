@@ -1,5 +1,4 @@
 import React from 'react';
-import LazyImage from './LazyImage';
 
 const Home: React.FC = () => {
   // 课程分类数据
@@ -10,7 +9,8 @@ const Home: React.FC = () => {
       description: "学习如何使用各种工具创建直观、有效的数据可视化",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20visualization%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/data-visualization",
-      icon: "📊"
+      icon: "📊",
+      gradient: "from-blue-400 to-purple-500"
     },
     {
       id: 2,
@@ -18,7 +18,8 @@ const Home: React.FC = () => {
       description: "掌握机器学习算法和模型，解决实际业务问题",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=machine%20learning%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/machine-learning",
-      icon: "🤖"
+      icon: "🤖",
+      gradient: "from-purple-400 to-pink-500"
     },
     {
       id: 3,
@@ -26,7 +27,8 @@ const Home: React.FC = () => {
       description: "学习从大量数据中提取有价值信息的技术和方法",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20mining%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/data-mining",
-      icon: "⛏️"
+      icon: "⛏️",
+      gradient: "from-amber-400 to-orange-500"
     },
     {
       id: 4,
@@ -34,55 +36,56 @@ const Home: React.FC = () => {
       description: "利用数据分析技能解决商业问题，制定决策",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=business%20analytics%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/business-analysis",
-      icon: "💼"
+      icon: "💼",
+      gradient: "from-emerald-400 to-teal-500"
     },
     {
       id: 5,
       title: "数据清洗实战",
       description: "掌握数据清洗的核心技术，处理缺失值、异常值和重复数据",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20cleaning%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/data-cleaning",
-      icon: "🧹"
+      icon: "🧹",
+      gradient: "from-cyan-400 to-blue-500"
     },
     {
       id: 6,
       title: "分组聚合分析",
       description: "学习数据分组和聚合操作，掌握SQL和Pandas中的聚合技巧",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=group%20aggregation%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/group-aggregation",
-      icon: "📈"
+      icon: "📈",
+      gradient: "from-green-400 to-emerald-500"
     },
     {
       id: 7,
       title: "购物篮分析",
       description: "学习关联规则挖掘，发现商品之间的关联关系",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=market%20basket%20analysis%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/market-basket",
-      icon: "🛒"
+      icon: "🛒",
+      gradient: "from-rose-400 to-pink-500"
     },
     {
       id: 8,
       title: "A/B测试分析",
       description: "掌握A/B测试的设计与分析方法，做出数据驱动的决策",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=ab%20testing%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/ab-testing",
-      icon: "🧪"
+      icon: "🧪",
+      gradient: "from-violet-400 to-purple-500"
     },
     {
       id: 9,
       title: "时间序列分析",
       description: "学习时间序列数据的分析方法，掌握预测和趋势分析技术",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=time%20series%20analysis%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/time-series",
-      icon: "📉"
+      icon: "📉",
+      gradient: "from-indigo-400 to-blue-500"
     },
     {
       id: 10,
       title: "异常值检测",
       description: "学习异常检测算法，识别数据中的异常模式和离群点",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=anomaly%20detection%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/anomaly-detection",
-      icon: "🔍"
+      icon: "🔍",
+      gradient: "from-red-400 to-orange-500"
     }
   ]
 
@@ -138,14 +141,13 @@ const Home: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8">
             {courseCategories.map((category) => (
               <div key={category.id} className="bg-yellow rounded-2xl overflow-hidden shadow-cute hover:shadow-cute-hover transition-all duration-300 transform hover:-translate-y-2">
-                <LazyImage 
-                  src={category.image} 
-                  alt={category.title} 
-                  className="w-full h-48 sm:h-56 rounded-t-2xl"
-                />
+                <div className={`relative w-full h-48 sm:h-56 bg-gradient-to-br ${category.gradient} flex items-center justify-center`}>
+                  <div className="text-center">
+                    <div className="text-6xl sm:text-7xl mb-2 drop-shadow-lg">{category.icon}</div>
+                  </div>
+                </div>
                 <div className="p-4 sm:p-6">
                   <div className="flex items-center mb-2">
-                    <span className="text-3xl mr-2">{category.icon}</span>
                     <h3 className="text-lg sm:text-xl font-semibold text-text">{category.title}</h3>
                   </div>
                   <p className="text-text mb-4 sm:mb-6 leading-relaxed">{category.description}</p>
