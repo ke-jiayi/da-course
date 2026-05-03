@@ -43,6 +43,42 @@ const Practice: React.FC = () => {
         },
         {
           id: '5',
+          title: '数据挖掘',
+          difficulty: '中等',
+          description: '学习关联规则挖掘、聚类分析和分类算法等数据挖掘核心技术'
+        },
+        {
+          id: '6',
+          title: '商业分析',
+          difficulty: '中等',
+          description: '掌握商业指标分析、ROI计算和数据驱动决策的方法'
+        },
+        {
+          id: '7',
+          title: '分组聚合分析',
+          difficulty: '简单',
+          description: '学习GROUP BY、聚合函数和数据透视表的使用方法'
+        },
+        {
+          id: '8',
+          title: '购物篮分析',
+          difficulty: '中等',
+          description: '学习Apriori算法、支持度、置信度和提升度的计算与应用'
+        },
+        {
+          id: '9',
+          title: 'A/B测试分析',
+          difficulty: '中等',
+          description: '掌握假设检验、显著性检验和置信区间的计算方法'
+        },
+        {
+          id: '10',
+          title: '异常值检测',
+          difficulty: '中等',
+          description: '学习Z-Score、IQR方法和孤立森林等异常检测技术'
+        },
+        {
+          id: '11',
           title: '商务数据分析与Python · 实战思维测试',
           difficulty: '中等',
           description: '检验你对数据分析核心思维的深层理解，包含10道实战思维测试题'
