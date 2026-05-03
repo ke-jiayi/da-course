@@ -9,70 +9,80 @@ const Home: React.FC = () => {
       title: "数据可视化",
       description: "学习如何使用各种工具创建直观、有效的数据可视化",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20visualization%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/data-visualization"
+      link: "/data-visualization",
+      icon: "📊"
     },
     {
       id: 2,
       title: "机器学习",
       description: "掌握机器学习算法和模型，解决实际业务问题",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=machine%20learning%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/machine-learning"
+      link: "/machine-learning",
+      icon: "🤖"
     },
     {
       id: 3,
       title: "数据挖掘",
       description: "学习从大量数据中提取有价值信息的技术和方法",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20mining%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/data-mining"
+      link: "/data-mining",
+      icon: "⛏️"
     },
     {
       id: 4,
       title: "商业分析",
       description: "利用数据分析技能解决商业问题，制定决策",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=business%20analytics%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/business-analysis"
+      link: "/business-analysis",
+      icon: "💼"
     },
     {
       id: 5,
       title: "数据清洗实战",
       description: "掌握数据清洗的核心技术，处理缺失值、异常值和重复数据",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20cleaning%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/data-cleaning"
+      link: "/data-cleaning",
+      icon: "🧹"
     },
     {
       id: 6,
       title: "分组聚合分析",
       description: "学习数据分组和聚合操作，掌握SQL和Pandas中的聚合技巧",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=group%20aggregation%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/group-aggregation"
+      link: "/group-aggregation",
+      icon: "📈"
     },
     {
       id: 7,
       title: "购物篮分析",
       description: "学习关联规则挖掘，发现商品之间的关联关系",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=market%20basket%20analysis%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/market-basket"
+      link: "/market-basket",
+      icon: "🛒"
     },
     {
       id: 8,
       title: "A/B测试分析",
       description: "掌握A/B测试的设计与分析方法，做出数据驱动的决策",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=ab%20testing%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/ab-testing"
+      link: "/ab-testing",
+      icon: "🧪"
     },
     {
       id: 9,
       title: "时间序列分析",
       description: "学习时间序列数据的分析方法，掌握预测和趋势分析技术",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=time%20series%20analysis%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/time-series"
+      link: "/time-series",
+      icon: "📉"
     },
     {
       id: 10,
       title: "异常值检测",
       description: "学习异常检测算法，识别数据中的异常模式和离群点",
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=anomaly%20detection%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/anomaly-detection"
+      link: "/anomaly-detection",
+      icon: "🔍"
     }
   ]
 
@@ -134,7 +144,10 @@ const Home: React.FC = () => {
                   className="w-full h-48 sm:h-56 rounded-t-2xl"
                 />
                 <div className="p-4 sm:p-6">
-                  <h3 className="text-lg sm:text-xl font-semibold mb-3 text-text">{category.title}</h3>
+                  <div className="flex items-center mb-2">
+                    <span className="text-3xl mr-2">{category.icon}</span>
+                    <h3 className="text-lg sm:text-xl font-semibold text-text">{category.title}</h3>
+                  </div>
                   <p className="text-text mb-4 sm:mb-6 leading-relaxed">{category.description}</p>
                   <a href={category.link} className="inline-flex items-center text-primary font-medium hover:underline transition-all duration-300 group">
                     查看课程
