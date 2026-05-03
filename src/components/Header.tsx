@@ -27,7 +27,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLoginClick }) => {
             <Link to="/test" className="text-text hover:text-primary font-medium transition-all duration-300">测试</Link>
             <Link to="/achievements" className="text-text hover:text-primary font-medium transition-all duration-300">成就</Link>
             <Link to="/leaderboard" className="text-text hover:text-primary font-medium transition-all duration-300">排行榜</Link>
-            <Link to="/learning-record" className="text-text hover:text-primary font-medium transition-all duration-300">学习记录</Link>
             <Link to="/notifications" className="text-text hover:text-primary font-medium transition-all duration-300">通知</Link>
             <Link to="/settings" className="text-text hover:text-primary font-medium transition-all duration-300">设置</Link>
             <Link to="/data-analysis-test" className="text-text hover:text-primary font-medium transition-all duration-300">思维测试</Link>
@@ -102,9 +101,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLoginClick }) => {
                 </Link>
                 <Link to="/leaderboard" className="text-text hover:text-primary font-medium transition-all duration-300 py-3 px-4 rounded-lg hover:bg-primary/10" onClick={() => setMobileMenuOpen(false)}>
                   排行榜
-                </Link>
-                <Link to="/learning-record" className="text-text hover:text-primary font-medium transition-all duration-300 py-3 px-4 rounded-lg hover:bg-primary/10" onClick={() => setMobileMenuOpen(false)}>
-                  学习记录
                 </Link>
                 <Link to="/notifications" className="text-text hover:text-primary font-medium transition-all duration-300 py-3 px-4 rounded-lg hover:bg-primary/10" onClick={() => setMobileMenuOpen(false)}>
                   通知

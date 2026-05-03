@@ -13,13 +13,11 @@ import PageTransition from './components/PageTransition'
 // 直接导入组件，暂时不用懒加载
 import Courses from './components/Courses'
 import CourseDetail from './components/CourseDetail'
-import LearnPage from './components/LearnPage'
 import Practice from './components/Practice'
 import PracticeDetail from './components/PracticeDetail'
 import Test from './components/Test'
 import TestDetail from './components/TestDetail'
 import Achievements from './components/Achievements'
-import LearningRecord from './components/LearningRecord'
 import Settings from './components/Settings'
 import Notifications from './components/Notifications'
 import Leaderboard from './components/Leaderboard'
@@ -130,13 +128,11 @@ function App() {
             <Route path="/" element={<PageTransition><Home /></PageTransition>} />
             <Route path="/courses" element={<PageTransition><Courses /></PageTransition>} />
             <Route path="/course/:id" element={<PageTransition><CourseDetail /></PageTransition>} />
-            <Route path="/learn/:courseId/:moduleId" element={<PageTransition><LearnPage /></PageTransition>} />
             <Route path="/practice" element={<PageTransition><Practice /></PageTransition>} />
             <Route path="/practice/:id" element={<PageTransition><PracticeDetail /></PageTransition>} />
             <Route path="/test" element={<PageTransition><Test /></PageTransition>} />
             <Route path="/test/:id" element={<PageTransition><TestDetail /></PageTransition>} />
             <Route path="/achievements" element={<PageTransition><Achievements /></PageTransition>} />
-            <Route path="/learning-record" element={<PageTransition><LearningRecord /></PageTransition>} />
             <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
             <Route path="/notifications" element={<PageTransition><Notifications /></PageTransition>} />
             <Route path="/leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
