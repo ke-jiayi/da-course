@@ -50,6 +50,14 @@ const Test: React.FC = () => {
           description: '全面评估你的数据分析进阶能力',
           duration: 90,
           totalQuestions: 25
+        },
+        {
+          id: '5',
+          title: '综合测评 - 高级篇',
+          type: '综合测评',
+          description: '全面评估你的数据分析高级能力',
+          duration: 120,
+          totalQuestions: 30
         }
       ];
       
