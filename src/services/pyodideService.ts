@@ -143,15 +143,43 @@ import base64
 from io import BytesIO
 import os
 
-# 配置中文字体支持
-plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'SimHei', 'SimSun', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC']
-plt.rcParams['font.family'] = 'sans-serif'
+# 配置中文字体支持 - 在Pyodide环境中使用默认字体并启用中文支持
+plt.rcParams['font.family'] = ['DejaVu Sans', 'Noto Sans CJK SC', 'SimHei', 'SimSun']
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Noto Sans CJK SC', 'SimHei', 'SimSun']
 plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams['axes.labelsize'] = 12
+plt.rcParams['axes.titlesize'] = 14
+plt.rcParams['legend.fontsize'] = 12
 plt.ioff()
 
 # 禁用字体缺失警告
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning, message='.*missing from current font.*')
+
+# 下载并安装中文字体
+def install_chinese_font():
+    """安装中文字体以支持中文显示"""
+    try:
+        import matplotlib.font_manager as fm
+        import urllib.request
+        
+        # 尝试下载Noto Sans CJK字体
+        font_url = 'https://fonts.gstatic.com/s/notosanscjksc/v28/k3kCo84MPvpLmixcA63oeALhLw.woff2'
+        font_path = '/tmp/NotoSansCJKsc.woff2'
+        
+        urllib.request.urlretrieve(font_url, font_path)
+        
+        # 添加字体
+        fm.fontManager.addfont(font_path)
+        plt.rcParams['font.sans-serif'] = ['Noto Sans CJK SC', 'DejaVu Sans'] + plt.rcParams['font.sans-serif']
+        plt.rcParams['font.family'] = 'sans-serif'
+        return True
+    except Exception as e:
+        # 如果下载失败，使用默认配置
+        return False
+
+# 尝试安装中文字体
+install_chinese_font()
 
 def show_plot():
     """将当前图表转换为 base64 编码的 HTML img 标签"""
@@ -173,22 +201,6 @@ def show_plot():
 def clear_plots():
     """清除所有图表"""
     plt.close('all')
-
-def set_chinese_font():
-    """尝试设置中文字体"""
-    import matplotlib.font_manager as fm
-    font_path = None
-    
-    # 尝试查找系统中的中文字体
-    font_candidates = ['SimHei.ttf', 'SimSun.ttf', 'WenQuanYiZenHei.ttf', 'NotoSansCJKsc.ttf']
-    
-    for font_name in font_candidates:
-        try:
-            fm.findfont(font_name)
-            plt.rcParams['font.sans-serif'] = [font_name] + plt.rcParams['font.sans-serif']
-            break
-        except:
-            continue
 `);
     
     this.log('Matplotlib 配置完成');
