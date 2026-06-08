@@ -32,7 +32,7 @@ const Test: React.FC = () => {
           title: '第二章 数据分析测试',
           type: '章节测试',
           description: '测试你对数据分析方法的掌握',
-          duration: 45,
+          duration: 30,
           totalQuestions: 15
         },
         {
@@ -40,7 +40,7 @@ const Test: React.FC = () => {
           title: '综合测评 - 基础篇',
           type: '综合测评',
           description: '全面评估你的数据分析基础能力',
-          duration: 60,
+          duration: 30,
           totalQuestions: 20
         },
         {
@@ -48,7 +48,7 @@ const Test: React.FC = () => {
           title: '综合测评 - 进阶篇',
           type: '综合测评',
           description: '全面评估你的数据分析进阶能力',
-          duration: 90,
+          duration: 30,
           totalQuestions: 25
         },
         {
@@ -56,7 +56,7 @@ const Test: React.FC = () => {
           title: '综合测评 - 高级篇',
           type: '综合测评',
           description: '全面评估你的数据分析高级能力',
-          duration: 120,
+          duration: 30,
           totalQuestions: 30
         }
       ];
