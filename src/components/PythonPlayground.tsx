@@ -215,9 +215,9 @@ plt.plot(x, y1, label='sin(x)', color='blue', linewidth=2)
 plt.plot(x, y2, label='cos(x)', color='red', linewidth=2)
 
 # 添加标题和标签
-plt.title('正弦和余弦函数', fontsize=14)
-plt.xlabel('X轴', fontsize=12)
-plt.ylabel('Y轴', fontsize=12)
+plt.title('Sine and Cosine Functions', fontsize=14)
+plt.xlabel('X axis', fontsize=12)
+plt.ylabel('Y axis', fontsize=12)
 plt.legend()
 plt.grid(True, alpha=0.3)
 
