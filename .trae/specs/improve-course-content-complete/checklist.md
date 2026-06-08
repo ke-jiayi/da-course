@@ -22,6 +22,6 @@
 
 ## 构建验证
 
-- [ ] npm run build 成功无错误
-- [ ] 部署到Cloudflare Pages成功
-- [ ] 线上网站所有功能正常
+- [x] npm run build 成功无错误
+- [x] 部署到Cloudflare Pages成功
+- [x] 线上网站所有功能正常

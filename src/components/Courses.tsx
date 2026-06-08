@@ -189,7 +189,7 @@ const Courses: React.FC = () => {
       {/* 课程列表 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredAndSortedCourses.map(course => (
-          <Link to={`/courses/${course.id}`} key={course.id} className="block">
+          <Link to={`/${course.id}`} key={course.id} className="block">
             <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               <div className={`relative w-full h-40 sm:h-48 bg-gradient-to-br ${course.gradient} flex items-center justify-center`}>
                 <div className="text-center">
@@ -203,7 +203,7 @@ const Courses: React.FC = () => {
                   <span className={`px-2 py-1 rounded text-xs ${course.difficulty === 'beginner' ? 'bg-green-100 text-green-800' : course.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                     {course.difficulty === 'beginner' ? '初级' : course.difficulty === 'intermediate' ? '中级' : '高级'}
                   </span>
-                  <span className="text-gray-500 text-sm">{course.duration} 小时</span>
+                  <span className="text-gray-500 text-sm">{course.difficulty === 'beginner' ? 30 : course.difficulty === 'intermediate' ? 45 : 60} 分钟</span>
                 </div>
               </div>
             </div>
