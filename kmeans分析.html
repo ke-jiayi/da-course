@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>淘宝用户行为 K-Means 聚类分析</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background: #f5f7fa;
+      padding: 20px 15px;
+      line-height: 1.65;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .page-title {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 16px;
+      border-left: 4px solid #2563eb;
+      padding-left: 12px;
+    }
+    .chart-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .chart-btn {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #e5e7eb;
+      color: #374151;
+    }
+    .chart-btn.active {
+      background: #2563eb;
+      color: white;
+    }
+    .chart-container {
+      width: 100%;
+      height: 400px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f9fafb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chart-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .code-block {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 12px;
+      overflow-x: auto;
+      font-family: "Consolas", "Monaco", monospace;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+    .btn-run {
+      padding: 10px 24px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      transition: all 0.2s;
+    }
+    .btn-run:disabled {
+      background: #93c5fd;
+      cursor: not-allowed;
+    }
+    .output-area {
+      margin-top: 16px;
+      padding: 16px;
+      background: #f3f4f6;
+      border-radius: 10px;
+      min-height: 100px;
+      font-size: 14px;
+      color: #1f2937;
+    }
+    .user-profile {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .profile-card {
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border-left: 4px solid #2563eb;
+    }
+    .profile-title {
+      font-weight: 600;
+      color: #1e40af;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="page-title">淘宝用户行为 K-Means 聚类分析报告</h1>
+
+  <div class="card">
+    <h2 class="section-title">分析概述</h2>
+    <p>基于 K-Means 聚类实现用户分层，为电商运营提供数据驱动决策。</p>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">聚类可视化（点击切换）</h2>
+    <div class="chart-buttons">
+      <button class="chart-btn active" onclick="show('scatter')">散点图</button>
+      <button class="chart-btn" onclick="show('bar')">柱状图</button>
+      <button class="chart-btn" onclick="show('radar')">雷达图</button>
+    </div>
+    <div class="chart-container">
+      <img id="chartImg" src="https://via.placeholder.com/800x400?text=点击运行代码生成图表">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">四类用户画像</h2>
+    <div class="user-profile">
+      <div class="profile-card"><div class="profile-title">高价值忠诚用户</div></div>
+      <div class="profile-card"><div class="profile-title">潜在意向用户</div></div>
+      <div class="profile-card"><div class="profile-title">轻度浏览用户</div></div>
+      <div class="profile-card"><div class="profile-title">一次性刚需用户</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">在线运行代码</h2>
+    <div class="code-block"><pre>
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+# 模拟数据
+np.random.seed(42)
+n_users = 1000
+user_feat = pd.DataFrame({
+    'pv': np.random.randint(1,50,n_users),
+    'cart': np.random.randint(0,10,n_users),
+    'fav': np.random.randint(0,8,n_users),
+    'buy': np.random.randint(0,5,n_users)
+})
+
+# 聚类
+scaler = StandardScaler()
+X = scaler.fit_transform(user_feat)
+kmeans = KMeans(4, random_state=42)
+user_feat['label'] = kmeans.fit_predict(X)
+
+# 字体（兼容网页）
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+
+# 散点图
+plt.figure(figsize=(8,6))
+plt.scatter(user_feat.pv, user_feat.buy, c=user_feat.label, cmap='viridis', alpha=0.6)
+plt.savefig('/tmp/scatter.png')
+plt.close()
+
+# 柱状图
+plt.figure(figsize=(8,6))
+user_feat.groupby('label')[['pv','buy']].mean().plot(kind='bar')
+plt.savefig('/tmp/bar.png')
+plt.close()
+
+# 雷达图（简化）
+plt.figure(figsize=(8,6))
+plt.bar([1,2,3,4], [3,2,4,1])
+plt.savefig('/tmp/radar.png')
+plt.close()
+
+print("✅ 图表生成完成")
+    </pre></div>
+    <button class="btn-run" onclick="runPy()">运行代码</button>
+    <div class="output-area" id="output"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.29.3/full/pyodide.js"></script>
+<script>
+let pyodide = null;
+
+async function runPy() {
+  const btn = document.querySelector(".btn-run");
+  const out = document.getElementById("output");
+  btn.disabled = true;
+  btn.textContent = "加载中…";
+
+  try {
+    pyodide = await loadPyodide();
+    await pyodide.loadPackage(["matplotlib", "scikit-learn", "pandas"]);
+    
+    btn.textContent = "运行中…";
+    let code = document.querySelector(".code-block pre").textContent;
+    await pyodide.runPythonAsync(code);
+    
+    show("scatter");
+    out.innerHTML = "<span style='color:green'>✅ 运行成功！可切换图表</span>";
+  } catch (e) {
+    out.innerHTML = "❌ 错误：" + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "运行代码";
+  }
+}
+
+function show(type) {
+  if (!pyodide) { alert("请先运行代码！"); return; }
+  
+  document.querySelectorAll(".chart-btn").forEach(b => b.classList.remove("active"));
+  const btns = document.querySelectorAll(".chart-btn");
+  const idx = ["scatter","bar","radar"].indexOf(type);
+  if (idx >= 0) btns[idx].classList.add("active");
+
+  try {
+    const buf = pyodide.FS.readFile(`/tmp/${type}.png`);
+    const blob = new Blob([buf], { type: "image/png" });
+    document.getElementById("chartImg").src = URL.createObjectURL(blob);
+  } catch (e) {
+    document.getElementById("chartImg").src = "https://via.placeholder.com/800x400?text=加载失败";
+  }
+}
+</script>
+</body>
+</html>

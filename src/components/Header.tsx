@@ -23,6 +23,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLoginClick }) => {
           <nav className="hidden md:flex space-x-8">
             <Link to="/" className="text-text hover:text-primary font-medium transition-all duration-300">首页</Link>
             <Link to="/courses" className="text-text hover:text-primary font-medium transition-all duration-300">课程</Link>
+            <Link to="/python-playground" className="text-text hover:text-primary font-medium transition-all duration-300">代码编辑器</Link>
             <Link to="/practice" className="text-text hover:text-primary font-medium transition-all duration-300">练习</Link>
             <Link to="/test" className="text-text hover:text-primary font-medium transition-all duration-300">测试</Link>
             <Link to="/achievements" className="text-text hover:text-primary font-medium transition-all duration-300">成就</Link>
@@ -89,6 +90,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLoginClick }) => {
                 </Link>
                 <Link to="/courses" className="text-text hover:text-primary font-medium transition-all duration-300 py-3 px-4 rounded-lg hover:bg-primary/10" onClick={() => setMobileMenuOpen(false)}>
                   课程
+                </Link>
+                <Link to="/python-playground" className="text-text hover:text-primary font-medium transition-all duration-300 py-3 px-4 rounded-lg hover:bg-primary/10" onClick={() => setMobileMenuOpen(false)}>
+                  代码编辑器
                 </Link>
                 <Link to="/practice" className="text-text hover:text-primary font-medium transition-all duration-300 py-3 px-4 rounded-lg hover:bg-primary/10" onClick={() => setMobileMenuOpen(false)}>
                   练习

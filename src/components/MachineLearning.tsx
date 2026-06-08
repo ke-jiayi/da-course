@@ -239,6 +239,31 @@ print("✅ 客户分群完成！")
   }
 ];
 
+const exercises = [
+  {
+    id: 1,
+    title: '练习一：预测考试成绩',
+    description: '使用线性回归，根据学习时间预测学生考试成绩',
+    task: '给定以下学习时间数据，预测学习6小时后的考试成绩',
+    data: 'X = [1, 2, 3, 4, 5]（学习时间）\\ny = [50, 60, 70, 80, 90]（考试成绩）',
+    hint: '使用最小二乘法计算斜率和截距，然后进行预测'
+  },
+  {
+    id: 2,
+    title: '练习二：动物分类',
+    description: '使用KNN算法，根据体重和身高分类动物类型',
+    task: '给定以下动物数据，对新样本进行分类：\\n[体重(kg), 身高(cm)]\\n猫: [4, 25], [3.5, 24]\\n狗: [20, 60], [25, 65]\\n测试: [5, 30]',
+    hint: '使用K=3近邻投票决定分类结果'
+  },
+  {
+    id: 3,
+    title: '练习三：购物行为分群',
+    description: '使用K-Means对网购用户进行聚类分析',
+    task: '根据用户的月消费和购物频率，将用户分为不同群体：\\n[月消费(元), 月购物次数]\\n数据: [200, 2], [300, 3], [250, 2], [2000, 15], [2500, 20], [1800, 12]',
+    hint: '尝试k=2或k=3，观察不同的聚类效果'
+  }
+];
+
 const MachineLearning: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState(0);
   const [code, setCode] = useState(projects[0].placeholderCode);
@@ -504,6 +529,32 @@ const MachineLearning: React.FC = () => {
               <h3 className="font-bold text-green-700 mb-2">K-Means 聚类</h3>
               <p className="text-sm text-gray-600">无监督学习，自动发现数据中的群体结构</p>
             </div>
+          </div>
+        </div>
+
+        <div className="mt-8 bg-white rounded-2xl shadow-xl p-6 md:p-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-6">📝 课后练习题</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {exercises.map((exercise) => (
+              <div key={exercise.id} className="bg-gradient-to-br from-orange-50 to-yellow-50 p-6 rounded-xl border-2 border-orange-100 hover:border-orange-300 transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-orange-500 text-white font-bold flex items-center justify-center">
+                    {exercise.id}
+                  </div>
+                  <h3 className="font-bold text-gray-800">{exercise.title}</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">{exercise.description}</p>
+                <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+                  <p className="text-xs text-gray-500 mb-2 font-semibold">任务：</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{exercise.task}</p>
+                </div>
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-xs text-blue-600">
+                    <strong>💡 提示：</strong>{exercise.hint}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

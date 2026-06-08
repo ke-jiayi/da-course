@@ -11,6 +11,7 @@ const BusinessAnalysis: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [pyodideStatus, setPyodideStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [activeProject, setActiveProject] = useState(0);
+  const [_showExercises, setShowExercises] = useState(false);
 
   useEffect(() => {
     const checkPyodide = async () => {
@@ -84,13 +85,17 @@ const BusinessAnalysis: React.FC = () => {
     }
   };
 
-  const placeholderCode = `# 在这里编写你的代码
-# 点击"显示参考答案"按钮可以查看示例代码
+  const placeholderCode = `# 商业数据分析练习
+# 点击下方按钮切换不同练习：
+# - "基础练习"：KPI指标计算
+# - "进阶练习"：实战案例分析
 
-# 提示：
-# 1. 可以尝试计算销售额、订单量等基础指标
-# 2. 可以计算月度增长率
-# 3. 可以对产品进行分类统计
+# 练习要求：
+# 1. 计算月环比增长率
+# 2. 进行客户价值分层
+# 3. 分析不同渠道的ROI
+
+# 提示：使用 for 循环和字典进行数据处理
 
 `;
 
@@ -98,7 +103,8 @@ const BusinessAnalysis: React.FC = () => {
 print("欢迎学习商业数据分析！")
 print("=" * 40)
 
-# 1. 基础商业指标计算
+# ========== 练习1：基础商业指标计算 ==========
+print("\\n【练习1】基础商业指标计算")
 sales = [120, 150, 180, 160, 200, 220]
 orders = [600, 750, 900, 800, 1000, 1100]
 
@@ -110,25 +116,64 @@ print(f"总销售额: ¥{total_sales}万")
 print(f"总订单数: {total_orders}")
 print(f"平均订单价值: ¥{avg_order_value:.2f}")
 
-# 2. 月度增长率计算
-print("\\n月度增长率:")
+# ========== 练习2：月度增长率计算 ==========
+print("\\n【练习2】月度增长率:")
 for i in range(1, len(sales)):
     growth = (sales[i] - sales[i-1]) / sales[i-1] * 100
     month = f"{i+1}月"
     print(f"  {month}: {growth:+.1f}%")
 
-# 3. 产品分类统计
+# ========== 练习3：产品分类统计 ==========
+print("\\n【练习3】产品销售额排名:")
 products = {
     "手机": 299900,
     "电脑": 509900,
     "平板": 389844
 }
 
-print("\\n产品销售额排名:")
 for product, amount in sorted(products.items(), key=lambda x: x[1], reverse=True):
     print(f"  {product}: ¥{amount:,}")
 
 print("\\n✓ 练习完成！尝试修改数据进行分析")`;
+
+  const answerCodeExercises = `# ========== 练习参考答案 ==========
+
+# 练习1答案：计算环比增长率
+print("【练习1】月环比增长率分析")
+monthly_data = {
+    "1月": 120, "2月": 150, "3月": 180,
+    "4月": 160, "5月": 200, "6月": 220
+}
+months = list(monthly_data.keys())
+values = list(monthly_data.values())
+
+for i in range(1, len(values)):
+    growth = (values[i] - values[i-1]) / values[i-1] * 100
+    print(f"  {months[i]}环比{months[i-1]}: {growth:+.1f}%")
+
+# 练习2答案：客户分层分析
+print("\\n【练习2】客户价值分层")
+customers = [
+    {"name": "A类客户", "purchase": 50000, "frequency": 12},
+    {"name": "B类客户", "purchase": 20000, "frequency": 6},
+    {"name": "C类客户", "purchase": 5000, "frequency": 2}
+]
+for c in customers:
+    ltv = c["purchase"] * c["frequency"]
+    print(f"  {c['name']}: 终身价值LTV = ¥{ltv:,}")
+
+# 练习3答案：渠道效果分析
+print("\\n【练习3】渠道ROI分析")
+channels = {
+    "电商平台": {"cost": 50000, "revenue": 180000},
+    "社交媒体": {"cost": 30000, "revenue": 75000},
+    "线下门店": {"cost": 80000, "revenue": 200000}
+}
+for ch, data in channels.items():
+    roi = (data["revenue"] - data["cost"]) / data["cost"] * 100
+    print(f"  {ch}: ROI = {roi:.1f}%")
+
+print("\\n✓ 恭喜完成所有练习！")`;
 
   const projects = [
     {
@@ -294,8 +339,11 @@ print("\\n✓ 练习完成！尝试修改数据进行分析")`;
               {activeProject === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 月度经营分析案例</h3>
-                    <p className="text-text mb-3">通过数据分析了解业务表现，制定优化策略。</p>
+                    <h3 className="font-semibold text-lg mb-2">📊 实战案例：季度经营分析</h3>
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                      <p className="font-medium text-yellow-800 mb-1">📌 案例背景</p>
+                      <p className="text-sm text-yellow-700">某电商公司Q1销售额为450万，Q2增长到580万。但老板发现毛利率没有明显提升，需要分析原因。</p>
+                    </div>
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse border border-gray-300 mb-4">
                         <thead>
@@ -308,19 +356,35 @@ print("\\n✓ 练习完成！尝试修改数据进行分析")`;
                         </thead>
                         <tbody>
                           <tr>
-                            <td className="border border-gray-300 px-4 py-2">Q1</td>
-                            <td className="border border-gray-300 px-4 py-2">450</td>
-                            <td className="border border-gray-300 px-4 py-2">22,500</td>
-                            <td className="border border-gray-300 px-4 py-2">41%</td>
+                            <td className="border border-gray-300 px-4 py-2">1月</td>
+                            <td className="border border-gray-300 px-4 py-2">120</td>
+                            <td className="border border-gray-300 px-4 py-2">6,000</td>
+                            <td className="border border-gray-300 px-4 py-2">38%</td>
                           </tr>
                           <tr>
-                            <td className="border border-gray-300 px-4 py-2">Q2</td>
-                            <td className="border border-gray-300 px-4 py-2">580</td>
-                            <td className="border border-gray-300 px-4 py-2">29,000</td>
-                            <td className="border border-gray-300 px-4 py-2">44%</td>
+                            <td className="border border-gray-300 px-4 py-2">2月</td>
+                            <td className="border border-gray-300 px-4 py-2">150</td>
+                            <td className="border border-gray-300 px-4 py-2">7,500</td>
+                            <td className="border border-gray-300 px-4 py-2">42%</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-4 py-2">3月</td>
+                            <td className="border border-gray-300 px-4 py-2">180</td>
+                            <td className="border border-gray-300 px-4 py-2">9,000</td>
+                            <td className="border border-gray-300 px-4 py-2">43%</td>
                           </tr>
                         </tbody>
                       </table>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="font-medium text-blue-800 mb-2">🔍 问题分析</p>
+                        <p className="text-sm text-blue-700">虽然销售额增长，但AOV（平均订单价值）从200元下降到了190元，说明客单价在下降。</p>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <p className="font-medium text-green-800 mb-2">💡 优化建议</p>
+                        <p className="text-sm text-green-700">建议推出满减活动提升客单价，同时优化高毛利商品的推荐权重。</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -401,12 +465,24 @@ print("\\n✓ 练习完成！尝试修改数据进行分析")`;
                 
                 <button
                   onClick={() => {
+                    setShowExercises(false);
                     setCode(answerCode);
                     setResult(null);
                   }}
                   className="px-6 py-3 rounded-full font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all"
                 >
-                  💡 显示参考答案
+                  📊 基础练习
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowExercises(true);
+                    setCode(answerCodeExercises);
+                    setResult(null);
+                  }}
+                  className="px-6 py-3 rounded-full font-bold bg-purple-500 text-white hover:bg-purple-600 transition-all"
+                >
+                  🎯 进阶练习
                 </button>
                 
                 <button
@@ -482,15 +558,27 @@ print("\\n✓ 练习完成！尝试修改数据进行分析")`;
           </div>
 
           <div className="bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
-            <div className="space-y-3">
+            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后练习题</h2>
+            <div className="space-y-4">
               <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">1. 如何选择关键KPI来衡量业务健康度？</p>
-                <p className="text-sm text-gray-600">提示：考虑业务目标、行业特点、数据的可获取性</p>
+                <p className="font-medium mb-2">练习1：计算月环比增长率</p>
+                <p className="text-sm text-gray-600 mb-2">已知Q2各月销售额：4月160万、5月200万、6月220万，计算每月的环比增长率</p>
+                <p className="text-xs text-primary">提示：环比增长率 = (本月-上月)/上月 × 100%</p>
               </div>
               <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">2. 数据分析结果如何转化为行动建议？</p>
-                <p className="text-sm text-gray-600">提示：从数据洞察→问题诊断→解决方案→执行计划</p>
+                <p className="font-medium mb-2">练习2：客户价值分层</p>
+                <p className="text-sm text-gray-600 mb-2">某电商客户数据：A类客户年均消费5万购买12次，B类客户年均消费2万购买6次，计算两类客户的终身价值(LTV)</p>
+                <p className="text-xs text-primary">提示：LTV = 年均消费 × 年购买次数</p>
+              </div>
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <p className="font-medium mb-2">练习3：渠道ROI分析</p>
+                <p className="text-sm text-gray-600 mb-2">电商平台成本5万收入18万，社交媒体成本3万收入7.5万，计算各渠道ROI并比较效果</p>
+                <p className="text-xs text-primary">提示：ROI = (收入-成本)/成本 × 100%</p>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                <p className="font-medium text-yellow-800 mb-2">🎯 思考题</p>
+                <p className="text-sm text-yellow-700 mb-1">1. 如何选择关键KPI来衡量业务健康度？</p>
+                <p className="text-sm text-yellow-700">2. 数据分析结果如何转化为行动建议？</p>
               </div>
             </div>
           </div>

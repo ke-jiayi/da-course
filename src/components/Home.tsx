@@ -10,7 +10,9 @@ const Home: React.FC = () => {
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20visualization%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/data-visualization",
       icon: "📊",
-      gradient: "from-blue-400 to-purple-500"
+      gradient: "from-blue-400 to-purple-500",
+      difficulty: "入门",
+      duration: "30分钟"
     },
     {
       id: 2,
@@ -19,7 +21,9 @@ const Home: React.FC = () => {
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=machine%20learning%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/machine-learning",
       icon: "🤖",
-      gradient: "from-purple-400 to-pink-500"
+      gradient: "from-purple-400 to-pink-500",
+      difficulty: "入门",
+      duration: "45分钟"
     },
     {
       id: 3,
@@ -28,7 +32,9 @@ const Home: React.FC = () => {
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20mining%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/data-mining",
       icon: "⛏️",
-      gradient: "from-amber-400 to-orange-500"
+      gradient: "from-amber-400 to-orange-500",
+      difficulty: "入门",
+      duration: "45分钟"
     },
     {
       id: 4,
@@ -37,7 +43,9 @@ const Home: React.FC = () => {
       image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=business%20analytics%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
       link: "/business-analysis",
       icon: "💼",
-      gradient: "from-emerald-400 to-teal-500"
+      gradient: "from-emerald-400 to-teal-500",
+      difficulty: "进阶",
+      duration: "45分钟"
     },
     {
       id: 5,
@@ -45,7 +53,9 @@ const Home: React.FC = () => {
       description: "掌握数据清洗的核心技术，处理缺失值、异常值和重复数据",
       link: "/data-cleaning",
       icon: "🧹",
-      gradient: "from-cyan-400 to-blue-500"
+      gradient: "from-cyan-400 to-blue-500",
+      difficulty: "入门",
+      duration: "30分钟"
     },
     {
       id: 6,
@@ -53,7 +63,9 @@ const Home: React.FC = () => {
       description: "学习数据分组和聚合操作，掌握SQL和Pandas中的聚合技巧",
       link: "/group-aggregation",
       icon: "📈",
-      gradient: "from-green-400 to-emerald-500"
+      gradient: "from-green-400 to-emerald-500",
+      difficulty: "入门",
+      duration: "30分钟"
     },
     {
       id: 7,
@@ -61,7 +73,9 @@ const Home: React.FC = () => {
       description: "学习关联规则挖掘，发现商品之间的关联关系",
       link: "/market-basket",
       icon: "🛒",
-      gradient: "from-rose-400 to-pink-500"
+      gradient: "from-rose-400 to-pink-500",
+      difficulty: "进阶",
+      duration: "45分钟"
     },
     {
       id: 8,
@@ -69,7 +83,9 @@ const Home: React.FC = () => {
       description: "掌握A/B测试的设计与分析方法，做出数据驱动的决策",
       link: "/ab-testing",
       icon: "🧪",
-      gradient: "from-violet-400 to-purple-500"
+      gradient: "from-violet-400 to-purple-500",
+      difficulty: "进阶",
+      duration: "45分钟"
     },
     {
       id: 9,
@@ -77,7 +93,9 @@ const Home: React.FC = () => {
       description: "学习时间序列数据的分析方法，掌握预测和趋势分析技术",
       link: "/time-series",
       icon: "📉",
-      gradient: "from-indigo-400 to-blue-500"
+      gradient: "from-indigo-400 to-blue-500",
+      difficulty: "进阶",
+      duration: "45分钟"
     },
     {
       id: 10,
@@ -85,7 +103,9 @@ const Home: React.FC = () => {
       description: "学习异常检测算法，识别数据中的异常模式和离群点",
       link: "/anomaly-detection",
       icon: "🔍",
-      gradient: "from-red-400 to-orange-500"
+      gradient: "from-red-400 to-orange-500",
+      difficulty: "高级",
+      duration: "45分钟"
     }
   ]
 
@@ -151,6 +171,21 @@ const Home: React.FC = () => {
                     <h3 className="text-lg sm:text-xl font-semibold text-text">{category.title}</h3>
                   </div>
                   <p className="text-text mb-4 sm:mb-6 leading-relaxed">{category.description}</p>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                      category.difficulty === '入门' ? 'bg-green-100 text-green-700' :
+                      category.difficulty === '进阶' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {category.difficulty}
+                    </span>
+                    <span className="text-xs text-gray-500 flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {category.duration}
+                    </span>
+                  </div>
                   <a href={category.link} className="inline-flex items-center text-primary font-medium hover:underline transition-all duration-300 group">
                     查看课程
                     <svg className="w-4 h-4 ml-1 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

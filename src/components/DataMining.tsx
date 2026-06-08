@@ -87,62 +87,145 @@ const DataMining: React.FC = () => {
   const placeholderCode = `# 在这里编写你的代码
 # 点击"显示参考答案"按钮可以查看示例代码
 
-# 提示：
-# 1. 可以尝试处理包含缺失值的数据
-# 2. 可以计算数据的统计信息
-# 3. 可以对数据进行分类和筛选
+# 数据挖掘练习：
+# 1. 关联规则挖掘 - 发现购物篮中的关联商品
+# 2. 聚类分析 - 对用户数据进行分群
+# 3. 分类预测 - 预测用户购买行为
 
+# 提示：尝试使用 mlxtend 库进行关联规则挖掘
 `;
 
-  const answerCode = `# 数据清洗与预处理练习
-print("欢迎学习数据清洗！")
-print("=" * 40)
+  const answerCode = `# 关联规则挖掘示例 (Apriori算法)
+from mlxtend.frequent_patterns import apriori
+from mlxtend.preprocessing import TransactionEncoder
+import pandas as pd
 
-# 1. 简单数据处理
-data = [10, 25, 30, 45, 50, None, 70, 85]
+print("=" * 50)
+print("  关联规则挖掘 - 购物篮分析")
+print("=" * 50)
 
-# 计算统计信息
-valid_data = [x for x in data if x is not None]
-total = sum(valid_data)
-count = len(valid_data)
-average = total / count
+# 示例交易数据
+transactions = [
+    ['面包', '牛奶'],
+    ['面包', '尿布', '啤酒', '鸡蛋'],
+    ['牛奶', '尿布', '啤酒', '可乐'],
+    ['面包', '牛奶', '尿布', '啤酒'],
+    ['面包', '牛奶', '尿布', '可乐'],
+]
 
-print(f"原始数据: {data}")
-print(f"有效数据: {valid_data}")
-print(f"数据总和: {total}")
-print(f"数据个数: {count}")
-print(f"平均值: {average:.2f}")
+print(f"交易记录数量: {len(transactions)}")
+print(f"示例交易: {transactions[0]}")
+print()
 
-# 2. 数据分类
-categories = ["电子产品", "服装", "食品", "图书"]
-prices = [2999, 599, 89, 45]
+# 将交易数据转换为one-hot编码格式
+te = TransactionEncoder()
+te_ary = te.fit(transactions).transform(transactions)
+df = pd.DataFrame(te_ary, columns=te.columns_)
+print("商品项:", list(te.columns_))
+print()
 
-print("\\n产品分类:")
-for cat, price in zip(categories, prices):
-    level = "高" if price > 1000 else "中" if price > 100 else "低"
-    print(f"  {cat}: ¥{price} ({level}价位)")
+# 使用Apriori算法挖掘频繁项集
+frequent_itemsets = apriori(df, min_support=0.4, use_colnames=True)
+print("频繁项集 (支持度 >= 0.4):")
+print(frequent_itemsets)
+print()
 
-# 3. 数据筛选
-high_value = [p for p in prices if p > 100]
-print(f"\\n高价位产品数: {len(high_value)}")
+# 如果有频繁项集，进行关联规则挖掘
+if len(frequent_itemsets) > 0:
+    from mlxtend.frequent_patterns import association_rules
+    rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.6)
+    if len(rules) > 0:
+        print("关联规则 (置信度 >= 0.6):")
+        for idx, row in rules.iterrows():
+            antecedent = ', '.join(list(row['antecedents']))
+            consequent = ', '.join(list(row['consequents']))
+            print(f"  {antecedent} → {consequent}")
+            print(f"    支持度: {row['support']:.2f}, 置信度: {row['confidence']:.2f}, 提升度: {row['lift']:.2f}")
+    else:
+        print("没有找到满足条件的关联规则")
+else:
+    print("没有找到频繁项集，尝试降低最小支持度")
 
-print("\\n✓ 练习完成！尝试修改数据看看效果")`;
+print()
+print("=" * 50)
+print("  聚类分析示例 (K-Means)")
+print("=" * 50)
+
+# 用户数据：年龄、消费金额
+user_data = [
+    [25, 300],
+    [28, 450],
+    [35, 800],
+    [38, 1200],
+    [45, 2000],
+    [48, 2500],
+    [22, 200],
+    [30, 600],
+    [33, 900],
+    [40, 1800],
+]
+
+print("用户数据 (年龄, 消费金额):")
+for i, data in enumerate(user_data):
+    print(f"  用户{i+1}: {data}")
+
+# 简单的K-Means实现
+def kmeans(data, k=3, max_iter=100):
+    # 初始化中心点
+    centers = data[:k]
+    for _ in range(max_iter):
+        # 分配到最近的中心
+        clusters = [[] for _ in range(k)]
+        for point in data:
+            distances = [sum((a-b)**2 for a,b in zip(point, c)) for c in centers]
+            cluster_idx = distances.index(min(distances))
+            clusters[cluster_idx].append(point)
+        
+        # 更新中心点
+        new_centers = []
+        for cluster in clusters:
+            if cluster:
+                new_center = [sum(p[i] for p in cluster) / len(cluster) for i in range(len(cluster[0]))]
+            else:
+                new_center = centers[len(new_centers)]
+            new_centers.append(new_center)
+        
+        if new_centers == centers:
+            break
+        centers = new_centers
+    
+    return centers, clusters
+
+centers, clusters = kmeans(user_data, k=3)
+
+print()
+print("聚类结果:")
+for i, cluster in enumerate(clusters):
+    print(f"  群组{i+1} ({len(cluster)}人): {cluster}")
+
+print()
+print("中心点:")
+for i, center in enumerate(centers):
+    print(f"  群组{i+1}中心: 年龄{int(center[0])}岁, 消费¥{int(center[1])}")
+
+print()
+print("✓ 练习完成！尝试修改数据看看聚类效果")`;
 
   const projects = [
     {
       id: 1,
-      title: '数据清洗基础',
-      description: '学习处理缺失值、异常值和重复数据的方法'
+      title: '关联规则挖掘',
+      description: '学习Apriori算法，发现购物篮中的关联商品'
     },
     {
       id: 2,
-      title: '项目实战：用户分析',
-      description: '进行用户数据清洗，构建用户画像'
+      title: '聚类分析',
+      description: '使用K-Means算法对用户数据进行分群'
     },
     {
       id: 3,
-      title: '数据预处理',
-      description: '学习数据转换、标准化和特征工程基础'
+      title: '分类预测',
+      description: '构建分类模型，预测用户购买行为'
     }
   ];
 
@@ -151,8 +234,8 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
           <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 数据清洗与数据挖掘</h1>
-            <p className="text-text">学习数据预处理技术，掌握数据清洗的基本方法</p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 数据挖掘与分析</h1>
+            <p className="text-text">学习关联规则、聚类分析等数据挖掘核心方法</p>
           </div>
 
           {pyodideStatus === 'loading' && (
@@ -227,7 +310,7 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-text text-sm">理解数据清洗的重要性和基本原则</p>
+                <p className="text-text text-sm">理解关联规则挖掘的核心概念</p>
               </div>
               <div className="flex items-start">
                 <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
@@ -235,7 +318,7 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-text text-sm">掌握处理缺失值和异常值的策略</p>
+                <p className="text-text text-sm">掌握Apriori算法的原理和应用</p>
               </div>
               <div className="flex items-start">
                 <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
@@ -243,7 +326,7 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-text text-sm">学会识别和处理重复数据</p>
+                <p className="text-text text-sm">理解聚类分析的基本思想</p>
               </div>
               <div className="flex items-start">
                 <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
@@ -251,7 +334,15 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-text text-sm">了解数据预处理在数据分析中的角色</p>
+                <p className="text-text text-sm">掌握K-Means聚类算法的实现</p>
+              </div>
+              <div className="flex items-start">
+                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-text text-sm">了解分类预测的基本流程</p>
               </div>
             </div>
           </div>
@@ -262,15 +353,22 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
               {activeProject === 0 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">什么是数据清洗？</h3>
-                    <p className="text-text mb-3">数据清洗是发现并纠正数据中可识别错误的过程，是数据分析前至关重要的一步。</p>
+                    <h3 className="font-semibold text-lg mb-2">关联规则挖掘 (Association Rules)</h3>
+                    <p className="text-text mb-3">通过分析交易数据中发现商品之间的关联关系，是电商推荐系统的核心技术。</p>
                     <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-green-800 mb-2">💡 常见的数据问题</p>
+                      <p className="text-sm font-medium text-green-800 mb-2">💡 核心概念</p>
                       <ul className="text-sm text-green-700 space-y-1">
-                        <li>• <strong>缺失值</strong>：数据中缺少某些信息</li>
-                        <li>• <strong>重复值</strong>：完全相同的数据出现多次</li>
-                        <li>• <strong>异常值</strong>：与大多数数据明显不同的值</li>
-                        <li>• <strong>格式不一致</strong>：日期、数字等格式不统一</li>
+                        <li>• <strong>支持度 (Support)</strong>：某商品组合在所有交易中出现的频率</li>
+                        <li>• <strong>置信度 (Confidence)</strong>：购买A商品时同时购买B商品的概率</li>
+                        <li>• <strong>提升度 (Lift)</strong>：关联规则的实际提升效果</li>
+                      </ul>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4 mt-4">
+                      <p className="text-sm font-medium text-blue-800 mb-2">📊 应用场景</p>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• 超市货架布局优化</li>
+                        <li>• 交叉销售推荐</li>
+                        <li>• 用户购买行为预测</li>
                       </ul>
                     </div>
                   </div>
@@ -280,36 +378,36 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
               {activeProject === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 用户画像分析案例</h3>
-                    <p className="text-text mb-3">通过数据清洗构建用户画像，识别高价值用户。</p>
+                    <h3 className="font-semibold text-lg mb-2">聚类分析 (Clustering)</h3>
+                    <p className="text-text mb-3">将相似的用户或数据点分组，发现数据中的自然结构。</p>
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse border border-gray-300 mb-4">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">用户ID</th>
-                            <th className="border border-gray-300 px-4 py-2">消费金额</th>
-                            <th className="border border-gray-300 px-4 py-2">订单数</th>
-                            <th className="border border-gray-300 px-4 py-2">用户等级</th>
+                            <th className="border border-gray-300 px-4 py-2">用户群组</th>
+                            <th className="border border-gray-300 px-4 py-2">年龄范围</th>
+                            <th className="border border-gray-300 px-4 py-2">消费水平</th>
+                            <th className="border border-gray-300 px-4 py-2">营销策略</th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr>
-                            <td className="border border-gray-300 px-4 py-2">U001</td>
-                            <td className="border border-gray-300 px-4 py-2">¥5,000</td>
-                            <td className="border border-gray-300 px-4 py-2">15</td>
-                            <td className="border border-gray-300 px-4 py-2">⭐⭐⭐</td>
+                            <td className="border border-gray-300 px-4 py-2">🌱 萌芽用户</td>
+                            <td className="border border-gray-300 px-4 py-2">18-25岁</td>
+                            <td className="border border-gray-300 px-4 py-2">低</td>
+                            <td className="border border-gray-300 px-4 py-2">培养兴趣</td>
                           </tr>
                           <tr>
-                            <td className="border border-gray-300 px-4 py-2">U002</td>
-                            <td className="border border-gray-300 px-4 py-2">¥300</td>
-                            <td className="border border-gray-300 px-4 py-2">2</td>
-                            <td className="border border-gray-300 px-4 py-2">⭐</td>
+                            <td className="border border-gray-300 px-4 py-2">🌿 成长用户</td>
+                            <td className="border border-gray-300 px-4 py-2">26-35岁</td>
+                            <td className="border border-gray-300 px-4 py-2">中</td>
+                            <td className="border border-gray-300 px-4 py-2">提升粘性</td>
                           </tr>
                           <tr>
-                            <td className="border border-gray-300 px-4 py-2">U003</td>
-                            <td className="border border-gray-300 px-4 py-2">¥8,000</td>
-                            <td className="border border-gray-300 px-4 py-2">25</td>
-                            <td className="border border-gray-300 px-4 py-2">⭐⭐⭐⭐</td>
+                            <td className="border border-gray-300 px-4 py-2">🌳 价值用户</td>
+                            <td className="border border-gray-300 px-4 py-2">36-50岁</td>
+                            <td className="border border-gray-300 px-4 py-2">高</td>
+                            <td className="border border-gray-300 px-4 py-2">VIP服务</td>
                           </tr>
                         </tbody>
                       </table>
@@ -321,28 +419,28 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
               {activeProject === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">🔧 数据预处理技术</h3>
-                    <p className="text-text mb-3">数据预处理为后续分析做好准备，包括数据转换、标准化等。</p>
+                    <h3 className="font-semibold text-lg mb-2">分类预测 (Classification)</h3>
+                    <p className="text-text mb-3">根据用户的历史行为特征，预测其未来的购买意向。</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">数据清洗</h4>
-                        <p className="text-sm text-text mb-2">处理缺失值、异常值、重复值</p>
-                        <p className="text-xs text-gray-600">确保数据质量可靠</p>
+                        <h4 className="font-medium text-primary mb-2">KNN分类器</h4>
+                        <p className="text-sm text-text mb-2">K近邻算法</p>
+                        <p className="text-xs text-gray-600">根据最近K个邻居判断类别</p>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">数据转换</h4>
-                        <p className="text-sm text-text mb-2">类型转换、编码、归一化</p>
-                        <p className="text-xs text-gray-600">统一数据格式</p>
+                        <h4 className="font-medium text-primary mb-2">决策树</h4>
+                        <p className="text-sm text-text mb-2">树形结构分类</p>
+                        <p className="text-xs text-gray-600">通过特征划分进行分类</p>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">特征工程</h4>
-                        <p className="text-sm text-text mb-2">特征选择、特征构造</p>
-                        <p className="text-xs text-gray-600">提升模型效果</p>
+                        <h4 className="font-medium text-primary mb-2">朴素贝叶斯</h4>
+                        <p className="text-sm text-text mb-2">概率分类</p>
+                        <p className="text-xs text-gray-600">基于贝叶斯定理的概率分类</p>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">数据集成</h4>
-                        <p className="text-sm text-text mb-2">合并多个数据源</p>
-                        <p className="text-xs text-gray-600">构建完整数据集</p>
+                        <h4 className="font-medium text-primary mb-2">随机森林</h4>
+                        <p className="text-sm text-text mb-2">集成学习</p>
+                        <p className="text-xs text-gray-600">多棵决策树的集成</p>
                       </div>
                     </div>
                   </div>
@@ -474,15 +572,19 @@ print("\\n✓ 练习完成！尝试修改数据看看效果")`;
           </div>
 
           <div className="bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
+            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后练习</h2>
             <div className="space-y-3">
               <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">1. 如何选择缺失值的处理方法？</p>
-                <p className="text-sm text-gray-600">提示：考虑缺失原因（随机缺失还是系统性缺失）、缺失比例和数据分布</p>
+                <p className="font-medium mb-2">1. 关联规则练习：如果某商品的支持度是0.1，置信度是0.8，能说明什么？</p>
+                <p className="text-sm text-gray-600">提示：支持度反映商品组合的普遍性，置信度反映购买相关性</p>
               </div>
               <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">2. 异常值一定要删除吗？</p>
-                <p className="text-sm text-gray-600">提示：有时异常值本身包含重要信息，需要根据业务场景判断</p>
+                <p className="font-medium mb-2">2. 聚类分析练习：如何确定K-Means中的最佳K值？</p>
+                <p className="text-sm text-gray-600">提示：可以考虑肘部法则(Elbow Method)或轮廓系数</p>
+              </div>
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <p className="font-medium mb-2">3. 实战练习：修改代码中的交易数据，添加更多商品组合，观察关联规则的变化</p>
+                <p className="text-sm text-gray-600">提示：尝试添加更多交易记录，观察哪些商品组合的支持度会提高</p>
               </div>
             </div>
           </div>

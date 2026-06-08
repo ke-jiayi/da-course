@@ -32,6 +32,7 @@ import ABTesting from './components/ABTesting'
 import TimeSeries from './components/TimeSeries'
 import AnomalyDetection from './components/AnomalyDetection'
 import PyodideTest from './components/PyodideTest'
+import PythonPlayground from './components/PythonPlayground'
 import LearningGuide from './components/LearningGuide'
 import Projects from './components/Projects'
 import ProjectDetail from './components/ProjectDetail'
@@ -147,6 +148,7 @@ function App() {
             <Route path="/time-series" element={<PageTransition><TimeSeries /></PageTransition>} />
             <Route path="/anomaly-detection" element={<PageTransition><AnomalyDetection /></PageTransition>} />
             <Route path="/pyodide-test" element={<PageTransition><PyodideTest /></PageTransition>} />
+            <Route path="/python-playground" element={<PageTransition><PythonPlayground /></PageTransition>} />
             <Route path="/learning-guide" element={<PageTransition><LearningGuide /></PageTransition>} />
             <Route path="/projects" element={<PageTransition><Projects /></PageTransition>} />
             <Route path="/project/:id" element={<PageTransition><ProjectDetail /></PageTransition>} />
