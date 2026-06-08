@@ -426,7 +426,7 @@ print(f"方差: {np.var(data):.2f}")`;
                   <div>
                     <div
                       className="text-green-400 whitespace-pre-wrap font-mono text-sm"
-                      dangerouslySetInnerHTML={{ __html: result.output.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>') }}
+                      dangerouslySetInnerHTML={{ __html: result.output.replace(/\n/g, '<br/>') }}
                     />
                   </div>
                 )}
