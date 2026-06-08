@@ -136,7 +136,7 @@ const TestDetail: React.FC = () => {
 
   const handleStartTest = () => {
     setIsStarted(true);
-    setTimeLeft(test?.duration || 0 * 60);
+    setTimeLeft((test?.duration || 0) * 60); // 将分钟转换为秒
   };
 
   const handleAnswerChange = (questionId: string, answer: string | string[]) => {
