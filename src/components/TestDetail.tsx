@@ -832,18 +832,17 @@ const TestDetail: React.FC = () => {
         ]
       };
       
-      const testTitles: Record<string, { title: string; description: string; type: string }> = {
-        '1': { title: '第一章 数据基础测试', description: '测试你对数据基础概念的理解', type: '章节测试' },
-        '2': { title: '第二章 数据分析测试', description: '测试你对数据分析方法的掌握', type: '章节测试' },
-        '3': { title: '综合测评 - 基础篇', description: '全面评估你的数据分析基础能力', type: '综合测评' },
-        '4': { title: '综合测评 - 进阶篇', description: '全面评估你的数据分析进阶能力', type: '综合测评' },
-        '5': { title: '综合测评 - 高级篇', description: '全面评估你的数据分析高级能力', type: '综合测评' }
+      const testTitles: Record<string, { title: string; description: string; type: string; duration: number }> = {
+        '1': { title: '第一章 数据基础测试', description: '测试你对数据基础概念的理解', type: '章节测试', duration: 30 },
+        '2': { title: '第二章 数据分析测试', description: '测试你对数据分析方法的掌握', type: '章节测试', duration: 45 },
+        '3': { title: '综合测评 - 基础篇', description: '全面评估你的数据分析基础能力', type: '综合测评', duration: 60 },
+        '4': { title: '综合测评 - 进阶篇', description: '全面评估你的数据分析进阶能力', type: '综合测评', duration: 75 },
+        '5': { title: '综合测评 - 高级篇', description: '全面评估你的数据分析高级能力', type: '综合测评', duration: 90 }
       };
       
       const mockTest: TestDetail = {
         id: id || '1',
         ...testTitles[id || '1'],
-        duration: 30,
         questions: testQuestions[id || '1'] || testQuestions['1']
       };
       
