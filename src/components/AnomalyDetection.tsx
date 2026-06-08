@@ -172,6 +172,63 @@ print("-" * 40)
 print(f"Z-Score 方法异常数: {len(anomalies)}")
 print(f"IQR 方法异常数: {len(iqr_anomalies)}")
 
+# ==================== Isolation Forest 方法 ====================
+print("\\n【方法三：Isolation Forest 孤立森林检测】")
+print("-" * 40)
+
+def isolation_forest_simple(data, n_trees=100, subsample_size=256):
+    import random
+    import math
+    
+    def path_length(x, data_subset):
+        if len(data_subset) <= 1:
+            return 0
+        split_val = random.choice(data_subset)
+        left = [d for d in data_subset if d <= split_val]
+        right = [d for d in data_subset if d > split_val]
+        if x <= split_val:
+            return 1 + path_length(x, left)
+        else:
+            return 1 + path_length(x, right)
+    
+    anomaly_scores = []
+    for x in data:
+        avg_path = 0
+        for _ in range(n_trees):
+            subset = random.sample(data, min(subsample_size, len(data)))
+            avg_path += path_length(x, subset)
+        avg_path /= n_trees
+        
+        c = 2 * (math.log(len(data)-1) + 0.5772156649) - (2*(len(data)-1)/len(data))
+        score = 2 ** (-avg_path / c)
+        anomaly_scores.append(score)
+    
+    return anomaly_scores
+
+data_iforest = [120, 135, 128, 142, 138, 125, 130, 145, 132, 128,
+                135, 140, 500, 138, 142, 125, 130, 135, 140, 128]
+
+scores = isolation_forest_simple(data_iforest)
+
+print(f"数据集: {data_iforest}")
+print(f"\\n检测结果（异常分数 > 0.5 视为异常）:")
+
+iforest_anomalies = []
+for i, (value, score) in enumerate(zip(data_iforest, scores)):
+    status = "⚠️ 异常" if score > 0.5 else "✓ 正常"
+    print(f"  #{i:2d}: 值={value:4d}, 异常分数={score:.4f} {status}")
+    if score > 0.5:
+        iforest_anomalies.append((i, value, score))
+
+print(f"\\n共检测到 {len(iforest_anomalies)} 个异常值")
+
+# ==================== 综合对比 ====================
+print("\\n【综合对比】")
+print("-" * 40)
+print(f"Z-Score 方法异常数: {len(anomalies)}")
+print(f"IQR 方法异常数: {len(iqr_anomalies)}")
+print(f"Isolation Forest 方法异常数: {len(iforest_anomalies)}")
+
 print("\\n✓ 异常值检测完成！")
 print("提示: 尝试调整阈值参数，观察检测结果的变化")`;
 
