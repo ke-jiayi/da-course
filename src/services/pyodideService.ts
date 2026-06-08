@@ -141,10 +141,17 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
+import os
 
-plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+# 配置中文字体支持
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'SimHei', 'SimSun', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC']
+plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['axes.unicode_minus'] = False
 plt.ioff()
+
+# 禁用字体缺失警告
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, message='.*missing from current font.*')
 
 def show_plot():
     """将当前图表转换为 base64 编码的 HTML img 标签"""
@@ -166,6 +173,22 @@ def show_plot():
 def clear_plots():
     """清除所有图表"""
     plt.close('all')
+
+def set_chinese_font():
+    """尝试设置中文字体"""
+    import matplotlib.font_manager as fm
+    font_path = None
+    
+    # 尝试查找系统中的中文字体
+    font_candidates = ['SimHei.ttf', 'SimSun.ttf', 'WenQuanYiZenHei.ttf', 'NotoSansCJKsc.ttf']
+    
+    for font_name in font_candidates:
+        try:
+            fm.findfont(font_name)
+            plt.rcParams['font.sans-serif'] = [font_name] + plt.rcParams['font.sans-serif']
+            break
+        except:
+            continue
 `);
     
     this.log('Matplotlib 配置完成');
