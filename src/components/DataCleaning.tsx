@@ -261,6 +261,188 @@ print("=" * 60)
 #   4. 输出清洗后的记录数 + 前 5 行预览
 `;
 
+  const step2Answer = `# ============================================================
+# Step 2: 缺失值处理 + 去重 + 格式标准化
+# ============================================================
+import csv
+from io import StringIO
+from collections import Counter
+
+# ---------------------- 1. 脏数据（CSV 字符串） ----------------------
+csv_data = """order_id,product,quantity,price,region,date
+1001,iPhone,2,5999,北京,2024-01-15
+1002,MacBook,1,12999,上海,2024-01-16
+1003,AirPods,,1299,北京,2024-01-17
+1004,iPad,3,,广州,2024-01-18
+1005,iPhone,2,5999,北京,2024-01-15
+1006,MacBook,1,99999,深圳,2024-01-19
+1007,Watch,-2,2199,上海,2024-01-20
+1008,,1,899,北京,2024-01-21
+1009,iPhone,2,5999,beijing,2024/01/15
+1010,MacBook,1,12999,上海,2024-01-16
+1011,iPad,5,3499,杭州,2024-01-22
+1012,AirPods,2,1299,,
+1013,Watch,1,2199,上海,2024-01-23
+1014,iPhone,-1,5999,北京,2024-01-24
+1015,MacBook,1,12999,上海,2024-01-16
+1016,iPad,0,3499,南京,2024-01-25
+1017,AirPods,3,12999,北京,2024-01-26
+1018,Watch,1,,上海,2024-01-27
+1019,iPhone,2,5999,北京,2024-01-15
+1020,MacBook,100,12999,上海,2024-01-28
+"""
+
+# ---------------------- 2. 解析 CSV ----------------------
+reader = csv.DictReader(StringIO(csv_data))
+rows = list(reader)
+fields = reader.fieldnames
+
+print("=" * 60)
+print("          🧹 Step 2: 数据清洗（缺失值 + 去重 + 格式标准化）")
+print("=" * 60)
+print(f"\\n📊 原始数据: {len(rows)} 行")
+
+# ---------------------- 3. 缺失值填充 ----------------------
+print("\\n" + "-" * 60)
+print(" 【1】缺失值处理")
+print("-" * 60)
+
+# 3.1 quantity 用中位数填充
+quantities = [float(r['quantity']) for r in rows if r['quantity'].strip()]
+quantities_sorted = sorted(quantities)
+n = len(quantities_sorted)
+median_qty = quantities_sorted[n // 2] if n % 2 == 1 else (quantities_sorted[n // 2 - 1] + quantities_sorted[n // 2]) / 2
+
+# 3.2 price 用同 product 均值填充
+product_prices = {}
+for r in rows:
+    p = r['product'].strip()
+    if r['price'].strip():
+        product_prices.setdefault(p, []).append(float(r['price']))
+product_avg_price = {p: sum(v) / len(v) for p, v in product_prices.items()}
+
+# 3.3 region 用众数填充，date 用默认值
+regions = [r['region'].strip() for r in rows if r['region'].strip()]
+region_counter = Counter(regions)
+mode_region = region_counter.most_common(1)[0][0] if region_counter else "未知"
+
+# 填充
+filled_count = 0
+for r in rows:
+    if not r['quantity'].strip():
+        r['quantity'] = str(int(median_qty))
+        filled_count += 1
+    if not r['price'].strip():
+        r['price'] = str(int(product_avg_price.get(r['product'].strip(), 0)))
+        filled_count += 1
+    if not r['region'].strip():
+        r['region'] = mode_region
+        filled_count += 1
+    if not r['date'].strip():
+        r['date'] = "2024-01-01"
+        filled_count += 1
+    if not r['product'].strip():
+        r['product'] = "未知商品"
+
+print(f"  ✅ quantity 缺失 → 用中位数 {int(median_qty)} 填充")
+print(f"  ✅ price 缺失 → 用同产品均值填充")
+print(f"  ✅ region 缺失 → 用众数 '{mode_region}' 填充")
+print(f"  ✅ date 缺失 → 用 '2024-01-01' 填充")
+print(f"  共处理 {filled_count} 个缺失值")
+
+# ---------------------- 4. 去重 ----------------------
+print("\\n" + "-" * 60)
+print(" 【2】删除重复行（保留第一条）")
+print("-" * 60)
+
+row_strings = [tuple(r[f] for f in fields) for r in rows]
+counter = Counter(row_strings)
+dup_count = sum(v - 1 for _, v in counter.items() if v > 1)
+
+seen = set()
+unique_rows = []
+dup_removed = 0
+for r in rows:
+    key = tuple(r[f] for f in fields)
+    if key not in seen:
+        seen.add(key)
+        unique_rows.append(r)
+    else:
+        dup_removed += 1
+
+rows[:] = unique_rows
+print(f"  ✅ 删除重复行: {dup_removed} 行")
+print(f"  去重后数据: {len(rows)} 行")
+
+# ---------------------- 5. 格式标准化 ----------------------
+print("\\n" + "-" * 60)
+print(" 【3】格式标准化")
+print("-" * 60)
+
+# region 统一为中文（首字母大写）
+region_map = {
+    'beijing': '北京', 'shanghai': '上海', 'guangzhou': '广州',
+    'shenzhen': '深圳', 'hangzhou': '杭州', 'nanjing': '南京'
+}
+region_fixed = 0
+for r in rows:
+    original = r['region']
+    r['region'] = region_map.get(r['region'].lower().strip(), r['region'].strip())
+    if original.lower().strip() in region_map:
+        region_fixed += 1
+
+# date 统一为 YYYY-MM-DD
+import re
+date_fixed = 0
+for r in rows:
+    d = r['date'].strip()
+    # 转换 2024/01/15 → 2024-01-15
+    if '/' in d:
+        parts = d.split('/')
+        if len(parts) == 3:
+            r['date'] = f"{parts[0]}-{parts[1].zfill(2)}-{parts[2].zfill(2)}"
+            date_fixed += 1
+
+# quantity 和 price 转为数值
+for r in rows:
+    try:
+        r['quantity'] = str(int(float(r['quantity'])))
+    except:
+        r['quantity'] = '0'
+    try:
+        r['price'] = str(int(float(r['price'])))
+    except:
+        r['price'] = '0'
+
+print(f"  ✅ region 格式统一: 修正 {region_fixed} 条")
+print(f"  ✅ date 格式统一: 修正 {date_fixed} 条 (转换为 YYYY-MM-DD)")
+
+# ---------------------- 6. 清洗后数据预览 ----------------------
+print("\\n" + "=" * 60)
+print("          📋 清洗后数据预览（前 5 行）")
+print("=" * 60)
+
+# 打印表头
+print("  " + " | ".join([f"{f:>12}" for f in fields]))
+print("  " + "-" * (15 * len(fields)))
+
+for i, r in enumerate(rows[:5], 1):
+    print("  " + " | ".join([f"{r[f]:>12}" for f in fields]))
+
+print(f"\\n  ... 共 {len(rows)} 行")
+
+# ---------------------- 7. 汇总 ----------------------
+print("\\n" + "=" * 60)
+print("                  📝 Step 2 清洗报告汇总")
+print("=" * 60)
+print(f"  ✅ 原始数据:     20 行")
+print(f"  ✅ 清洗后数据:   {len(rows)} 行")
+print(f"  ✅ 删除重复:     {dup_removed} 行")
+print(f"  ✅ 填充缺失:     {filled_count} 处")
+print(f"  ✅ 格式统一:     {region_fixed + date_fixed} 处")
+print("=" * 60)
+print("\\n  👉 建议下一步: 进行异常值检测与修正（Step 3）")
+`;
 
   const [step2Code, setStep2Code] = useState(step2Placeholder);
   const [step2Result, setStep2Result] = useState<any>(null);
@@ -274,6 +456,190 @@ print("=" * 60)
 #   2. 用描述性统计（均值/中位数/合理边界）修正异常
 #   3. 对比清洗前后数据集（行数、均值、中位数、极值）
 #   4. 输出修正报告
+`;
+
+  const step3Answer = `# ============================================================
+# Step 3: 异常值检测与修正（IQR 法 + 描述性统计）
+# ============================================================
+import csv
+from io import StringIO
+from collections import Counter
+
+# ---------------------- 1. 清洗后的数据（来自 Step 2） ----------------------
+csv_data = """order_id,product,quantity,price,region,date
+1001,iPhone,2,5999,北京,2024-01-15
+1002,MacBook,1,12999,上海,2024-01-16
+1003,AirPods,2,1299,北京,2024-01-17
+1004,iPad,3,3499,广州,2024-01-18
+1005,iPhone,2,5999,北京,2024-01-15
+1006,MacBook,1,99999,深圳,2024-01-19
+1007,Watch,2,2199,上海,2024-01-20
+1008,iPhone,1,899,北京,2024-01-21
+1009,iPhone,2,5999,北京,2024-01-15
+1010,MacBook,1,12999,上海,2024-01-16
+1011,iPad,5,3499,杭州,2024-01-22
+1012,AirPods,2,1299,上海,2024-01-23
+1013,Watch,1,2199,上海,2024-01-24
+1014,iPhone,1,5999,北京,2024-01-25
+1015,MacBook,1,12999,上海,2024-01-26
+1016,iPad,1,3499,南京,2024-01-27
+1017,AirPods,3,1299,北京,2024-01-28
+1018,Watch,1,2199,上海,2024-01-29
+1019,iPhone,2,5999,北京,2024-01-30
+1020,MacBook,100,12999,上海,2024-01-31
+"""
+
+# ---------------------- 2. 解析 CSV ----------------------
+reader = csv.DictReader(StringIO(csv_data))
+rows = list(reader)
+fields = reader.fieldnames
+
+def safe_float(v):
+    try:
+        return float(v)
+    except:
+        return None
+
+print("=" * 60)
+print("          📊 Step 3: 异常值检测与修正")
+print("=" * 60)
+
+# ==================== IQR 法检测 ====================
+def detect_iqr_outliers(values, field_name):
+    """IQR 法检测异常值"""
+    n = len(values)
+    if n < 4:
+        return [], [], []
+    sorted_v = sorted(values)
+    q1 = sorted_v[n // 4]
+    q3 = sorted_v[3 * n // 4]
+    iqr = q3 - q1
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+    return lower, upper, [(i + 1, v) for i, v in enumerate(values) if v < lower or v > upper]
+
+# ==================== 检测 quantity ====================
+print("\\n" + "-" * 60)
+print(" 【1】quantity 异常值检测 (IQR 法)")
+print("-" * 60)
+
+qty_values = [safe_float(r['quantity']) for r in rows if safe_float(r['quantity']) is not None]
+qty_before = qty_values.copy()
+
+lower_q, upper_q, qty_outliers = detect_iqr_outliers(qty_values, 'quantity')
+
+print(f"  有效值数量: {len(qty_values)}")
+print(f"  Q1 = {qty_values[len(qty_values)//4]}, Q3 = {qty_values[3*len(qty_values)//4]}")
+print(f"  IQR = Q3 - Q1")
+print(f"  正常范围: [{lower_q:.1f}, {upper_q:.1f}]")
+print(f"  发现异常值: {len(qty_outliers)} 条")
+for row_idx, val in qty_outliers:
+    print(f"    行 {row_idx}: quantity = {val}")
+
+# ==================== 检测 price ====================
+print("\\n" + "-" * 60)
+print(" 【2】price 异常值检测 (IQR 法)")
+print("-" * 60)
+
+price_values = [safe_float(r['price']) for r in rows if safe_float(r['price']) is not None]
+price_before = price_values.copy()
+
+lower_p, upper_p, price_outliers = detect_iqr_outliers(price_values, 'price')
+
+print(f"  有效值数量: {len(price_values)}")
+print(f"  Q1 = {price_values[len(price_values)//4]}, Q3 = {price_values[3*len(price_values)//4]}")
+print(f"  正常范围: [{lower_p:.1f}, {upper_p:.1f}]")
+print(f"  发现异常值: {len(price_outliers)} 条")
+for row_idx, val in price_outliers:
+    print(f"    行 {row_idx}: price = {val}")
+
+# ==================== 修正异常值 ====================
+print("\\n" + "-" * 60)
+print(" 【3】异常值修正策略")
+print("-" * 60)
+
+# quantity: 用中位数替换异常值
+qty_median = sorted(qty_values)[len(qty_values) // 2]
+qty_fixed = 0
+for r in rows:
+    v = safe_float(r['quantity'])
+    if v is not None and (v < lower_q or v > upper_q):
+        r['quantity'] = str(int(qty_median))
+        qty_fixed += 1
+
+# price: 用同 product 均值替换异常值（排除异常后计算）
+product_prices_clean = {}
+for r in rows:
+    p = r['product'].strip()
+    v = safe_float(r['price'])
+    if v is not None and lower_p <= v <= upper_p:
+        product_prices_clean.setdefault(p, []).append(v)
+product_avg_clean = {p: sum(v) / len(v) for p, v in product_prices_clean.items()}
+
+price_fixed = 0
+for r in rows:
+    v = safe_float(r['price'])
+    if v is not None and (v < lower_p or v > upper_p):
+        r['price'] = str(int(product_avg_clean.get(r['product'].strip(), 0)))
+        price_fixed += 1
+
+print(f"  ✅ quantity 异常修正: {qty_fixed} 条 → 用中位数 {int(qty_median)} 替换")
+print(f"  ✅ price 异常修正: {price_fixed} 条 → 用同产品均值替换")
+
+# ==================== 修正后统计 ====================
+print("\\n" + "-" * 60)
+print(" 【4】修正后数据统计")
+print("-" * 60)
+
+qty_after = [safe_float(r['quantity']) for r in rows if safe_float(r['quantity']) is not None]
+price_after = [safe_float(r['price']) for r in rows if safe_float(r['price']) is not None]
+
+def stats(vals):
+    n = len(vals)
+    s = sorted(vals)
+    return {
+        'count': n,
+        'mean': sum(vals) / n,
+        'median': s[n // 2],
+        'min': s[0],
+        'max': s[-1],
+        'std': (sum((x - sum(vals)/n)**2 for x in vals) / n) ** 0.5
+    }
+
+qty_s = stats(qty_after)
+price_s = stats(price_after)
+
+print(f"\\n  【quantity 修正前后对比】")
+print(f"    修正前: 均值={sum(qty_before)/len(qty_before):.1f}, 中位数={sorted(qty_before)[len(qty_before)//2]:.1f}")
+print(f"    修正后: 均值={qty_s['mean']:.1f}, 中位数={qty_s['median']:.1f}, 范围=[{qty_s['min']:.0f}, {qty_s['max']:.0f}]")
+
+print(f"\\n  【price 修正前后对比】")
+print(f"    修正前: 均值={sum(price_before)/len(price_before):.1f}, 中位数={sorted(price_before)[len(price_before)//2]:.1f}")
+print(f"    修正后: 均值={price_s['mean']:.1f}, 中位数={price_s['median']:.1f}, 范围=[{price_s['min']:.0f}, {price_s['max']:.0f}]")
+
+# ==================== 最终数据预览 ====================
+print("\\n" + "=" * 60)
+print("          📋 Step 3 修正后完整数据")
+print("=" * 60)
+
+print("  " + " | ".join([f"{f:>12}" for f in fields]))
+print("  " + "-" * (15 * len(fields)))
+
+for r in rows:
+    print("  " + " | ".join([f"{r[f]:>12}" for f in fields]))
+
+# ==================== 汇总 ====================
+print("\\n" + "=" * 60)
+print("                  📝 Step 3 修正报告汇总")
+print("=" * 60)
+print(f"  ✅ 原始记录数:         {len(rows)} 行")
+print(f"  ✅ quantity 异常修正:  {qty_fixed} 条")
+print(f"  ✅ price 异常修正:      {price_fixed} 条")
+print(f"  ✅ 修正后 quantity 均值: {qty_s['mean']:.1f} (合理范围)")
+print(f"  ✅ 修正后 price 均值:   {price_s['mean']:.1f} (合理范围)")
+print("=" * 60)
+print("\\n  🎉 数据清洗全流程完成！")
+print("  👉 建议下一步: 导出清洗后的数据，进行后续分析（如可视化、建模等）")
 `;
 
   const [step3Code, setStep3Code] = useState(step3Placeholder);
@@ -316,7 +682,9 @@ print("=" * 60)
     showAnswer: boolean,
     setShowAnswer: (b: boolean) => void,
     resetCode: () => void,
-    runFn: () => void
+    runFn: () => void,
+    answerCode: string,
+    placeholderCode: string
   ) => (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
@@ -360,7 +728,15 @@ print("=" * 60)
           </button>
 
           <button
-            onClick={() => setShowAnswer(!showAnswer)}
+            onClick={() => {
+              if (!showAnswer) {
+                onChange(answerCode);
+                setShowAnswer(true);
+              } else {
+                onChange(placeholderCode);
+                setShowAnswer(false);
+              }
+            }}
             className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
           >
             {showAnswer ? '隐藏参考答案' : '💡 查看参考答案'}
@@ -535,7 +911,9 @@ print("=" * 60)
             step1ShowAnswer,
             setStep1ShowAnswer,
             () => { setStep1Code(step1Placeholder); setStep1Result(null); },
-            () => runCode(step1Code, setStep1Result, setStep1Loading)
+            () => runCode(step1Code, setStep1Result, setStep1Loading),
+            step1Answer,
+            step1Placeholder
           )}
 
           {step1ShowAnswer && step1Code !== step1Answer && (
@@ -577,7 +955,9 @@ print("=" * 60)
             step2ShowAnswer,
             setStep2ShowAnswer,
             () => { setStep2Code(step2Placeholder); setStep2Result(null); },
-            () => runCode(step2Code, setStep2Result, setStep2Loading)
+            () => runCode(step2Code, setStep2Result, setStep2Loading),
+            step2Answer,
+            step2Placeholder
           )}
         </div>
 
@@ -615,7 +995,9 @@ print("=" * 60)
             step3ShowAnswer,
             setStep3ShowAnswer,
             () => { setStep3Code(step3Placeholder); setStep3Result(null); },
-            () => runCode(step3Code, setStep3Result, setStep3Loading)
+            () => runCode(step3Code, setStep3Result, setStep3Loading),
+            step3Answer,
+            step3Placeholder
           )}
         </div>
 
