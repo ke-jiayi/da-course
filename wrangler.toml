@@ -1,13 +1,2 @@
-name = "da-course"
-compatibility_date = "2024-04-20"
 pages_build_output_dir = "dist"
-
-[build]
-  command = "npm run build"
-  cwd = "."
-  watch_dir = ["src"]
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+compatibility_date = "2024-04-20"
