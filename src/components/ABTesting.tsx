@@ -3,817 +3,920 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPythonCode, isPyodideReady, initPyodide } from '../services/pyodideService';
+import { runPythonCode, initPyodide, isPyodideReady, PyodideProgress } from '../services/pyodideService';
+import PyodideLoader from './PyodideLoader';
+import CourseCompletion from './CourseCompletion';
 
-const ABTesting: React.FC = () => {
-  const [code, setCode] = useState('');
-  const [result, setResult] = useState<{ success: boolean; output?: string; stdout: string; stderr: string; error?: any; } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [pyodideStatus, setPyodideStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [activeProject, setActiveProject] = useState(0);
+// ============ Step 1: 基础练习 - 参考答案 ============
+const step1Answer = `# Step 1: 读取 A/B 测试数据，计算基础转化率与统计指标
+import math
 
-  useEffect(() => {
-    const checkPyodide = async () => {
-      if (isPyodideReady()) {
-        setPyodideStatus('ready');
-        return;
-      }
+csv_data = """group,impressions,clicks,conversions,revenue
+control,12500,3200,480,18240.50
+treatment,12800,3580,596,23256.80
+"""
 
-      try {
-        await initPyodide();
-        setPyodideStatus('ready');
-      } catch (error) {
-        console.error('Pyodide 初始化失败:', error);
-        setPyodideStatus('error');
-      }
-    };
+lines = csv_data.strip().split("\\n")
+header = lines[0].split(",")
+data = []
+for line in lines[1:]:
+    vals = line.split(",")
+    row = dict(zip(header, vals))
+    row["impressions"] = int(row["impressions"])
+    row["clicks"] = int(row["clicks"])
+    row["conversions"] = int(row["conversions"])
+    row["revenue"] = float(row["revenue"])
+    data.append(row)
 
-    checkPyodide();
-  }, []);
+print("=" * 60)
+print("【 Step 1 · 基础指标计算 】")
+print("=" * 60)
 
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode);
-    setResult(null);
-  };
+results = {}
+for row in data:
+    g = row["group"]
+    imp = row["impressions"]
+    clicks = row["clicks"]
+    conv = row["conversions"]
+    rev = row["revenue"]
 
-  const handleRunCode = async () => {
-    if (!code.trim()) {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'InputError',
-          message: '请输入代码后再运行'
-        }
-      });
-      return;
+    ctr = clicks / imp
+    cvr = conv / clicks
+    overall_conv = conv / imp
+    arpconv = rev / conv
+    rpm = rev / imp
+
+    se_ctr = math.sqrt(ctr * (1 - ctr) / imp)
+    se_cvr = math.sqrt(cvr * (1 - cvr) / clicks)
+
+    results[g] = {
+        "impressions": imp,
+        "clicks": clicks,
+        "conversions": conv,
+        "revenue": rev,
+        "ctr": ctr,
+        "cvr": cvr,
+        "overall_conv": overall_conv,
+        "arpconv": arpconv,
+        "rpm": rpm,
+        "se_ctr": se_ctr,
+        "se_cvr": se_cvr,
     }
 
-    if (pyodideStatus !== 'ready') {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'SystemError',
-          message: 'Python 环境正在初始化，请稍候...'
-        }
-      });
-      return;
-    }
+for g, r in results.items():
+    print(f"\\n  {g.upper()} 组")
+    print(f"  曝光量:      {r['impressions']:,}")
+    print(f"  点击量:      {r['clicks']:,}")
+    print(f"  转化数:      {r['conversions']:,}")
+    print(f"  总收益:      ¥ {r['revenue']:,.2f}")
+    print(f"  点击率(CTR): {r['ctr']*100:.2f}%  ±{r['se_ctr']*100:.2f}%")
+    print(f"  转化率(CVR): {r['cvr']*100:.2f}%  ±{r['se_cvr']*100:.2f}%")
+    print(f"  总转化率:    {r['overall_conv']*100:.2f}%")
+    print(f"  单客收益:    ¥ {r['arpconv']:.2f}")
+    print(f"  RPM:         ¥ {r['rpm']:.2f} / 千次曝光")
 
-    setIsLoading(true);
-    setResult(null);
+print("\\n" + "=" * 60)
+print("【 差异对比 (Treatment vs Control) 】")
+print("=" * 60)
 
-    try {
-      const executionResult = await runPythonCode(code);
-      setResult(executionResult);
-    } catch (err) {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'ExecutionError',
-          message: '执行出错: ' + (err as Error).message
-        }
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+ctrl = results["control"]
+trt = results["treatment"]
 
-  const placeholderCode = `# 在这里编写你的A/B测试代码
-# 点击"显示参考答案"按钮可以查看示例代码
+diff_ctr = trt["ctr"] - ctrl["ctr"]
+diff_cvr = trt["cvr"] - ctrl["cvr"]
+lift_ctr = diff_ctr / ctrl["ctr"] * 100
+lift_cvr = diff_cvr / ctrl["cvr"] * 100
 
-# 提示：
-# 1. 定义对照组和实验组的数据
-# 2. 计算转化率
-# 3. 进行统计检验
-# 4. 输出分析结论
+print(f"\\n  CTR 绝对差: {diff_ctr*100:+.2f}%    相对提升: {lift_ctr:+.2f}%")
+print(f"  CVR 绝对差: {diff_cvr*100:+.2f}%    相对提升: {lift_cvr:+.2f}%")
+print(f"  收益差:     ¥{trt['revenue']-ctrl['revenue']:+,.2f}")
+print(f"  RPM 提升:   {(trt['rpm']-ctrl['rpm']):+.2f} / 千次曝光")
 
+print("\\n✅ Step 1 完成：已读取并计算基础统计指标")
 `;
 
-  const answerCodeProject1 = `# A/B测试基础概念练习
+// ============ Step 2: 进阶练习 - 参考答案 ============
+const step2Answer = `# Step 2: 使用 Python 实现比例 z-test (双样本)
 import math
 
-print("=" * 50)
-print("A/B测试基础概念")
-print("=" * 50)
+def two_proportion_z_test(conv_a, n_a, conv_b, n_b, alpha=0.05):
+    """双样本比例 z 检验
+    返回: (z_score, p_value, pooled_SE, ci_lower, ci_upper)
+    """
+    p_a = conv_a / n_a
+    p_b = conv_b / n_b
+    p_pooled = (conv_a + conv_b) / (n_a + n_b)
+    se_pooled = math.sqrt(p_pooled * (1 - p_pooled) * (1.0 / n_a + 1.0 / n_b))
 
-# 1. 假设检验基础
-print("\\n【1. 假设检验】")
-print("原假设(H0): 实验组与对照组没有显著差异")
-print("备择假设(H1): 实验组与对照组存在显著差异")
+    diff = p_b - p_a
+    z_score = diff / se_pooled
 
-# 2. 实验数据
-print("\\n【2. 实验数据】")
-control_visitors = 5000
-control_conversions = 150
-treatment_visitors = 5000
-treatment_conversions = 180
+    # 使用级数近似计算标准正态分布的双尾 p-value (避免 scipy 依赖)
+    def norm_sf(x):
+        """生存函数 P(Z > x), x >= 0"""
+        # Abramowitz & Stegun 7.1.26
+        t = 1.0 / (1.0 + 0.2316419 * x)
+        d = 0.3989422804014327 * math.exp(-x * x / 2.0)
+        p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))))
+        return p
 
-print(f"对照组: {control_visitors} 访问, {control_conversions} 转化")
-print(f"实验组: {treatment_visitors} 访问, {treatment_conversions} 转化")
+    abs_z = abs(z_score)
+    p_value = 2.0 * norm_sf(abs_z)
+    if z_score == 0:
+        p_value = 1.0
 
-# 3. 计算转化率
-print("\\n【3. 转化率计算】")
-control_rate = control_conversions / control_visitors
-treatment_rate = treatment_conversions / treatment_visitors
+    # 95% 置信区间：使用非合并方差
+    se_unpooled = math.sqrt(p_a * (1 - p_a) / n_a + p_b * (1 - p_b) / n_b)
+    z_crit = 1.96  # 对应 alpha=0.05 双尾
+    ci_lower = diff - z_crit * se_unpooled
+    ci_upper = diff + z_crit * se_unpooled
 
-print(f"对照组转化率: {control_rate*100:.2f}%")
-print(f"实验组转化率: {treatment_rate*100:.2f}%")
+    return z_score, p_value, se_pooled, ci_lower, ci_upper, se_unpooled, p_a, p_b
 
-# 4. 显著性水平与P值
-print("\\n【4. 显著性检验】")
-print("显著性水平(α): 通常设为 0.05 (5%)")
-print("置信水平: 1 - α = 0.95 (95%)")
 
-# 5. 计算Z分数
-se_control = math.sqrt(control_rate * (1 - control_rate) / control_visitors)
-se_treatment = math.sqrt(treatment_rate * (1 - treatment_rate) / treatment_visitors)
-se_diff = math.sqrt(se_control**2 + se_treatment**2)
-z_score = (treatment_rate - control_rate) / se_diff
+csv_data = """group,impressions,clicks,conversions,revenue
+control,12500,3200,480,18240.50
+treatment,12800,3580,596,23256.80
+"""
 
-print(f"Z分数: {z_score:.4f}")
-print(f"判断: |Z| = {abs(z_score):.4f} {'>' if abs(z_score) > 1.96 else '<'} 1.96")
-print(f"结论: 差异{'统计显著' if abs(z_score) > 1.96 else '不显著'}")
-
-print("\\n✓ 基础概念练习完成！")`;
-
-  const answerCodeProject2 = `# A/B测试实战案例：网站改版
-import math
-
-print("=" * 50)
-print("网站改版测试实战案例")
-print("=" * 50)
-
-# 1. 实验背景
-print("\\n【实验背景】")
-print("目标: 测试新的"立即购买"按钮颜色是否能提高转化率")
-print("指标: 点击"立即购买"按钮的用户比例")
-
-# 2. 数据收集
-print("\\n【实验数据】")
-data = {
-    "A组(原版-红色按钮)": {"visitors": 10000, "conversions": 320},
-    "B组(新版-绿色按钮)": {"visitors": 10000, "conversions": 385}
-}
-
-for group, stats in data.items():
-    print(f"{group}:")
-    print(f"  访问量: {stats['visitors']}")
-    print(f"  转化数: {stats['conversions']}")
-
-# 3. 计算转化率
-print("\\n【转化率分析】")
-a_visitors = data["A组(原版-红色按钮)"]["visitors"]
-a_conversions = data["A组(原版-红色按钮)"]["conversions"]
-b_visitors = data["B组(新版-绿色按钮)"]["visitors"]
-b_conversions = data["B组(新版-绿色按钮)"]["conversions"]
-
-a_rate = a_conversions / a_visitors
-b_rate = b_conversions / b_visitors
-
-print(f"A组转化率: {a_rate*100:.2f}%")
-print(f"B组转化率: {b_rate*100:.2f}%")
-
-# 4. 计算提升
-print("\\n【效果评估】")
-absolute_diff = b_rate - a_rate
-relative_lift = (b_rate - a_rate) / a_rate * 100
-print(f"绝对提升: {absolute_diff*100:.2f}%")
-print(f"相对提升: {relative_lift:.1f}%")
-
-# 5. 统计检验
-print("\\n【统计显著性检验】")
-se_a = math.sqrt(a_rate * (1 - a_rate) / a_visitors)
-se_b = math.sqrt(b_rate * (1 - b_rate) / b_visitors)
-se_diff = math.sqrt(se_a**2 + se_b**2)
-z_score = (b_rate - a_rate) / se_diff
-
-# 计算95%置信区间
-margin_of_error = 1.96 * se_diff
-ci_lower = (b_rate - a_rate) - margin_of_error
-ci_upper = (b_rate - a_rate) + margin_of_error
-
-print(f"Z分数: {z_score:.4f}")
-print(f"95%置信区间: [{ci_lower*100:.2f}%, {ci_upper*100:.2f}%]")
-print(f"显著性判断: {'显著' if abs(z_score) > 1.96 else '不显著'}")
-
-# 6. 结论
-print("\\n【最终结论】")
-if z_score > 1.96 and ci_lower > 0:
-    print("✓ 推荐上线绿色按钮版本")
-    print("  理由: 转化率显著提升，效果可落地")
-elif z_score < -1.96:
-    print("✗ 保持原版红色按钮")
-    print("  理由: 新版本转化率反而下降")
-else:
-    print("? 需要更多数据再做判断")
-    print("  理由: 当前差异不具统计显著性")
-
-print("\\n✓ 实战案例分析完成！")`;
-
-  const answerCodeProject3 = `# A/B测试高级技巧：样本量与功效分析
-import math
-from scipy import stats
-
-print("=" * 50)
-print("高级技巧：样本量计算与功效分析")
-print("=" * 50)
-
-# 1. 功效分析基础
-print("\\n【1. 功效分析概念】")
-print("统计功效(Power): 当真实存在差异时，正确检测到的概率")
-print("通常设定: Power = 0.8 (80%)")
-print("显著性水平: α = 0.05 (5%)")
-
-# 2. 样本量计算
-print("\\n【2. 样本量计算】")
-baseline_rate = 0.03
-minimum_detectable_effect = 0.20
-alpha = 0.05
-power = 0.80
-
-p1 = baseline_rate
-p2 = baseline_rate * (1 + minimum_detectable_effect)
-
-p_avg = (p1 + p2) / 2
-z_alpha = stats.norm.ppf(1 - alpha / 2)
-z_beta = stats.norm.ppf(power)
-
-se_pooled = math.sqrt(2 * p_avg * (1 - p_avg))
-se_diff = math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))
-
-delta = abs(p2 - p1)
-
-n_per_group = ((z_alpha * se_pooled + z_beta * se_diff) / delta) ** 2
-
-print(f"基准转化率: {baseline_rate*100:.1f}%")
-print(f"最小可检测提升: {minimum_detectable_effect*100:.0f}%")
-print(f"目标转化率: {p2*100:.1f}%")
-print(f"每组所需样本量: {int(n_per_group):,}")
-
-# 3. 置信区间详解
-print("\\n【3. 置信区间解读】")
-sample_size = 10000
-observed_rate_a = 0.032
-observed_rate_b = 0.038
-
-se_a = math.sqrt(observed_rate_a * (1 - observed_rate_a) / sample_size)
-se_b = math.sqrt(observed_rate_b * (1 - observed_rate_b) / sample_size)
-
-diff = observed_rate_b - observed_rate_a
-se_diff = math.sqrt(se_a**2 + se_b**2)
-
-ci_95_lower = diff - 1.96 * se_diff
-ci_95_upper = diff + 1.96 * se_diff
-
-ci_99_lower = diff - 2.576 * se_diff
-ci_99_upper = diff + 2.576 * se_diff
-
-print(f"转化率差异: {diff*100:.2f}%")
-print(f"95%置信区间: [{ci_95_lower*100:.2f}%, {ci_95_upper*100:.2f}%]")
-print(f"99%置信区间: [{ci_99_lower*100:.2f}%, {ci_99_upper*100:.2f}%]")
-
-# 4. 多重比较校正
-print("\\n【4. 多重比较问题】")
-n_comparisons = 5
-bonferroni_alpha = alpha / n_comparisons
-print(f"比较次数: {n_comparisons}")
-print(f"Bonferroni校正后α: {bonferroni_alpha:.4f}")
-print(f"原始α: {alpha:.2f}")
-print("注意: 比较次数越多，出现假阳性的概率越大")
-
-# 5. 效应量
-print("\\n【5. 效应量(Cohen's h)】")
-import numpy as np
-def cohens_h(p1, p2):
-    return 2 * (np.arcsin(np.sqrt(p2)) - np.arcsin(np.sqrt(p1)))
-
-effect_size = cohens_h(observed_rate_a, observed_rate_b)
-print(f"效应量: {effect_size:.4f}")
-print("解读: 小效应(0.2) | 中等效应(0.5) | 大效应(0.8)")
-
-print("\\n✓ 高级技巧练习完成！")`;
-
-  const projects = [
-    {
-      id: 1,
-      title: '基础概念',
-      description: '学习假设检验、显著性水平、P值等核心概念'
-    },
-    {
-      id: 2,
-      title: '实战案例：网站改版测试',
-      description: '通过真实案例学习A/B测试的完整分析流程'
-    },
-    {
-      id: 3,
-      title: '高级技巧',
-      description: '掌握样本量计算、功效分析和多重比较校正'
+lines = csv_data.strip().split("\\n")[1:]
+data = {}
+for line in lines:
+    parts = line.split(",")
+    g = parts[0]
+    data[g] = {
+        "impressions": int(parts[1]),
+        "clicks": int(parts[2]),
+        "conversions": int(parts[3]),
+        "revenue": float(parts[4]),
     }
-  ];
 
-  const getAnswerCode = () => {
-    switch (activeProject) {
-      case 0: return answerCodeProject1;
-      case 1: return answerCodeProject2;
-      case 2: return answerCodeProject3;
-      default: return answerCodeProject1;
+print("=" * 60)
+print("【 Step 2 · 双样本 z 检验 】")
+print("=" * 60)
+print("\\n  H0 (原假设):      p_treatment == p_control")
+print("  H1 (备择假设):    p_treatment != p_control")
+print("  显著性水平 α:     0.05")
+print("  检验类型:         双尾检验")
+
+print("\\n" + "-" * 60)
+print("【 检验 1 · 点击率 CTR 】(clicks / impressions)")
+print("-" * 60)
+
+c = data["control"]
+t = data["treatment"]
+
+z, p, se_pooled, ci_lo, ci_up, se_un, p_a, p_b = two_proportion_z_test(
+    c["clicks"], c["impressions"], t["clicks"], t["impressions"]
+)
+
+print(f"  Control:   {c['clicks']:>6} / {c['impressions']:>6} = {p_a*100:.3f}%")
+print(f"  Treatment: {t['clicks']:>6} / {t['impressions']:>6} = {p_b*100:.3f}%")
+print(f"  差异 (B-A):      {(p_b-p_a)*100:+.4f}%")
+print(f"  z 分数:          {z:+.4f}")
+print(f"  p-value:         {p:.8f}")
+print(f"  95% 置信区间:    [{ci_lo*100:+.4f}%, {ci_up*100:+.4f}%]")
+print(f"  判断:            {'✅ 统计显著 (p < 0.05)' if p < 0.05 else '❌ 不显著 (p >= 0.05)'}")
+
+print("\\n" + "-" * 60)
+print("【 检验 2 · 转化率 CVR 】(conversions / clicks)")
+print("-" * 60)
+
+z2, p2, se2, ci_lo2, ci_up2, se_un2, pa2, pb2 = two_proportion_z_test(
+    c["conversions"], c["clicks"], t["conversions"], t["clicks"]
+)
+
+print(f"  Control:   {c['conversions']:>6} / {c['clicks']:>6} = {pa2*100:.3f}%")
+print(f"  Treatment: {t['conversions']:>6} / {t['clicks']:>6} = {pb2*100:.3f}%")
+print(f"  差异 (B-A):      {(pb2-pa2)*100:+.4f}%")
+print(f"  z 分数:          {z2:+.4f}")
+print(f"  p-value:         {p2:.8f}")
+print(f"  95% 置信区间:    [{ci_lo2*100:+.4f}%, {ci_up2*100:+.4f}%]")
+print(f"  判断:            {'✅ 统计显著 (p < 0.05)' if p2 < 0.05 else '❌ 不显著 (p >= 0.05)'}")
+
+print("\\n" + "-" * 60)
+print("【 检验 3 · 总转化率 】(conversions / impressions)")
+print("-" * 60)
+
+z3, p3, se3, ci_lo3, ci_up3, se_un3, pa3, pb3 = two_proportion_z_test(
+    c["conversions"], c["impressions"], t["conversions"], t["impressions"]
+)
+
+print(f"  Control:   {c['conversions']:>6} / {c['impressions']:>6} = {pa3*100:.3f}%")
+print(f"  Treatment: {t['conversions']:>6} / {t['impressions']:>6} = {pb3*100:.3f}%")
+print(f"  差异 (B-A):      {(pb3-pa3)*100:+.4f}%")
+print(f"  z 分数:          {z3:+.4f}")
+print(f"  p-value:         {p3:.8f}")
+print(f"  95% 置信区间:    [{ci_lo3*100:+.4f}%, {ci_up3*100:+.4f}%]")
+print(f"  判断:            {'✅ 统计显著 (p < 0.05)' if p3 < 0.05 else '❌ 不显著 (p >= 0.05)'}")
+
+print("\\n" + "=" * 60)
+print("【 小知识 · 第一类 / 第二类错误 】")
+print("=" * 60)
+print("  第一类错误 (Type I, α):  错误地拒绝真的 H0  (假阳性)")
+print("  第二类错误 (Type II, β): 错误地接受假的 H0  (假阴性)")
+print("  检验效能 Power = 1 - β")
+print("  α 越小，β 越大 → 需要更大样本量才能达到同样 Power")
+
+print("\\n✅ Step 2 完成：已实现比例 z-test，输出 p-value 与置信区间")
+`;
+
+// ============ Step 3: 挑战练习 - 参考答案 ============
+const step3Answer = `# Step 3: 综合决策分析 —— 结合显著性、效果幅度、收益潜力
+import math
+
+# ---------- 0. 复用的 z-test ----------
+def two_prop_z(conv_a, n_a, conv_b, n_b):
+    p_a = conv_a / n_a
+    p_b = conv_b / n_b
+    p_pool = (conv_a + conv_b) / (n_a + n_b)
+    se_pool = math.sqrt(p_pool * (1 - p_pool) * (1.0 / n_a + 1.0 / n_b))
+    diff = p_b - p_a
+    z = diff / se_pool
+
+    def norm_sf(x):
+        t = 1.0 / (1.0 + 0.2316419 * x)
+        d = 0.3989422804014327 * math.exp(-x * x / 2.0)
+        return d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))))
+    p = 2.0 * norm_sf(abs(z))
+    se_u = math.sqrt(p_a * (1 - p_a) / n_a + p_b * (1 - p_b) / n_b)
+    return z, p, diff, se_u, p_a, p_b
+
+
+# ---------- 1. 数据 ----------
+csv_data = """group,impressions,clicks,conversions,revenue
+control,12500,3200,480,18240.50
+treatment,12800,3580,596,23256.80
+"""
+lines = csv_data.strip().split("\\n")[1:]
+data = {}
+for line in lines:
+    p = line.split(",")
+    data[p[0]] = {
+        "impressions": int(p[1]),
+        "clicks": int(p[2]),
+        "conversions": int(p[3]),
+        "revenue": float(p[4]),
+    }
+c, t = data["control"], data["treatment"]
+
+
+# ---------- 2. 三个维度的检验 ----------
+z_ctr, p_ctr, diff_ctr, se_ctr, pa_ctr, pb_ctr = two_prop_z(c["clicks"], c["impressions"], t["clicks"], t["impressions"])
+z_cvr, p_cvr, diff_cvr, se_cvr, pa_cvr, pb_cvr = two_prop_z(c["conversions"], c["clicks"], t["conversions"], t["clicks"])
+z_total, p_total, diff_total, se_total, pa_total, pb_total = two_prop_z(c["conversions"], c["impressions"], t["conversions"], t["impressions"])
+
+# 单客收益（ARPU / 每转化）
+arpu_conv_ctrl = c["revenue"] / c["conversions"]
+arpu_conv_trt = t["revenue"] / t["conversions"]
+rpm_ctrl = c["revenue"] / c["impressions"] * 1000
+rpm_trt = t["revenue"] / t["impressions"] * 1000
+
+lift_ctr = diff_ctr / pa_ctr * 100
+lift_cvr = diff_cvr / pa_cvr * 100
+lift_total = diff_total / pa_total * 100
+lift_rpm = (rpm_trt - rpm_ctrl) / rpm_ctrl * 100
+
+# 95% 置信区间上/下限
+ci_ctr = (diff_ctr - 1.96 * se_ctr, diff_ctr + 1.96 * se_ctr)
+ci_cvr = (diff_cvr - 1.96 * se_cvr, diff_cvr + 1.96 * se_cvr)
+ci_total = (diff_total - 1.96 * se_total, diff_total + 1.96 * se_total)
+
+
+# ---------- 3. 效应量 (Cohen's h) ----------
+def cohens_h(p1, p2):
+    return 2.0 * (math.asin(math.sqrt(max(0.0, min(1.0, p2)))) -
+                   math.asin(math.sqrt(max(0.0, min(1.0, p1)))))
+
+h_total = cohens_h(pa_total, pb_total)
+
+
+# ---------- 4. 业务预测 ----------
+monthly_impressions = 1_000_000   # 预估月度曝光
+base_revenue_monthly = monthly_impressions * pa_total * arpu_conv_ctrl
+new_revenue_monthly = monthly_impressions * pb_total * arpu_conv_trt
+extra_revenue_monthly = new_revenue_monthly - base_revenue_monthly
+extra_revenue_yearly = extra_revenue_monthly * 12
+
+
+# ---------- 5. 输出 ----------
+def box(title):
+    print("\\n" + "=" * 60)
+    print(f"【 {title} 】")
+    print("=" * 60)
+
+box("Step 3 · 综合决策分析")
+
+print("\\n  📊 一、统计显著性 (α = 0.05)")
+print("  " + "-" * 58)
+print(f"  指标       p-value      z      显著?    95% CI(%)")
+print(f"  CTR        {p_ctr:.6f}   {z_ctr:+.2f}    {'✅ 是' if p_ctr < 0.05 else '❌ 否'}    [{ci_ctr[0]*100:+.3f}, {ci_ctr[1]*100:+.3f}]")
+print(f"  CVR        {p_cvr:.6f}   {z_cvr:+.2f}    {'✅ 是' if p_cvr < 0.05 else '❌ 否'}    [{ci_cvr[0]*100:+.3f}, {ci_cvr[1]*100:+.3f}]")
+print(f"  总转化     {p_total:.6f}   {z_total:+.2f}    {'✅ 是' if p_total < 0.05 else '❌ 否'}    [{ci_total[0]*100:+.3f}, {ci_total[1]*100:+.3f}]")
+
+print("\\n  🎯 二、效果幅度 (Effect Size)")
+print("  " + "-" * 58)
+print(f"  CTR 相对提升:     {lift_ctr:+.2f}%      ({'大' if abs(lift_ctr) >= 10 else '中' if abs(lift_ctr) >= 5 else '小'}效应)")
+print(f"  CVR 相对提升:     {lift_cvr:+.2f}%      ({'大' if abs(lift_cvr) >= 10 else '中' if abs(lift_cvr) >= 5 else '小'}效应)")
+print(f"  总转化相对提升:   {lift_total:+.2f}%    ({'大' if abs(lift_total) >= 10 else '中' if abs(lift_total) >= 5 else '小'}效应)")
+print(f"  Cohen's h =       {abs(h_total):.4f}    (小≈0.2, 中≈0.5, 大≈0.8)")
+
+print("\\n  💰 三、收益增长潜力")
+print("  " + "-" * 58)
+print(f"  对照组 RPM:       ¥{rpm_ctrl:.2f} / 千次")
+print(f"  实验组 RPM:       ¥{rpm_trt:.2f} / 千次")
+print(f"  RPM 相对提升:     {lift_rpm:+.2f}%")
+print(f"  单客收益:         对照组 ¥{arpu_conv_ctrl:.2f} → 实验组 ¥{arpu_conv_trt:.2f}")
+print(f"  预估月度曝光:     {monthly_impressions:,} 次")
+print(f"  预估月度额外收益: ¥{extra_revenue_monthly:+,.2f}")
+print(f"  预估年度额外收益: ¥{extra_revenue_yearly:+,.2f}")
+
+print("\\n  ⚖️  四、风险评估")
+print("  " + "-" * 58)
+all_significant = (p_ctr < 0.05) and (p_cvr < 0.05) and (p_total < 0.05)
+ci_all_positive = (ci_ctr[0] > 0) and (ci_cvr[0] > 0) and (ci_total[0] > 0)
+
+print(f"  全部指标显著?       {'✅ 是' if all_significant else '⚠️ 否 (存在不显著指标)'}")
+print(f"  CI 下限均 > 0?      {'✅ 是' if ci_all_positive else '⚠️ 否 (存在跨 0 的 CI)'}")
+print(f"  Cohen's h 绝对值:   {abs(h_total):.4f}   ({'小效应' if abs(h_total) < 0.2 else '中等效应' if abs(h_total) < 0.5 else '大效应'})")
+
+print("\\n  📝 五、最终决策结论")
+print("  " + "-" * 58)
+
+if all_significant and ci_all_positive and lift_total > 0:
+    conclusion = "✅ 推荐上线实验组版本：所有核心指标统计显著，且置信区间全为正，业务提升稳健。"
+elif p_total < 0.05 and ci_total[0] > 0 and (p_ctr < 0.05 or p_cvr < 0.05):
+    conclusion = "🟢 建议上线，配合持续监测：主指标(总转化)显著为正，虽局部指标可能波动，但总体正向。"
+elif p_total < 0.05 and abs(lift_total) < 5:
+    conclusion = "🟡 谨慎决策：统计显著但业务提升幅度小，需评估上线成本 vs 收益 (约 ¥{:,.0f}/月)。".format(extra_revenue_monthly)
+elif p_total >= 0.05 and ci_total[0] < 0 < ci_total[1]:
+    conclusion = "🟠 暂不上线，需扩大样本：p-value ≥ 0.05，置信区间跨 0，当前数据不足以判断优劣。"
+else:
+    conclusion = "🔴 不推荐上线：实验组未展现显著优势，或存在显著负向影响。"
+
+print(f"  {conclusion}")
+
+print("\\n" + "=" * 60)
+print("  决策者摘要 (Executive Summary)")
+print("=" * 60)
+print(f"  • CTR:  {pa_ctr*100:.2f}% → {pb_ctr*100:.2f}%   (相对{lift_ctr:+.2f}%, p={p_ctr:.4f})")
+print(f"  • CVR:  {pa_cvr*100:.2f}% → {pb_cvr*100:.2f}%   (相对{lift_cvr:+.2f}%, p={p_cvr:.4f})")
+print(f"  • RPM:  ¥{rpm_ctrl:.2f} → ¥{rpm_trt:.2f}   (相对{lift_rpm:+.2f}%)")
+print(f"  • 年度收益增量潜力: ¥{extra_revenue_yearly:+,.0f}")
+print(f"  • 结论: {conclusion}")
+
+print("\\n✅ Step 3 完成：综合统计显著性 × 效果幅度 × 收益潜力，已输出业务决策")
+`;
+
+// ============ 模板代码 ============
+const step1Starter = `# Step 1: 读取 A/B 测试数据，计算基础转化率与统计指标
+# 数据格式: group, impressions, clicks, conversions, revenue
+
+csv_data = """group,impressions,clicks,conversions,revenue
+control,12500,3200,480,18240.50
+treatment,12800,3580,596,23256.80
+"""
+
+# TODO: 在这里解析 CSV，计算两组的
+#  - CTR = clicks / impressions
+#  - CVR = conversions / clicks
+#  - 总转化率 = conversions / impressions
+#  - 单客收益 = revenue / conversions
+#  - RPM = revenue / impressions * 1000
+
+print("请完成 Step 1 的代码...")
+`;
+
+const step2Starter = `# Step 2: 实现双样本比例 z-test
+# 参考公式：
+#   p_pool = (conv_a + conv_b) / (n_a + n_b)
+#   SE = sqrt(p_pool * (1-p_pool) * (1/n_a + 1/n_b))
+#   z = (p_b - p_a) / SE
+#   95% CI = (p_b - p_a) ± 1.96 * SE_unpooled
+
+csv_data = """group,impressions,clicks,conversions,revenue
+control,12500,3200,480,18240.50
+treatment,12800,3580,596,23256.80
+"""
+
+# TODO: 实现 two_proportion_z_test 函数并对 3 个指标做检验
+
+print("请完成 Step 2 的代码...")
+`;
+
+const step3Starter = `# Step 3: 综合决策分析
+# 需要结合：
+#   1) 统计显著性 (p-value < 0.05)
+#   2) 效果幅度 (相对提升%, Cohen's h)
+#   3) 收益增长潜力 (月度/年度额外收益)
+# 并给出业务决策结论
+
+csv_data = """group,impressions,clicks,conversions,revenue
+control,12500,3200,480,18240.50
+treatment,12800,3580,596,23256.80
+"""
+
+# TODO: 综合上述三个维度输出结论
+
+print("请完成 Step 3 的代码...")
+`;
+
+const ABTesting: React.FC = () => {
+  const [pyodideReady, setPyodideReady] = useState<boolean>(isPyodideReady());
+  const [pyodideStage, setPyodideStage] = useState<number>(0);
+  const [pyodidePercent, setPyodidePercent] = useState<number>(0);
+  const [pyodideError, setPyodideError] = useState<string | null>(null);
+  const [pyodideSeconds, setPyodideSeconds] = useState<number>(0);
+
+  const [step1Code, setStep1Code] = useState(step1Starter);
+  const [step1Output, setStep1Output] = useState<string>('');
+  const [step1Error, setStep1Error] = useState<string>('');
+  const [step1ShowAnswer, setStep1ShowAnswer] = useState(false);
+  const [step1Running, setStep1Running] = useState(false);
+
+  const [step2Code, setStep2Code] = useState(step2Starter);
+  const [step2Output, setStep2Output] = useState<string>('');
+  const [step2Error, setStep2Error] = useState<string>('');
+  const [step2ShowAnswer, setStep2ShowAnswer] = useState(false);
+  const [step2Running, setStep2Running] = useState(false);
+
+  const [step3Code, setStep3Code] = useState(step3Starter);
+  const [step3Output, setStep3Output] = useState<string>('');
+  const [step3Error, setStep3Error] = useState<string>('');
+  const [step3ShowAnswer, setStep3ShowAnswer] = useState(false);
+  const [step3Running, setStep3Running] = useState(false);
+
+  useEffect(() => {
+    if (pyodideReady) return;
+
+    let mounted = true;
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      if (mounted) setPyodideSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    initPyodide((p: PyodideProgress) => {
+      if (mounted) {
+        setPyodideStage(p.stage);
+        setPyodidePercent(p.percent);
+      }
+    })
+      .then(() => {
+        if (mounted) {
+          setPyodideReady(true);
+          setPyodideStage(4);
+          setPyodidePercent(100);
+        }
+      })
+      .catch((err: Error) => {
+        if (mounted) setPyodideError(err.message || 'Pyodide 初始化失败');
+      });
+
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [pyodideReady]);
+
+  const runStep = async (
+    code: string,
+    setOutput: (s: string) => void,
+    setError: (s: string) => void,
+    setRunning: (b: boolean) => void
+  ) => {
+    setError('');
+    setOutput('');
+    if (!code.trim()) {
+      setError('请先输入代码再运行');
+      return;
+    }
+    setRunning(true);
+    try {
+      const res = await runPythonCode(code);
+      if (res.success) {
+        setOutput(res.output || res.stdout || '代码执行成功（无输出）');
+      } else {
+        const errMsg =
+          `[${res.error?.type || 'Error'}] ${res.error?.message || ''}` +
+          (res.stdout ? `\n\nstdout:\n${res.stdout}` : '') +
+          (res.stderr ? `\n\nstderr:\n${res.stderr}` : '');
+        setError(errMsg);
+        if (res.stdout) setOutput(res.stdout);
+      }
+    } catch (err: any) {
+      setError(`执行异常: ${err?.message || String(err)}`);
+    } finally {
+      setRunning(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-sky-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 A/B测试分析</h1>
-            <p className="text-text">掌握A/B测试的设计与分析方法，做出数据驱动的决策</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50">
+      <div className="container mx-auto px-4 py-8 md:py-12 max-w-6xl">
+        {/* ================= Hero 区域 ================= */}
+        <header className="bg-white rounded-3xl shadow-xl p-8 md:p-12 mb-10 border border-indigo-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-200 to-cyan-200 rounded-full opacity-30 blur-3xl -translate-y-16 translate-x-16" />
+          <div className="relative">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              <div className="text-7xl md:text-8xl select-none">🧪</div>
+              <div className="flex-1">
+                <p className="text-indigo-500 font-semibold text-sm md:text-base mb-2 tracking-wider uppercase">
+                  A/B TESTING · 数据分析实战
+                </p>
+                <h1 className="text-3xl md:text-5xl font-extrabold text-gray-800 mb-4 leading-tight">
+                  A/B 测试分析 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">数据驱动决策</span>
+                </h1>
+                <p className="text-gray-600 text-base md:text-lg leading-relaxed">
+                  从零开始掌握 A/B 测试核心原理 —— 假设检验、p-value、显著性水平、第一/二类错误，
+                  并用 Python 实现双样本比例 z-test，结合业务收益给出可落地的决策结论。
+                </p>
+                <div className="flex flex-wrap gap-3 mt-6">
+                  <span className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold">📘 统计假设检验</span>
+                  <span className="px-4 py-2 bg-cyan-100 text-cyan-700 rounded-full text-sm font-semibold">🐍 Python 实战</span>
+                  <span className="px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">💼 业务决策</span>
+                  <span className="px-4 py-2 bg-rose-100 text-rose-700 rounded-full text-sm font-semibold">🎯 3 步递进</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* ================= Pyodide 加载器 ================= */}
+        {!pyodideReady && (
+          <div className="mb-10">
+            <PyodideLoader
+              stage={pyodideStage as 0 | 1 | 2 | 3 | 4}
+              percent={pyodidePercent}
+              error={pyodideError}
+              elapsedSeconds={pyodideSeconds}
+            />
+          </div>
+        )}
+
+        {/* ================= 核心概念板块 ================= */}
+        <section className="mb-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1.5 h-8 bg-gradient-to-b from-indigo-500 to-cyan-500 rounded-full" />
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">核心概念</h2>
           </div>
 
-          {pyodideStatus === 'loading' && (
-            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-6 mb-8">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* 卡片 1: 设计原则 */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-transparent hover:border-indigo-200 hover:-translate-y-1 transition-all">
+              <div className="flex items-start gap-4">
+                <div className="text-4xl flex-shrink-0">🎯</div>
                 <div>
-                  <p className="font-semibold text-cyan-800">正在初始化 Python 环境...</p>
-                  <p className="text-sm text-cyan-600">首次加载需要下载必要的库，请耐心等待</p>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">A/B 测试设计原则</h3>
+                  <ul className="text-gray-600 text-sm space-y-1.5 leading-relaxed">
+                    <li>• <b>单一变量</b>：每次只改变一个核心变量</li>
+                    <li>• <b>随机分流</b>：保证两组用户同质可比</li>
+                    <li>• <b>样本量先验</b>：实验前计算所需最小样本量</li>
+                    <li>• <b>指标先行</b>：确定主指标 / 辅助指标 / 护栏指标</li>
+                    <li>• <b>等时长</b>：两组必须在完全相同的时间窗口运行</li>
+                  </ul>
                 </div>
               </div>
             </div>
-          )}
 
-          {pyodideStatus === 'error' && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-medium text-red-800">环境加载失败</h3>
-                  <p className="mt-1 text-sm text-red-600">请检查网络连接后刷新页面重试</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📚 学习路径</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {projects.map((project) => (
-                <button
-                  key={project.id}
-                  onClick={() => setActiveProject(project.id - 1)}
-                  className={`p-4 rounded-xl text-left transition-all ${
-                    activeProject === project.id - 1
-                      ? 'bg-primary text-white shadow-lg transform scale-105'
-                      : 'bg-gray-50 hover:bg-gray-100 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center mb-2">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                      activeProject === project.id - 1
-                        ? 'bg-white text-primary'
-                        : 'bg-primary text-white'
-                    }`}>
-                      {project.id}
-                    </span>
-                    <h3 className="font-semibold">{project.title}</h3>
+            {/* 卡片 2: 原假设/备择假设 */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-transparent hover:border-indigo-200 hover:-translate-y-1 transition-all">
+              <div className="flex items-start gap-4">
+                <div className="text-4xl flex-shrink-0">⚖️</div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">原假设 vs 备择假设</h3>
+                  <div className="text-gray-600 text-sm space-y-2 leading-relaxed">
+                    <p>
+                      <b className="text-rose-600">H₀ (原假设)</b>：实验组与对照组之间<b>没有差异</b>。这是我们默认的立场，直到有足够证据推翻它。
+                    </p>
+                    <p>
+                      <b className="text-emerald-600">H₁ (备择假设)</b>：实验组与对照组之间<b>存在显著差异</b>。我们希望通过数据证明 H₁ 成立。
+                    </p>
+                    <p className="text-xs text-gray-500 italic mt-2">例: H₀: p_treatment = p_control; H₁: p_treatment ≠ p_control (双尾检验)</p>
                   </div>
-                  <p className={`text-sm ${
-                    activeProject === project.id - 1
-                      ? 'text-cyan-100'
-                      : 'text-gray-600'
-                  }`}>
-                    {project.description}
-                  </p>
-                </button>
-              ))}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="mb-8 bg-accent rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">🎯 学习目标</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="bg-cyan-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+            {/* 卡片 3: p-value & 显著性水平 */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-transparent hover:border-indigo-200 hover:-translate-y-1 transition-all">
+              <div className="flex items-start gap-4">
+                <div className="text-4xl flex-shrink-0">📊</div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">p-value & 显著性水平 α</h3>
+                  <div className="text-gray-600 text-sm space-y-2 leading-relaxed">
+                    <p>
+                      <b>p-value</b>：在 H₀ 为真的前提下，观察到当前或更极端结果的概率。p 越小，说明 "巧合" 的可能性越低。
+                    </p>
+                    <p>
+                      <b>显著性水平 α</b>：人为设定的阈值，通常取 <b className="text-indigo-600">0.05</b>。若 p &lt; α，则"拒绝原假设"。
+                    </p>
+                    <div className="bg-indigo-50 rounded-lg px-3 py-2 mt-2 font-mono text-xs text-indigo-700">
+                      p &lt; 0.05 → 差异显著 ✅ &nbsp;&nbsp; p ≥ 0.05 → 不显著 ❌
+                    </div>
+                  </div>
                 </div>
-                <p className="text-text text-sm">理解A/B测试的基本原理和流程</p>
               </div>
-              <div className="flex items-start">
-                <div className="bg-cyan-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+            </div>
+
+            {/* 卡片 4: 第一/二类错误 */}
+            <div className="bg-gradient-to-br from-white to-indigo-50 rounded-2xl shadow-lg p-6 border-2 border-transparent hover:border-indigo-200 hover:-translate-y-1 transition-all">
+              <div className="flex items-start gap-4">
+                <div className="text-4xl flex-shrink-0">⚠️</div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">第一类错误 & 第二类错误</h3>
+                  <div className="text-gray-600 text-sm space-y-2 leading-relaxed">
+                    <div className="flex items-start gap-2">
+                      <span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-xs font-bold flex-shrink-0 mt-0.5">Type I · α</span>
+                      <span><b>假阳性</b>：H₀ 为真却被拒绝。上线了一个"无效"的版本。降低 α 可减少此错误。</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-bold flex-shrink-0 mt-0.5">Type II · β</span>
+                      <span><b>假阴性</b>：H₀ 为假却被保留。漏掉了真正有效的版本。样本量越小，β 越大。</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold flex-shrink-0 mt-0.5">Power = 1−β</span>
+                      <span><b>检验效能</b>：当差异真实存在时能检测到它的概率。通常目标 ≥ 80%。</span>
+                    </div>
+                    <p className="text-xs text-gray-500 italic mt-1">α 与 β 呈此消彼长：减小 α 会增大 β。平衡两者需要更大样本量。</p>
+                  </div>
                 </div>
-                <p className="text-text text-sm">掌握统计显著性的判断方法</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-cyan-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">学会计算置信区间和功效分析</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-cyan-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">能够解读和应用测试结果</p>
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">💡 知识要点</h2>
-            <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-              {activeProject === 0 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 假设检验基础</h3>
-                    <p className="text-text mb-3">假设检验是A/B测试的统计基础，通过样本数据判断两个版本是否存在显著差异。</p>
-                    
-                    <div className="bg-cyan-50 rounded-lg p-4 mb-4">
-                      <p className="text-sm font-medium text-cyan-800 mb-2">💡 核心概念</p>
-                      <ul className="text-sm text-cyan-700 space-y-1">
-                        <li>• <strong>原假设(H₀)</strong>：实验组与对照组无差异</li>
-                        <li>• <strong>备择假设(H₁)</strong>：实验组与对照组存在差异</li>
-                        <li>• <strong>显著性水平(α)</strong>：通常设为0.05（5%）</li>
-                        <li>• <strong>P值</strong>：假设H₀为真时，观察到当前结果的概率</li>
-                      </ul>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <p className="text-sm font-medium text-gray-700 mb-2">示例数据：按钮颜色测试</p>
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2 text-left">组别</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">样本量</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">转化数</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">转化率</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">A组(红色按钮)</td>
-                            <td className="border border-gray-300 px-4 py-2">5,000</td>
-                            <td className="border border-gray-300 px-4 py-2">150</td>
-                            <td className="border border-gray-300 px-4 py-2">3.00%</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">B组(蓝色按钮)</td>
-                            <td className="border border-gray-300 px-4 py-2">5,000</td>
-                            <td className="border border-gray-300 px-4 py-2">180</td>
-                            <td className="border border-gray-300 px-4 py-2">3.60%</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-green-800 mb-2">✅ 判断标准</p>
-                      <ul className="text-sm text-green-700 space-y-1">
-                        <li>• P值 &lt; 0.05：拒绝原假设，差异显著</li>
-                        <li>• P值 ≥ 0.05：无法拒绝原假设，差异不显著</li>
-                        <li>• Z分数绝对值 &gt; 1.96 等价于 P值 &lt; 0.05</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeProject === 1 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 网站改版测试实战</h3>
-                    <p className="text-text mb-3">通过一个完整的网站改版案例，学习A/B测试的完整分析流程和结果解读。</p>
-                    
-                    <div className="bg-cyan-50 rounded-lg p-4 mb-4">
-                      <p className="text-sm font-medium text-cyan-800 mb-2">💡 案例背景</p>
-                      <ul className="text-sm text-cyan-700 space-y-1">
-                        <li>• <strong>业务场景</strong>：电商网站测试新的"立即购买"按钮</li>
-                        <li>• <strong>实验设计</strong>：A组(红色) vs B组(绿色)，各10,000访客</li>
-                        <li>• <strong>评估指标</strong>：点击"立即购买"按钮的用户比例</li>
-                      </ul>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <p className="text-sm font-medium text-gray-700 mb-2">实验数据汇总</p>
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2 text-left">指标</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">A组(对照组)</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">B组(实验组)</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">差异</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">访问量</td>
-                            <td className="border border-gray-300 px-4 py-2">10,000</td>
-                            <td className="border border-gray-300 px-4 py-2">10,000</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">转化数</td>
-                            <td className="border border-gray-300 px-4 py-2">320</td>
-                            <td className="border border-gray-300 px-4 py-2">385</td>
-                            <td className="border border-gray-300 px-4 py-2">+65</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">转化率</td>
-                            <td className="border border-gray-300 px-4 py-2">3.20%</td>
-                            <td className="border border-gray-300 px-4 py-2">3.85%</td>
-                            <td className="border border-gray-300 px-4 py-2">+0.65%</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">Z分数</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                            <td className="border border-gray-300 px-4 py-2">2.21</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">95%置信区间</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                            <td className="border border-gray-300 px-4 py-2">[0.11%, 1.19%]</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">显著性</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                            <td className="border border-gray-300 px-4 py-2 text-green-600 font-semibold">✓ 显著</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-green-800 mb-2">✅ 分析结论</p>
-                      <ul className="text-sm text-green-700 space-y-1">
-                        <li>• 绿色按钮版本的转化率提升20.3%</li>
-                        <li>• Z分数(2.21) &gt; 1.96，差异具有统计显著性</li>
-                        <li>• 95%置信区间不包含0，说明效果真实可靠</li>
-                        <li>• <strong>建议：</strong>上线绿色按钮版本</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeProject === 2 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">🔬 高级技巧：样本量与功效分析</h3>
-                    <p className="text-text mb-3">在实验开始前计算所需的样本量，确保实验能够检测到有意义的差异。</p>
-                    
-                    <div className="bg-cyan-50 rounded-lg p-4 mb-4">
-                      <p className="text-sm font-medium text-cyan-800 mb-2">💡 核心概念</p>
-                      <ul className="text-sm text-cyan-700 space-y-1">
-                        <li>• <strong>统计功效(Power)</strong>：真实存在差异时正确检测到的概率，通常设为80%</li>
-                        <li>• <strong>最小可检测效应(MDE)</strong>：实验设计要求能检测到的最小差异</li>
-                        <li>• <strong>多重比较校正</strong>：进行多次检验时需要校正显著性水平</li>
-                      </ul>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <p className="text-sm font-medium text-gray-700 mb-2">样本量计算参数说明</p>
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2 text-left">参数</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">符号</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">常用值</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left">说明</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">显著性水平</td>
-                            <td className="border border-gray-300 px-4 py-2">α</td>
-                            <td className="border border-gray-300 px-4 py-2">0.05</td>
-                            <td className="border border-gray-300 px-4 py-2">Type I error rate</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">统计功效</td>
-                            <td className="border border-gray-300 px-4 py-2">1-β</td>
-                            <td className="border border-gray-300 px-4 py-2">0.80</td>
-                            <td className="border border-gray-300 px-4 py-2">Power = 1 - Type II error</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">基准转化率</td>
-                            <td className="border border-gray-300 px-4 py-2">p₁</td>
-                            <td className="border border-gray-300 px-4 py-2">3%</td>
-                            <td className="border border-gray-300 px-4 py-2">当前版本的转化率</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">最小提升</td>
-                            <td className="border border-gray-300 px-4 py-2">MDE</td>
-                            <td className="border border-gray-300 px-4 py-2">20%</td>
-                            <td className="border border-gray-300 px-4 py-2">相对基准的最小提升</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-green-800 mb-2">✅ 效应量解读 (Cohen's h)</p>
-                      <ul className="text-sm text-green-700 space-y-1">
-                        <li>• 小效应：h = 0.2（需要较大样本量才能检测）</li>
-                        <li>• 中等效应：h = 0.5</li>
-                        <li>• 大效应：h = 0.8（较小样本量即可检测）</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+        {/* ================= 三步递进练习 ================= */}
+        <section className="space-y-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-1.5 h-8 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full" />
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">动手练习 · 三步递进</h2>
           </div>
+          <p className="text-gray-600 mb-4 -mt-2 pl-4">
+            从基础数据读取 → 统计检验实现 → 综合业务决策，一步一步掌握 A/B 测试完整分析流程。
+          </p>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-6 text-primary">💻 动手练习</h2>
-            <div className="bg-gradient-to-r from-cyan-50 to-sky-50 rounded-xl p-6">
-              <p className="text-text mb-4">在下方编辑器中尝试修改代码，体验A/B测试分析的过程！</p>
-              
-              <div className="mb-4">
+          {/* ---------- Step 1 ---------- */}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 md:px-8 py-5 text-white">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-black text-lg">1</span>
+                  <div>
+                    <h3 className="text-xl font-bold">Step 1 · 基础：读取数据 & 计算基础指标</h3>
+                    <p className="text-indigo-100 text-sm">CTR / CVR / 总转化率 / 单客收益 / RPM</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">📘 基础</span>
+              </div>
+            </div>
+
+            <div className="p-5 md:p-6">
+              <div className="mb-4 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
                 <AceEditor
                   mode="python"
                   theme="monokai"
-                  value={code || placeholderCode}
-                  onChange={handleCodeChange}
-                  name="ab-testing-editor"
-                  editorProps={{
-                    $blockScrolling: true
-                  }}
-                  className="rounded-lg shadow-md"
-                  style={{ height: '350px', width: '100%' }}
+                  value={step1Code}
+                  onChange={(v) => setStep1Code(v)}
+                  name="ab-step1-editor"
+                  editorProps={{ $blockScrolling: true }}
+                  setOptions={{ showLineNumbers: true, tabSize: 4 }}
+                  style={{ height: '280px', width: '100%', fontSize: '13px' }}
                 />
               </div>
-              
-              <div className="flex flex-wrap items-center gap-4">
+
+              <div className="flex flex-wrap gap-3 mb-4">
                 <button
-                  onClick={handleRunCode}
-                  disabled={isLoading || pyodideStatus !== 'ready'}
-                  className={`px-8 py-3 rounded-full font-bold transition-all shadow-lg ${
-                    isLoading || pyodideStatus !== 'ready'
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-primary text-white hover:bg-secondary hover:shadow-button-hover transform hover:-translate-y-0.5'
-                  }`}
+                  onClick={() => runStep(step1Code, setStep1Output, setStep1Error, setStep1Running)}
+                  disabled={step1Running || !pyodideReady}
+                  className="bg-primary text-white px-6 py-2 rounded-full font-bold shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      运行中...
-                    </span>
-                  ) : (
-                    '▶ 运行代码'
-                  )}
+                  {step1Running ? '⏳ 运行中...' : '▶ 运行代码'}
                 </button>
-                
                 <button
                   onClick={() => {
-                    setCode(getAnswerCode());
-                    setResult(null);
+                    setStep1ShowAnswer((prev) => !prev);
+                    if (!step1ShowAnswer) setStep1Code(step1Answer);
                   }}
-                  className="px-6 py-3 rounded-full font-bold bg-cyan-500 text-white hover:bg-cyan-600 transition-all"
+                  className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
                 >
-                  💡 显示参考答案
+                  {step1ShowAnswer ? '🔄 隐藏参考答案' : '💡 显示参考答案'}
                 </button>
-                
                 <button
                   onClick={() => {
-                    setCode(placeholderCode);
-                    setResult(null);
+                    setStep1Code(step1Starter);
+                    setStep1Output('');
+                    setStep1Error('');
                   }}
-                  className="px-6 py-3 rounded-full font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-all"
                 >
-                  重置代码
+                  ♻ 重置
                 </button>
               </div>
-            </div>
-            
-            <div className="mt-6 bg-gray-900 text-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+
+              {step1Error && (
+                <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-100 whitespace-pre-wrap font-mono text-sm mb-3">
+                  {step1Error}
                 </div>
-                <span className="ml-4 text-sm text-gray-400">运行结果</span>
-              </div>
-              
-              {!result ? (
-                <div className="text-gray-400 flex items-center justify-center py-8">
-                  <span className="text-2xl mr-2">⌨️</span>
-                  <span>点击"运行代码"查看输出结果</span>
-                </div>
-              ) : result.success ? (
-                <div className="space-y-3">
-                  {result.output && (
-                    <div>
-                      <pre className="text-green-400 whitespace-pre-wrap font-mono text-sm">{result.output}</pre>
-                    </div>
-                  )}
-                  {!result.output && !result.stdout && (
-                    <div className="text-green-400 flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      代码执行成功！
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="flex-1">
-                        <h4 className="text-red-400 font-semibold mb-1">
-                          {result.error?.type || '执行错误'}
-                        </h4>
-                        <p className="text-red-300 text-sm">{result.error?.message}</p>
-                        {result.error?.lineNumber && (
-                          <p className="text-red-400 text-xs mt-2">📍 错误位置: 第 {result.error.lineNumber} 行</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {result.stdout && (
-                    <div className="text-gray-400 text-sm">
-                      <p className="font-semibold mb-1">标准输出:</p>
-                      <pre className="text-gray-300 whitespace-pre-wrap">{result.stdout}</pre>
-                    </div>
-                  )}
+              )}
+              {step1Output && (
+                <div className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg overflow-x-auto">
+                  {step1Output}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mb-8 bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📊 结果展示区域</h2>
-            <div className="bg-white rounded-lg p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-cyan-50 rounded-lg p-4 text-center">
-                  <p className="text-sm text-cyan-600 mb-1">对照组转化率</p>
-                  <p className="text-2xl font-bold text-cyan-700">3.20%</p>
+          {/* ---------- Step 2 ---------- */}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 md:px-8 py-5 text-white">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-black text-lg">2</span>
+                  <div>
+                    <h3 className="text-xl font-bold">Step 2 · 进阶：双样本比例 z-test</h3>
+                    <p className="text-emerald-100 text-sm">实现 z-test · 计算 p-value · 95% 置信区间</p>
+                  </div>
                 </div>
-                <div className="bg-green-50 rounded-lg p-4 text-center">
-                  <p className="text-sm text-green-600 mb-1">实验组转化率</p>
-                  <p className="text-2xl font-bold text-green-700">3.85%</p>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4 text-center">
-                  <p className="text-sm text-purple-600 mb-1">相对提升</p>
-                  <p className="text-2xl font-bold text-purple-700">+20.3%</p>
-                </div>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">⚡ 进阶</span>
               </div>
-              <div className="bg-gray-100 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">统计显著性</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">✓ 显著</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">95%置信区间</span>
-                  <span className="text-sm text-gray-600">[+0.11%, +1.19%]</span>
-                </div>
+            </div>
+
+            <div className="p-5 md:p-6">
+              <div className="mb-4 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                <AceEditor
+                  mode="python"
+                  theme="monokai"
+                  value={step2Code}
+                  onChange={(v) => setStep2Code(v)}
+                  name="ab-step2-editor"
+                  editorProps={{ $blockScrolling: true }}
+                  setOptions={{ showLineNumbers: true, tabSize: 4 }}
+                  style={{ height: '320px', width: '100%', fontSize: '13px' }}
+                />
               </div>
+
+              <div className="flex flex-wrap gap-3 mb-4">
+                <button
+                  onClick={() => runStep(step2Code, setStep2Output, setStep2Error, setStep2Running)}
+                  disabled={step2Running || !pyodideReady}
+                  className="bg-primary text-white px-6 py-2 rounded-full font-bold shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {step2Running ? '⏳ 运行中...' : '▶ 运行代码'}
+                </button>
+                <button
+                  onClick={() => {
+                    setStep2ShowAnswer((prev) => !prev);
+                    if (!step2ShowAnswer) setStep2Code(step2Answer);
+                  }}
+                  className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
+                >
+                  {step2ShowAnswer ? '🔄 隐藏参考答案' : '💡 显示参考答案'}
+                </button>
+                <button
+                  onClick={() => {
+                    setStep2Code(step2Starter);
+                    setStep2Output('');
+                    setStep2Error('');
+                  }}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-all"
+                >
+                  ♻ 重置
+                </button>
+              </div>
+
+              {step2Error && (
+                <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-100 whitespace-pre-wrap font-mono text-sm mb-3">
+                  {step2Error}
+                </div>
+              )}
+              {step2Output && (
+                <div className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg overflow-x-auto">
+                  {step2Output}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
-            <div className="space-y-3">
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">1. A/B测试中为什么要设置显著性水平为0.05？</p>
-                <p className="text-sm text-gray-600">提示：考虑假阳性率(Type I Error)与商业成本之间的平衡</p>
+          {/* ---------- Step 3 ---------- */}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-rose-500 to-orange-500 px-6 md:px-8 py-5 text-white">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-black text-lg">3</span>
+                  <div>
+                    <h3 className="text-xl font-bold">Step 3 · 挑战：综合决策分析</h3>
+                    <p className="text-rose-100 text-sm">p-value × 效果幅度 × 收益潜力 → 业务结论</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold">🔥 挑战</span>
               </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">2. 如果实验结果显示统计显著但实际提升很小，应该如何决策？</p>
-                <p className="text-sm text-gray-600">提示：考虑实施成本、边际收益和长期价值</p>
+            </div>
+
+            <div className="p-5 md:p-6">
+              <div className="mb-4 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                <AceEditor
+                  mode="python"
+                  theme="monokai"
+                  value={step3Code}
+                  onChange={(v) => setStep3Code(v)}
+                  name="ab-step3-editor"
+                  editorProps={{ $blockScrolling: true }}
+                  setOptions={{ showLineNumbers: true, tabSize: 4 }}
+                  style={{ height: '340px', width: '100%', fontSize: '13px' }}
+                />
               </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">3. 什么时候需要使用多重比较校正？有哪些常用的校正方法？</p>
-                <p className="text-sm text-gray-600">提示：同时测试多个指标或多个版本时需要考虑</p>
+
+              <div className="flex flex-wrap gap-3 mb-4">
+                <button
+                  onClick={() => runStep(step3Code, setStep3Output, setStep3Error, setStep3Running)}
+                  disabled={step3Running || !pyodideReady}
+                  className="bg-primary text-white px-6 py-2 rounded-full font-bold shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {step3Running ? '⏳ 运行中...' : '▶ 运行代码'}
+                </button>
+                <button
+                  onClick={() => {
+                    setStep3ShowAnswer((prev) => !prev);
+                    if (!step3ShowAnswer) setStep3Code(step3Answer);
+                  }}
+                  className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
+                >
+                  {step3ShowAnswer ? '🔄 隐藏参考答案' : '💡 显示参考答案'}
+                </button>
+                <button
+                  onClick={() => {
+                    setStep3Code(step3Starter);
+                    setStep3Output('');
+                    setStep3Error('');
+                  }}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-all"
+                >
+                  ♻ 重置
+                </button>
+              </div>
+
+              {step3Error && (
+                <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-100 whitespace-pre-wrap font-mono text-sm mb-3">
+                  {step3Error}
+                </div>
+              )}
+              {step3Output && (
+                <div className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg overflow-x-auto">
+                  {step3Output}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ================= 学习小结 ================= */}
+        <section className="mt-10 bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-600 rounded-3xl shadow-2xl p-8 md:p-10 text-white relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -translate-x-10 -translate-y-10" />
+          <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-x-10 translate-y-10" />
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="text-4xl">🎓</div>
+              <h2 className="text-2xl md:text-3xl font-bold">你学到了什么？</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20">
+                <div className="text-2xl mb-2">①</div>
+                <p className="font-semibold text-lg mb-1">看懂数据</p>
+                <p className="text-sm text-white/80 leading-relaxed">
+                  从 CSV 中提取两组指标，计算 CTR、CVR、RPM 等关键业务指标。
+                </p>
+              </div>
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20">
+                <div className="text-2xl mb-2">②</div>
+                <p className="font-semibold text-lg mb-1">做统计检验</p>
+                <p className="text-sm text-white/80 leading-relaxed">
+                  用双样本 z-test 计算 p-value 与置信区间，判断差异是否"显著"。
+                </p>
+              </div>
+              <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20">
+                <div className="text-2xl mb-2">③</div>
+                <p className="font-semibold text-lg mb-1">写业务结论</p>
+                <p className="text-sm text-white/80 leading-relaxed">
+                  综合显著性 × 效果幅度 × 收益潜力，给出可落地的决策建议。
+                </p>
               </div>
             </div>
           </div>
+        </section>
+
+        {/* ================= Course Completion ================= */}
+        <div className="mt-10">
+          <CourseCompletion
+            courseId="ab-testing"
+            courseTitle="A/B测试分析"
+            badgeIcon="🧪"
+            badgeName="A/B测试高手"
+          />
         </div>
+
+        <footer className="text-center text-gray-400 text-xs mt-10 pb-4">
+          © A/B Testing Interactive Course · Powered by Python + React
+        </footer>
       </div>
     </div>
   );

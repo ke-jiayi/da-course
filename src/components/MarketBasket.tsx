@@ -3,783 +3,591 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPythonCode, isPyodideReady, initPyodide } from '../services/pyodideService';
+import { runPythonCode, initPyodide, isPyodideReady, PyodideProgress, PyodideStage } from '../services/pyodideService';
+import PyodideLoader from './PyodideLoader';
+import CourseCompletion from './CourseCompletion';
 
-const MarketBasket: React.FC = () => {
-  const [code, setCode] = useState('');
-  const [result, setResult] = useState<{ success: boolean; output?: string; stdout: string; stderr: string; error?: any; } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [pyodideStatus, setPyodideStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [activeProject, setActiveProject] = useState(0);
+const TRANSACTION_CSV = `面包,牛奶,鸡蛋
+面包,牛奶,黄油,果酱
+鸡蛋,牛奶,酸奶
+面包,鸡蛋,牛奶,黄油
+牛奶,面包,饼干
+鸡蛋,面包,牛奶
+黄油,面包,果酱
+牛奶,鸡蛋,酸奶,饼干
+面包,牛奶,黄油
+鸡蛋,牛奶,面包
+饼干,牛奶,面包
+牛奶,鸡蛋,黄油
+面包,果酱,黄油
+牛奶,鸡蛋,面包,饼干
+鸡蛋,牛奶,酸奶
+面包,牛奶,黄油,果酱
+牛奶,鸡蛋,饼干
+面包,黄油,鸡蛋
+牛奶,面包,黄油,鸡蛋
+饼干,牛奶,面包,鸡蛋`;
 
-  useEffect(() => {
-    const checkPyodide = async () => {
-      if (isPyodideReady()) {
-        setPyodideStatus('ready');
-        return;
-      }
+const STEP1_TEMPLATE = `# Step 1：读取交易数据，理解数据格式
+# 任务：
+# 1) 将 CSV 字符串按行/逗号拆分为 transactions 列表
+# 2) 统计 交易数量、商品频次、平均每单商品数
+# 3) 打印统计结果
 
-      try {
-        await initPyodide();
-        setPyodideStatus('ready');
-      } catch (error) {
-        console.error('Pyodide 初始化失败:', error);
-        setPyodideStatus('error');
-      }
-    };
+csv_data = """${TRANSACTION_CSV}"""
 
-    checkPyodide();
-  }, []);
+# ==== 在这里写代码 ====
 
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode);
-    setResult(null);
-  };
 
-  const handleRunCode = async () => {
-    if (!code.trim()) {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'InputError',
-          message: '请输入代码后再运行'
-        }
-      });
-      return;
-    }
-
-    if (pyodideStatus !== 'ready') {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'SystemError',
-          message: 'Python 环境正在初始化，请稍候...'
-        }
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    setResult(null);
-
-    try {
-      const executionResult = await runPythonCode(code);
-      setResult(executionResult);
-    } catch (err) {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'ExecutionError',
-          message: '执行出错: ' + (err as Error).message
-        }
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const placeholderCode = `# 购物篮分析练习
-# 点击"显示参考答案"按钮查看示例代码
-
-# 提示：
-# 1. 尝试统计商品出现频率
-# 2. 计算商品组合的支持度
-# 3. 挖掘频繁项集
 
 `;
 
-  const defaultCode = `# 购物篮分析 - 支持度、置信度、提升度计算
+const STEP1_SOLUTION = `# Step 1：参考答案
+from collections import Counter
+
+csv_data = """${TRANSACTION_CSV}"""
+
+lines = [line.strip() for line in csv_data.strip().split("\\n") if line.strip()]
+transactions = [[item.strip() for item in line.split(",") if item.strip()] for line in lines]
+
+n_trans = len(transactions)
+item_counter = Counter()
+total_items = 0
+for t in transactions:
+    for item in t:
+        item_counter[item] += 1
+        total_items += 1
+avg_items = total_items / n_trans if n_trans else 0
+
+print("=" * 50)
+print("📊 交易数据概览")
+print("=" * 50)
+print(f"交易总数: {n_trans}")
+print(f"商品种类数: {len(item_counter)}")
+print(f"商品总件数: {total_items}")
+print(f"平均每单商品数: {avg_items:.2f}")
+print()
+print("🔁 商品频次（降序）:")
+for item, cnt in item_counter.most_common():
+    print(f"  {item}: {cnt} 次  (支持度 {cnt / n_trans:.2%})")
+`;
+
+const STEP2_TEMPLATE = `# Step 2：简化版 Apriori
+# 任务：
+# 1) 基于上一步的 transactions，计算 1-项集支持度
+# 2) 计算所有 2-项集（商品对）支持度
+# 3) 生成 1→1 关联规则，计算置信度
+# 提示：可对商品排序后用组合方式遍历，避免重复
+
+csv_data = """${TRANSACTION_CSV}"""
+
+lines = [line.strip() for line in csv_data.strip().split("\\n") if line.strip()]
+transactions = [[item.strip() for item in line.split(",") if item.strip()] for line in lines]
+n_trans = len(transactions)
+
+# ==== 在这里写代码 ====
+
+
+
+`;
+
+const STEP2_SOLUTION = `# Step 2：参考答案 —— 简化版 Apriori（1-项集、2-项集、1→1 规则）
 from itertools import combinations
+from collections import Counter
 
-print("=" * 50)
-print("购物篮分析 - 关联规则挖掘")
-print("=" * 50)
+csv_data = """${TRANSACTION_CSV}"""
 
-transactions = [
-    ["牛奶", "面包", "黄油"],
-    ["牛奶", "面包"],
-    ["面包", "黄油", "果酱"],
-    ["牛奶", "面包", "黄油", "果酱"],
-    ["牛奶", "面包"],
-    ["面包", "黄油"],
-    ["牛奶", "果酱"],
-    ["面包", "牛奶", "果酱"],
-]
+lines = [line.strip() for line in csv_data.strip().split("\\n") if line.strip()]
+transactions = [[item.strip() for item in line.split(",") if item.strip()] for line in lines]
+n_trans = len(transactions)
 
-n_transactions = len(transactions)
-print(f"\\n总交易数: {n_transactions}")
+# 1-项集支持度
+one_count = Counter()
+for t in transactions:
+    for item in set(t):
+        one_count[item] += 1
+one_support = {item: c / n_trans for item, c in one_count.items()}
 
-print("\\n" + "=" * 50)
-print("【第一步】计算单个商品的支持度")
-print("=" * 50)
+# 2-项集支持度
+pair_count = Counter()
+for t in transactions:
+    unique = sorted(set(t))
+    for a, b in combinations(unique, 2):
+        pair_count[(a, b)] += 1
+two_support = {pair: c / n_trans for pair, c in pair_count.items()}
 
-item_count = {}
-for trans in transactions:
-    for item in trans:
-        item_count[item] = item_count.get(item, 0) + 1
+print("=" * 60)
+print("📦 1-项集支持度")
+print("=" * 60)
+for item, sup in sorted(one_support.items(), key=lambda x: -x[1]):
+    print(f"  {{{item}}}: {sup:.2%}")
 
-print("\\n商品支持度:")
-for item, count in sorted(item_count.items(), key=lambda x: -x[1]):
-    support = count / n_transactions
-    print(f"  {item}: {count}次, 支持度 = {support:.2%}")
+print()
+print("=" * 60)
+print("📦 2-项集支持度 (Top 10)")
+print("=" * 60)
+sorted_pairs = sorted(two_support.items(), key=lambda x: -x[1])
+for (a, b), sup in sorted_pairs[:10]:
+    print(f"  {{{a}, {b}}}: {sup:.2%}")
 
-print("\\n" + "=" * 50)
-print("【第二步】计算商品对的联合支持度")
-print("=" * 50)
+print()
+print("=" * 60)
+print("🔗 1→1 关联规则（置信度 Top 10）")
+print("=" * 60)
+rules = []
+for (a, b), sup_ab in two_support.items():
+    conf_a_b = sup_ab / one_support[a] if one_support[a] > 0 else 0
+    conf_b_a = sup_ab / one_support[b] if one_support[b] > 0 else 0
+    rules.append((f"{a} → {b}", sup_ab, conf_a_b))
+    rules.append((f"{b} → {a}", sup_ab, conf_b_a))
 
-pair_count = {}
-for trans in transactions:
-    for pair in combinations(sorted(trans), 2):
-        pair_count[pair] = pair_count.get(pair, 0) + 1
+rules.sort(key=lambda r: -r[2])
+for name, sup, conf in rules[:10]:
+    print(f"  {name:<14}  支持度={sup:.2%}  置信度={conf:.2%}")
+`;
 
-print("\\n商品对联合支持度:")
-for pair, count in sorted(pair_count.items(), key=lambda x: -x[1]):
-    support = count / n_transactions
-    print(f"  {pair[0]} + {pair[1]}: {count}次, 支持度 = {support:.2%}")
+const STEP3_TEMPLATE = `# Step 3：完整规则表 + 业务解读
+# 任务：
+# 1) 对所有 1→1 规则计算 支持度 / 置信度 / 提升度
+# 2) 以 min_support=0.20, min_confidence=0.50, min_lift=1.0 筛选
+# 3) 按 (提升度, 置信度, 支持度) 降序排列，输出完整规则表
+# 4) 对 Top 3 高价值规则做一段业务解读文字
 
-print("\\n" + "=" * 50)
-print("【第三步】计算关联规则的置信度和提升度")
-print("=" * 50)
+csv_data = """${TRANSACTION_CSV}"""
 
-def calculate_lift(confidence, item_support, consequent_support):
-    return confidence / consequent_support if consequent_support > 0 else 0
+lines = [line.strip() for line in csv_data.strip().split("\\n") if line.strip()]
+transactions = [[item.strip() for item in line.split(",") if item.strip()] for line in lines]
+n_trans = len(transactions)
 
-print("\\n关联规则示例:")
-rules = [
-    (("牛奶",), ("面包",)),
-    (("面包",), ("黄油",)),
-    (("牛奶",), ("果酱",)),
-]
+# ==== 在这里写代码 ====
 
-for antecedent, consequent in rules:
-    ant_count = item_count.get(antecedent[0], 0)
-    cons_count = item_count.get(consequent[0], 0)
-    combined = pair_count.get((antecedent[0], consequent[0]), 0) or \
-               pair_count.get((consequent[0], antecedent[0]), 0)
-    
-    ant_support = ant_count / n_transactions
-    cons_support = cons_count / n_transactions
-    combined_support = combined / n_transactions
-    confidence = combined_support / ant_support if ant_support > 0 else 0
-    lift = calculate_lift(confidence, ant_support, cons_support)
-    
-    print(f"\\n  {antecedent[0]} → {consequent[0]}:")
-    print(f"    支持度: {combined_support:.2%}")
-    print(f"    置信度: {confidence:.2%}")
-    print(f"    提升度: {lift:.2f}")
 
-print("\\n" + "=" * 50)
-print("【第四步】使用Apriori算法挖掘频繁项集")
-print("=" * 50)
 
-def apriori(transactions, min_support=0.2):
-    itemsets = {}
-    freq_itemsets = []
-    
-    item_count = {}
-    for trans in transactions:
-        for item in trans:
-            item_count[item] = item_count.get(item, 0) + 1
-    
-    n = len(transactions)
-    for item, count in item_count.items():
-        if count / n >= min_support:
-            itemsets[frozenset([item])] = count / n
-            freq_itemsets.append((frozenset([item]), count / n))
-    
-    k = 2
-    current_itemsets = list(itemsets.keys())
-    
-    while current_itemsets:
-        new_itemsets = {}
-        for i in range(len(current_itemsets)):
-            for j in range(i + 1, len(current_itemsets)):
-                union = current_itemsets[i] | current_itemsets[j]
-                if len(union) == k:
-                    count = sum(1 for t in transactions if union.issubset(t))
-                    support = count / n
-                    if support >= min_support and union not in itemsets:
-                        itemsets[union] = support
-                        freq_itemsets.append((union, support))
-        
-        current_itemsets = list(new_itemsets.keys())
-        k += 1
-    
-    return sorted(freq_itemsets, key=lambda x: -x[1])
+`;
 
-print(f"\\n最小支持度阈值: 20%")
-print("\\n频繁项集:")
-for itemset, support in apriori(transactions, 0.2):
-    items_str = ", ".join(sorted(itemset))
-    print(f"  {{{items_str}}}: 支持度 = {support:.2%}")
+const STEP3_SOLUTION = `# Step 3：参考答案 —— 完整规则表（支持度/置信度/提升度）
+from itertools import combinations
+from collections import Counter
 
-print("\\n" + "=" * 50)
-print("✓ 购物篮分析完成！")
-print("=" * 50)`;
+csv_data = """${TRANSACTION_CSV}"""
 
-  const projects = [
-    {
-      id: 1,
-      title: '基础概念',
-      description: '关联规则、支持度、置信度、提升度'
-    },
-    {
-      id: 2,
-      title: '实战案例',
-      description: '零售商品关联分析'
-    },
-    {
-      id: 3,
-      title: '高级应用',
-      description: '商品推荐、货架优化'
+lines = [line.strip() for line in csv_data.strip().split("\\n") if line.strip()]
+transactions = [[item.strip() for item in line.split(",") if item.strip()] for line in lines]
+n_trans = len(transactions)
+
+# 1-项集
+one_count = Counter()
+for t in transactions:
+    for item in set(t):
+        one_count[item] += 1
+one_support = {item: c / n_trans for item, c in one_count.items()}
+
+# 2-项集
+pair_count = Counter()
+for t in transactions:
+    unique = sorted(set(t))
+    for a, b in combinations(unique, 2):
+        pair_count[(a, b)] += 1
+two_support = {pair: c / n_trans for pair, c in pair_count.items()}
+
+# 生成规则
+MIN_SUP = 0.20
+MIN_CONF = 0.50
+MIN_LIFT = 1.0
+
+rules = []
+for (a, b), sup_ab in two_support.items():
+    if sup_ab < MIN_SUP:
+        continue
+    conf_a_b = sup_ab / one_support[a] if one_support[a] > 0 else 0
+    conf_b_a = sup_ab / one_support[b] if one_support[b] > 0 else 0
+    lift_a_b = conf_a_b / one_support[b] if one_support[b] > 0 else 0
+    lift_b_a = conf_b_a / one_support[a] if one_support[a] > 0 else 0
+    if conf_a_b >= MIN_CONF and lift_a_b >= MIN_LIFT:
+        rules.append((a, b, sup_ab, conf_a_b, lift_a_b))
+    if conf_b_a >= MIN_CONF and lift_b_a >= MIN_LIFT:
+        rules.append((b, a, sup_ab, conf_b_a, lift_b_a))
+
+rules.sort(key=lambda r: (-r[4], -r[3], -r[2]))
+
+print("=" * 80)
+print(f"📋 关联规则完整表 (共 {len(rules)} 条, 阈值 sup≥{MIN_SUP:.0%}, conf≥{MIN_CONF:.0%}, lift≥{MIN_LIFT})")
+print("=" * 80)
+print(f"{'#':<3} {'规则':<16} {'支持度':<10} {'置信度':<10} {'提升度':<10}")
+print("-" * 80)
+for i, (a, b, s, c, l) in enumerate(rules, 1):
+    print(f"{i:<3} {a} → {b:<10} {s:>7.2%}   {c:>7.2%}   {l:>7.2f}")
+
+print()
+print("=" * 80)
+print("💡 Top 3 高价值规则 · 业务解读")
+print("=" * 80)
+for i, (a, b, s, c, l) in enumerate(rules[:3], 1):
+    print()
+    print(f"【规则 {i}】 {a} → {b}")
+    print(f"   支持度={s:.2%}  置信度={c:.2%}  提升度={l:.2f}")
+    if l >= 1.5:
+        tone = "强正相关，极具推荐价值"
+    elif l > 1.0:
+        tone = "正相关，值得关注"
+    else:
+        tone = "关联性一般"
+    print(f"   解读：购买「{a}」的顾客再购买「{b}」的概率是随机购买的 {l:.2f} 倍（{tone}）。")
+    print(f"   建议：可将「{a}」与「{b}」相邻陈列，或设计 '{a}+{b}' 组合套餐 / 加购推荐，提升客单价与连带率。")
+`;
+
+type ExecResult = { success: boolean; output?: string; stdout: string; stderr: string; error?: { type: string; message: string } };
+
+interface StepState {
+  code: string;
+  result: ExecResult | null;
+  showAnswer: boolean;
+  isLoading: boolean;
+}
+
+const MarketBasket: React.FC = () => {
+  const [pyodideStatus, setPyodideStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [loaderStage, setLoaderStage] = useState<PyodideStage>(0);
+  const [loaderPercent, setLoaderPercent] = useState(0);
+  const [loaderError, setLoaderError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const [step1, setStep1] = useState<StepState>({ code: STEP1_TEMPLATE, result: null, showAnswer: false, isLoading: false });
+  const [step2, setStep2] = useState<StepState>({ code: STEP2_TEMPLATE, result: null, showAnswer: false, isLoading: false });
+  const [step3, setStep3] = useState<StepState>({ code: STEP3_TEMPLATE, result: null, showAnswer: false, isLoading: false });
+
+  useEffect(() => {
+    if (isPyodideReady()) {
+      setPyodideStatus('ready');
+      setLoaderStage(4);
+      setLoaderPercent(100);
+      return;
     }
-  ];
+
+    setPyodideStatus('loading');
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    initPyodide((p: PyodideProgress) => {
+      setLoaderStage(p.stage);
+      setLoaderPercent(p.percent);
+    })
+      .then(() => {
+        setPyodideStatus('ready');
+        setLoaderStage(4);
+        setLoaderPercent(100);
+      })
+      .catch((err: Error) => {
+        setPyodideStatus('error');
+        setLoaderError(err.message || 'Pyodide 初始化失败');
+      })
+      .finally(() => clearInterval(timer));
+  }, []);
+
+  const handleRetry = () => {
+    setLoaderError(null);
+    setPyodideStatus('loading');
+    initPyodide((p: PyodideProgress) => {
+      setLoaderStage(p.stage);
+      setLoaderPercent(p.percent);
+    })
+      .then(() => {
+        setPyodideStatus('ready');
+        setLoaderStage(4);
+        setLoaderPercent(100);
+      })
+      .catch((err: Error) => {
+        setPyodideStatus('error');
+        setLoaderError(err.message || 'Pyodide 初始化失败');
+      });
+  };
+
+  const runCode = async (setter: React.Dispatch<React.SetStateAction<StepState>>, current: StepState) => {
+    if (pyodideStatus !== 'ready' || current.isLoading) return;
+    setter({ ...current, isLoading: true, result: null });
+    try {
+      const res = await runPythonCode(current.code);
+      const result: ExecResult = {
+        success: res.success,
+        output: res.output,
+        stdout: res.stdout,
+        stderr: res.stderr,
+        error: res.error ? { type: res.error.type, message: res.error.message } : undefined,
+      };
+      setter((prev) => ({ ...prev, isLoading: false, result }));
+    } catch (err: any) {
+      setter((prev) => ({
+        ...prev,
+        isLoading: false,
+        result: { success: false, stdout: '', stderr: '', error: { type: 'ExecutionError', message: err?.message || '执行出错' } },
+      }));
+    }
+  };
+
+  const toggleAnswer = (setter: React.Dispatch<React.SetStateAction<StepState>>, current: StepState, answer: string, template: string) => {
+    if (!current.showAnswer) {
+      setter({ ...current, code: answer, showAnswer: true, result: null });
+    } else {
+      setter({ ...current, code: template, showAnswer: false, result: null });
+    }
+  };
+
+  const resetCode = (setter: React.Dispatch<React.SetStateAction<StepState>>, template: string) => {
+    setter({ code: template, result: null, showAnswer: false, isLoading: false });
+  };
+
+  const renderOutput = (result: ExecResult | null) => {
+    if (!result) {
+      return (
+        <div className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-gray-500 rounded-lg">
+          ⌨️ 点击「▶ 运行代码」查看输出结果
+        </div>
+      );
+    }
+    if (!result.success) {
+      return (
+        <div className="space-y-3">
+          <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-100">
+            <div className="flex items-start">
+              <div className="text-xl mr-3">⚠️</div>
+              <div className="flex-1">
+                <h4 className="font-semibold mb-1">{result.error?.type || '执行错误'}</h4>
+                <p className="text-sm">{result.error?.message}</p>
+              </div>
+            </div>
+          </div>
+          {result.stderr && (
+            <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-red-300 rounded-lg">{result.stderr}</pre>
+          )}
+        </div>
+      );
+    }
+    const content = result.output || result.stdout || '代码执行成功（无输出）';
+    return (
+      <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg">{content}</pre>
+    );
+  };
+
+  const renderStep = (
+    idx: number,
+    title: string,
+    subtitle: string,
+    state: StepState,
+    setState: React.Dispatch<React.SetStateAction<StepState>>,
+    solution: string,
+    template: string,
+    editorKey: string
+  ) => (
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-white">
+        <div className="flex items-center mb-2">
+          <div className="w-10 h-10 rounded-full bg-white text-orange-600 flex items-center justify-center font-bold text-lg mr-3 shadow">
+            {idx}
+          </div>
+          <h3 className="text-xl md:text-2xl font-bold">{title}</h3>
+        </div>
+        <p className="text-orange-50 text-sm md:text-base">{subtitle}</p>
+      </div>
+
+      <div className="p-4 md:p-6 space-y-4">
+        <div className="rounded-lg overflow-hidden border border-gray-800 shadow-inner">
+          <AceEditor
+            mode="python"
+            theme="monokai"
+            value={state.code}
+            onChange={(v) => setState({ ...state, code: v, result: null })}
+            name={editorKey}
+            editorProps={{ $blockScrolling: true }}
+            setOptions={{ fontSize: 13, showLineNumbers: true }}
+            style={{ height: '380px', width: '100%' }}
+          />
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => runCode(setState, state)}
+            disabled={state.isLoading || pyodideStatus !== 'ready'}
+            className={`px-6 py-2 rounded-full font-bold shadow-button transition-all ${
+              state.isLoading || pyodideStatus !== 'ready'
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : 'bg-primary text-white hover:shadow-button-hover hover:-translate-y-0.5'
+            }`}
+          >
+            {state.isLoading ? (
+              <span className="inline-flex items-center">
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                运行中...
+              </span>
+            ) : (
+              '▶ 运行代码'
+            )}
+          </button>
+          <button
+            onClick={() => toggleAnswer(setState, state, solution, template)}
+            className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
+          >
+            {state.showAnswer ? '✍ 恢复练习模板' : '💡 显示参考答案'}
+          </button>
+          <button
+            onClick={() => resetCode(setState, template)}
+            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-all"
+          >
+            ↺ 重置
+          </button>
+        </div>
+
+        <div>{renderOutput(state.result)}</div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 购物篮分析</h1>
-            <p className="text-text">学习关联规则挖掘，发现商品之间的关联关系</p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+      <div className="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
+        {/* Hero 区域 */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 mb-10 text-center border border-orange-100 overflow-hidden relative">
+          <div className="absolute -top-10 -right-10 text-9xl opacity-10">🛒</div>
+          <div className="absolute -bottom-8 -left-8 text-8xl opacity-10">📊</div>
+          <div className="relative">
+            <div className="text-7xl md:text-8xl mb-4 inline-block animate-bounce-slow">🛒</div>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-gray-800 mb-4">
+              购物篮分析 <span className="text-orange-600">实战课程</span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              从 CSV 交易数据出发，亲手实现简化版 Apriori 算法，计算支持度、置信度、提升度，
+              挖掘商品之间的隐藏关联，为零售运营提供数据驱动的决策建议。
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <span className="bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-medium">🐍 Python 代码实战</span>
+              <span className="bg-amber-100 text-amber-700 px-4 py-2 rounded-full text-sm font-medium">📈 Apriori 算法</span>
+              <span className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-medium">💼 业务解读</span>
+            </div>
           </div>
+        </div>
 
-          {pyodideStatus === 'loading' && (
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-8">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
-                <div>
-                  <p className="font-semibold text-orange-800">正在初始化 Python 环境...</p>
-                  <p className="text-sm text-orange-600">首次加载需要下载必要的库，请耐心等待</p>
-                </div>
+        {/* Pyodide 加载器 */}
+        {pyodideStatus !== 'ready' && (
+          <div className="mb-10">
+            <PyodideLoader
+              stage={loaderStage}
+              percent={loaderPercent}
+              error={loaderError}
+              elapsedSeconds={elapsedSeconds}
+              onRetry={handleRetry}
+            />
+          </div>
+        )}
+
+        {/* 核心概念板块 */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 md:p-10 mb-10 border border-gray-100">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2 flex items-center">
+            <span className="mr-3">🧠</span> 核心概念
+          </h2>
+          <p className="text-gray-600 mb-8">掌握购物篮分析的三大基石：问题定义、核心算法、指标应用。</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+              <div className="text-5xl mb-3">🛍️</div>
+              <h3 className="text-lg font-bold text-blue-800 mb-2">什么是购物篮分析</h3>
+              <p className="text-sm text-blue-700 leading-relaxed">
+                购物篮分析（Market Basket Analysis）是一种数据挖掘技术，通过分析顾客在一次交易中
+                同时购买的商品组合，揭示商品之间的<strong>关联关系</strong>。经典案例：
+                <em>"啤酒与尿布"</em>——年轻父亲在购买尿布时常同时购买啤酒。
+              </p>
+              <div className="mt-4 bg-white rounded-lg p-3 text-xs font-mono text-blue-900">
+                输入：交易记录（每行 = 一次购物）<br />
+                输出：{'{A → B}'} 形式的关联规则
               </div>
             </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100">
+              <div className="text-5xl mb-3">🧮</div>
+              <h3 className="text-lg font-bold text-green-800 mb-2">Apriori 算法简介</h3>
+              <p className="text-sm text-green-700 leading-relaxed">
+                Apriori 利用"先验性质"：<strong>若一个项集频繁，则其所有子集也必须频繁</strong>。
+                通过迭代地从 k-项集生成 (k+1)-项集，并按最小支持度剪枝，从而高效挖掘频繁项集。
+              </p>
+              <div className="mt-4 bg-white rounded-lg p-3 text-xs font-mono text-green-900">
+                1-项集 → 2-项集 → 3-项集 → ...<br />
+                直至无新频繁项集生成
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
+              <div className="text-5xl mb-3">📏</div>
+              <h3 className="text-lg font-bold text-purple-800 mb-2">关联规则三大指标</h3>
+              <p className="text-sm text-purple-700 leading-relaxed mb-3">
+                每条规则 A → B 用三个指标衡量其价值：
+              </p>
+              <ul className="text-xs space-y-1 text-purple-800 font-mono bg-white rounded-lg p-3">
+                <li>• <strong>支持度</strong> = P(A,B)</li>
+                <li>• <strong>置信度</strong> = P(B|A) = sup(A,B)/sup(A)</li>
+                <li>• <strong>提升度</strong> = conf(A→B)/P(B)</li>
+              </ul>
+              <p className="mt-3 text-xs text-purple-700">
+                提升度 {'>'} 1 表示规则有效；提升度越大，关联越强。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 3 步递进练习 */}
+        <div className="mb-10 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2 flex items-center justify-center">
+            <span className="mr-3">💻</span> 3 步递进练习
+          </h2>
+          <p className="text-gray-600">从数据读取到规则挖掘，再到业务洞察，循序渐进，亲手实现每一步。</p>
+        </div>
+
+        <div className="space-y-8">
+          {renderStep(
+            1,
+            'Step 1 · 数据读取与概览',
+            '解析 CSV 交易数据，统计交易数量、商品频次与平均每单商品数。',
+            step1,
+            setStep1,
+            STEP1_SOLUTION,
+            STEP1_TEMPLATE,
+            'mb-step1'
           )}
 
-          {pyodideStatus === 'error' && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-medium text-red-800">环境加载失败</h3>
-                  <p className="mt-1 text-sm text-red-600">请检查网络连接后刷新页面重试</p>
-                </div>
-              </div>
-            </div>
+          {renderStep(
+            2,
+            'Step 2 · 简化版 Apriori',
+            '计算 1-项集 / 2-项集支持度，并生成 1→1 关联规则与置信度。',
+            step2,
+            setStep2,
+            STEP2_SOLUTION,
+            STEP2_TEMPLATE,
+            'mb-step2'
           )}
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📚 学习路径</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {projects.map((project) => (
-                <button
-                  key={project.id}
-                  onClick={() => setActiveProject(project.id - 1)}
-                  className={`p-4 rounded-xl text-left transition-all ${
-                    activeProject === project.id - 1
-                      ? 'bg-primary text-white shadow-lg transform scale-105'
-                      : 'bg-gray-50 hover:bg-gray-100 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center mb-2">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                      activeProject === project.id - 1
-                        ? 'bg-white text-primary'
-                        : 'bg-primary text-white'
-                    }`}>
-                      {project.id}
-                    </span>
-                    <h3 className="font-semibold">{project.title}</h3>
-                  </div>
-                  <p className={`text-sm ${
-                    activeProject === project.id - 1
-                      ? 'text-orange-100'
-                      : 'text-gray-600'
-                  }`}>
-                    {project.description}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
+          {renderStep(
+            3,
+            'Step 3 · 完整规则表与业务解读',
+            '对所有规则计算支持度/置信度/提升度，筛选高价值规则并给出零售业务建议。',
+            step3,
+            setStep3,
+            STEP3_SOLUTION,
+            STEP3_TEMPLATE,
+            'mb-step3'
+          )}
+        </div>
 
-          <div className="mb-8 bg-accent rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">🎯 学习目标</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">理解关联规则的基本概念和核心指标</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">掌握支持度、置信度、提升度的计算方法</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">学会使用Apriori算法挖掘频繁项集</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">能够应用于商品推荐和货架优化场景</p>
-              </div>
-            </div>
-          </div>
+        {/* 课程完成 */}
+        <div className="mt-12">
+          <CourseCompletion
+            courseId="market-basket"
+            courseTitle="购物篮分析"
+            badgeIcon="🛒"
+            badgeName="购物篮分析师"
+          />
+        </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">💡 知识要点</h2>
-            <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-              {activeProject === 0 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">关联规则基础概念</h3>
-                    <p className="text-text mb-3">关联规则是数据挖掘中的一种技术，用于发现数据项之间的关联关系。最经典的案例是"啤酒与尿布"。</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-blue-800 mb-2">📊 支持度 (Support)</h4>
-                      <p className="text-sm text-blue-700 mb-2">项集在所有交易中出现的频率</p>
-                      <div className="bg-white p-2 rounded text-xs font-mono">
-                        Support(A) = P(A) = count(A) / 总交易数
-                      </div>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-green-800 mb-2">📈 置信度 (Confidence)</h4>
-                      <p className="text-sm text-green-700 mb-2">规则的可靠程度</p>
-                      <div className="bg-white p-2 rounded text-xs font-mono">
-                        Conf(A→B) = P(B|A) = P(A,B) / P(A)
-                      </div>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-purple-800 mb-2">🎯 提升度 (Lift)</h4>
-                      <p className="text-sm text-purple-700 mb-2">规则的有效性指标</p>
-                      <div className="bg-white p-2 rounded text-xs font-mono">
-                        Lift(A→B) = Conf(A→B) / P(B)
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    <p className="text-sm font-medium text-orange-800 mb-2">💡 指标解读</p>
-                    <ul className="text-sm text-orange-700 space-y-1">
-                      <li>• <strong>支持度 &gt; 阈值</strong>：规则具有普遍性（通常设 1%-5%）</li>
-                      <li>• <strong>置信度 &gt; 阈值</strong>：规则可信（通常设 50%-80%）</li>
-                      <li>• <strong>提升度 &gt; 1</strong>：正相关；= 1 无关；&lt; 1 负相关</li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">📋 示例：超市交易数据</h4>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">交易ID</th>
-                            <th className="border border-gray-300 px-4 py-2">购买的商品</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">T1</td>
-                            <td className="border border-gray-300 px-4 py-2">牛奶, 面包, 黄油</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">T2</td>
-                            <td className="border border-gray-300 px-4 py-2">牛奶, 面包</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">T3</td>
-                            <td className="border border-gray-300 px-4 py-2">面包, 黄油, 果酱</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">T4</td>
-                            <td className="border border-gray-300 px-4 py-2">牛奶, 面包, 黄油, 果酱</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">📊 指标计算示例</h4>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">规则</th>
-                            <th className="border border-gray-300 px-4 py-2">支持度</th>
-                            <th className="border border-gray-300 px-4 py-2">置信度</th>
-                            <th className="border border-gray-300 px-4 py-2">提升度</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">牛奶 → 面包</td>
-                            <td className="border border-gray-300 px-4 py-2">75% (3/4)</td>
-                            <td className="border border-gray-300 px-4 py-2">100% (3/3)</td>
-                            <td className="border border-gray-300 px-4 py-2">1.33</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">面包 → 牛奶</td>
-                            <td className="border border-gray-300 px-4 py-2">75% (3/4)</td>
-                            <td className="border border-gray-300 px-4 py-2">75% (3/4)</td>
-                            <td className="border border-gray-300 px-4 py-2">1.33</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">黄油 → 面包</td>
-                            <td className="border border-gray-300 px-4 py-2">75% (3/4)</td>
-                            <td className="border border-gray-300 px-4 py-2">100% (3/3)</td>
-                            <td className="border border-gray-300 px-4 py-2">1.33</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeProject === 1 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 零售商品关联分析实战</h3>
-                    <p className="text-text mb-3">在实际零售场景中，通过购物篮分析可以发现商品之间的购买关联规律。</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-blue-800 mb-2">🏪 应用场景</h4>
-                      <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• 超市货架布局优化</li>
-                        <li>• 商品捆绑销售策略</li>
-                        <li>• 促销活动设计</li>
-                        <li>• 会员精准营销</li>
-                      </ul>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-green-800 mb-2">💰 商业价值</h4>
-                      <ul className="text-sm text-green-700 space-y-1">
-                        <li>• 增加客单价 15%-30%</li>
-                        <li>• 提升商品曝光率</li>
-                        <li>• 减少库存积压</li>
-                        <li>• 优化采购计划</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">📋 零售交易数据集</h4>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">交易ID</th>
-                            <th className="border border-gray-300 px-4 py-2">牛奶</th>
-                            <th className="border border-gray-300 px-4 py-2">面包</th>
-                            <th className="border border-gray-300 px-4 py-2">黄油</th>
-                            <th className="border border-gray-300 px-4 py-2">果酱</th>
-                            <th className="border border-gray-300 px-4 py-2">鸡蛋</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">1</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">2</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">3</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">4</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 text-center">5</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">-</td>
-                            <td className="border border-gray-300 px-4 py-2 text-center">✓</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    <p className="text-sm font-medium text-orange-800 mb-2">💡 分析结论</p>
-                    <ul className="text-sm text-orange-700 space-y-1">
-                      <li>• <strong>牛奶 + 面包</strong>：最常见的组合，支持度高达 60%，可放在相邻货架</li>
-                      <li>• <strong>面包 → 黄油</strong>：置信度 100%，买面包的顾客都会买黄油</li>
-                      <li>• <strong>套餐推荐</strong>：可将牛奶+面包+黄油打包成"早餐套餐"促销</li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {activeProject === 2 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">🔧 高级应用场景</h3>
-                    <p className="text-text mb-3">关联规则在电商和零售领域有众多高级应用场景。</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-blue-800 mb-2">🛒 商品推荐系统</h4>
-                      <p className="text-sm text-blue-700 mb-2">基于用户的购买历史，推荐相关商品</p>
-                      <div className="bg-white p-3 rounded text-xs font-mono">
-                        用户买了A → 推荐B (Lift {'>'}= 2)
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-green-800 mb-2">🏪 货架优化</h4>
-                      <p className="text-sm text-green-700 mb-2">将关联商品放置在相邻位置</p>
-                      <div className="bg-white p-3 rounded text-xs font-mono">
-                        A与B强关联 → 货架相邻摆放
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-purple-800 mb-2">🎁 促销设计</h4>
-                      <p className="text-sm text-purple-700 mb-2">设计捆绑套餐和买赠活动</p>
-                      <div className="bg-white p-3 rounded text-xs font-mono">
-                        A+B高置信度 → 捆绑降价销售
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-orange-800 mb-2">📢 目录设计</h4>
-                      <p className="text-sm text-orange-700 mb-2">优化商品目录和网页布局</p>
-                      <div className="bg-white p-3 rounded text-xs font-mono">
-                        关联规则 → 交叉销售位置
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">📊 Apriori算法步骤</h4>
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                      <div className="flex items-start">
-                        <span className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 flex-shrink-0">1</span>
-                        <p className="text-sm text-text"><strong>扫描数据集</strong>：统计每个单项的出现次数，计算支持度</p>
-                      </div>
-                      <div className="flex items-start">
-                        <span className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 flex-shrink-0">2</span>
-                        <p className="text-sm text-text"><strong>设定阈值</strong>：设定最小支持度阈值，筛选频繁1-项集</p>
-                      </div>
-                      <div className="flex items-start">
-                        <span className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 flex-shrink-0">3</span>
-                        <p className="text-sm text-text"><strong>连接与剪枝</strong>：生成候选项集，利用先验性质剪枝</p>
-                      </div>
-                      <div className="flex items-start">
-                        <span className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 flex-shrink-0">4</span>
-                        <p className="text-sm text-text"><strong>迭代</strong>：重复上述步骤，直到没有新的频繁项集</p>
-                      </div>
-                      <div className="flex items-start">
-                        <span className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 flex-shrink-0">5</span>
-                        <p className="text-sm text-text"><strong>生成规则</strong>：从频繁项集中生成关联规则，计算置信度和提升度</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    <p className="text-sm font-medium text-orange-800 mb-2">💡 注意事项</p>
-                    <ul className="text-sm text-orange-700 space-y-1">
-                      <li>• 支持度过高可能导致规则价值低（普遍现象）</li>
-                      <li>• 提升度过低说明规则实际意义不大</li>
-                      <li>• 数据量越大，挖掘结果越可靠</li>
-                      <li>• 需要结合业务理解选择有价值的规则</li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-6 text-primary">💻 动手练习</h2>
-            <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-6">
-              <p className="text-text mb-4">在下方编辑器中尝试修改代码，体验购物篮分析的过程！</p>
-              
-              <div className="mb-4">
-                <AceEditor
-                  mode="python"
-                  theme="monokai"
-                  value={code || placeholderCode}
-                  onChange={handleCodeChange}
-                  name="market-basket-editor"
-                  editorProps={{
-                    $blockScrolling: true
-                  }}
-                  className="rounded-lg shadow-md"
-                  style={{ height: '350px', width: '100%' }}
-                />
-              </div>
-              
-              <div className="flex items-center gap-4 flex-wrap">
-                <button
-                  onClick={handleRunCode}
-                  disabled={isLoading || pyodideStatus !== 'ready'}
-                  className={`px-8 py-3 rounded-full font-bold transition-all shadow-lg ${
-                    isLoading || pyodideStatus !== 'ready'
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-primary text-white hover:bg-secondary hover:shadow-button-hover transform hover:-translate-y-0.5'
-                  }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      运行中...
-                    </span>
-                  ) : (
-                    '▶ 运行代码'
-                  )}
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setCode(defaultCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all"
-                >
-                  💡 显示参考答案
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setCode(placeholderCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
-                >
-                  重置代码
-                </button>
-              </div>
-            </div>
-            
-            <div className="mt-6 bg-gray-900 text-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <span className="ml-4 text-sm text-gray-400">运行结果</span>
-              </div>
-              
-              {!result ? (
-                <div className="text-gray-400 flex items-center justify-center py-8">
-                  <span className="text-2xl mr-2">⌨️</span>
-                  <span>点击"运行代码"查看输出结果</span>
-                </div>
-              ) : result.success ? (
-                <div className="space-y-3">
-                  {result.output && (
-                    <div>
-                      <pre className="text-green-400 whitespace-pre-wrap font-mono text-sm">{result.output}</pre>
-                    </div>
-                  )}
-                  {!result.output && !result.stdout && (
-                    <div className="text-green-400 flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      代码执行成功！
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="flex-1">
-                        <h4 className="text-red-400 font-semibold mb-1">
-                          {result.error?.type || '执行错误'}
-                        </h4>
-                        <p className="text-red-300 text-sm">{result.error?.message}</p>
-                        {result.error?.lineNumber && (
-                          <p className="text-red-400 text-xs mt-2">📍 错误位置: 第 {result.error.lineNumber} 行</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {result.stdout && (
-                    <div className="text-gray-400 text-sm">
-                      <p className="font-semibold mb-1">标准输出:</p>
-                      <pre className="text-gray-300 whitespace-pre-wrap">{result.stdout}</pre>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
-            <div className="space-y-3">
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">1. 为什么"啤酒与尿布"的关联规则在现实中需要谨慎对待？</p>
-                <p className="text-sm text-gray-600">提示：考虑相关性不等于因果关系，以及虚假相关性的问题</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">2. 如何在实际项目中选择合适的最小支持度和置信度阈值？</p>
-                <p className="text-sm text-gray-600">提示：需要平衡规则的数量和质量，考虑业务场景和计算成本</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">3. 除了Apriori算法，还有哪些频繁项集挖掘算法？各有何优缺点？</p>
-                <p className="text-sm text-gray-600">提示：考虑FP-Growth、Eclat等算法，以及它们的时间和空间复杂度</p>
-              </div>
-            </div>
-          </div>
+        <div className="text-center text-gray-400 text-sm mt-8 pb-4">
+          ——— 本课程由 Python 实战驱动 · 继续加油，解锁更多数据技能 ———
         </div>
       </div>
     </div>

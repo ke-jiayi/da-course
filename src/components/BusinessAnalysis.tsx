@@ -3,586 +3,842 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPythonCode, isPyodideReady, initPyodide } from '../services/pyodideService';
+import { runPythonCode, initPyodide, isPyodideReady, PyodideProgress } from '../services/pyodideService';
+import PyodideLoader from './PyodideLoader';
+import CourseCompletion from './CourseCompletion';
+
+interface StepState {
+  code: string;
+  output: { success: boolean; stdout: string; stderr: string; output?: string; error?: { type: string; message: string; lineNumber?: number } } | null;
+  showAnswer: boolean;
+  isLoading: boolean;
+}
 
 const BusinessAnalysis: React.FC = () => {
-  const [code, setCode] = useState('');
-  const [result, setResult] = useState<{ success: boolean; output?: string; stdout: string; stderr: string; error?: any; } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [pyodideStatus, setPyodideStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [activeProject, setActiveProject] = useState(0);
-  const [_showExercises, setShowExercises] = useState(false);
+  const [pyodideProgress, setPyodideProgress] = useState<{ stage: number; percent: number }>({ stage: 0, percent: 0 });
+  const [pyodideError, setPyodideError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  const initialCodeStep1 = `# Step 1: 基础统计 - 读取 A/B 测试数据
+# 我们将分析控制组(Group A) vs 实验组(Group B)的关键指标
+
+data_csv = """group,users,conversions,revenue
+Control,10000,520,125000
+Treatment,10000,610,148500
+"""
+
+print("=" * 50)
+print("📊 A/B 测试数据分析")
+print("=" * 50)
+
+# 解析 CSV 数据
+lines = data_csv.strip().split('\\n')
+headers = lines[0].split(',')
+rows = []
+for line in lines[1:]:
+    values = line.split(',')
+    row = {}
+    for i, h in enumerate(headers):
+        row[h] = values[i]
+    rows.append(row)
+
+# 计算基础指标
+print("\\n📈 基础统计对比:")
+print("-" * 50)
+
+for row in rows:
+    users = int(row['users'])
+    conversions = int(row['conversions'])
+    revenue = float(row['revenue'])
+    cr = conversions / users * 100
+    aov = revenue / conversions if conversions > 0 else 0
+    arpu = revenue / users
+
+    print(f"\\n【{row['group']}组】")
+    print(f"  总用户数:      {users:,}")
+    print(f"  转化用户数:    {conversions:,}")
+    print(f"  总收入:       ¥{revenue:,.0f}")
+    print(f"  转化率 (CR):   {cr:.2f}%")
+    print(f"  平均客单价 (AOV): ¥{aov:.2f}")
+    print(f"  每用户收入 (ARPU): ¥{arpu:.2f}")
+
+# 对比分析
+control = rows[0]
+treatment = rows[1]
+
+control_cr = int(control['conversions']) / int(control['users'])
+treatment_cr = int(treatment['conversions']) / int(treatment['users'])
+cr_lift = (treatment_cr - control_cr) / control_cr * 100
+
+control_rev = float(control['revenue']) / int(control['users'])
+treatment_rev = float(treatment['revenue']) / int(treatment['users'])
+rev_lift = (treatment_rev - control_rev) / control_rev * 100
+
+print("\\n" + "=" * 50)
+print("📊 提升效果 (实验组 vs 控制组)")
+print("=" * 50)
+print(f"  转化率提升: {cr_lift:+.2f}%")
+print(f"  每用户收入提升: {rev_lift:+.2f}%")
+
+if cr_lift > 0:
+    print(f"\\n✅ 实验组转化率表现更优")
+else:
+    print(f"\\n⚠️  实验组转化率未优于控制组")
+`;
+
+const answerCodeStep1 = initialCodeStep1;
+
+const initialCodeStep2 = `# Step 2: 统计显著性检验 - z-test 和 p-value
+# 验证转化率提升是否是统计显著的（非偶然）
+
+import math
+
+print("=" * 60)
+print("🔬 统计显著性检验 (Z-test for Conversion Rates)")
+print("=" * 60)
+
+# A/B 测试数据
+n_control = 10000     # 控制组样本量
+conv_control = 520    # 控制组转化数
+n_treatment = 10000   # 实验组样本量
+conv_treatment = 610  # 实验组转化数
+
+# 计算转化率
+p_control = conv_control / n_control
+p_treatment = conv_treatment / n_treatment
+
+print(f"\\n📋 输入参数:")
+print(f"  控制组: {conv_control}/{n_control} = {p_control:.4%}")
+print(f"  实验组: {conv_treatment}/{n_treatment} = {p_treatment:.4%}")
+print(f"  绝对差异: {(p_treatment - p_control):.4%}")
+print(f"  相对提升: {((p_treatment - p_control) / p_control * 100):+.2f}%")
+
+# 计算联合转化率（pooled proportion）
+p_pooled = (conv_control + conv_treatment) / (n_control + n_treatment)
+
+# 标准误差（Standard Error）
+se = math.sqrt(p_pooled * (1 - p_pooled) * (1/n_control + 1/n_treatment))
+
+# Z 统计量
+z_score = (p_treatment - p_control) / se
+
+print(f"\\n🧮 计算过程:")
+print(f"  联合转化率 (p_pooled): {p_pooled:.6f}")
+print(f"  标准误差 (SE):         {se:.6f}")
+print(f"  Z 统计量:              {z_score:.4f}")
+
+# 手动计算 p-value（使用正态分布近似）
+# 使用 erf 函数的多项式近似
+def erf_approx(x):
+    a1 =  0.254829592
+    a2 = -0.284496736
+    a3 =  1.421413741
+    a4 = -1.453152027
+    a5 =  1.061405429
+    p  =  0.3275911
+    sign = 1 if x >= 0 else -1
+    x = abs(x)
+    t = 1.0 / (1.0 + p * x)
+    y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-x * x)
+    return sign * y
+
+def normal_cdf(z):
+    return 0.5 * (1 + erf_approx(z / math.sqrt(2)))
+
+# 双尾检验 p-value
+p_value = 2 * (1 - normal_cdf(abs(z_score)))
+
+print(f"\\n📊 检验结果:")
+print(f"  p-value: {p_value:.6f}")
+print(f"  显著性水平 (α): 0.05")
+
+# 判断结论
+print(f"\\n{'=' * 60}")
+print("🎯 结论")
+print(f"{'=' * 60}")
+
+alpha = 0.05
+if p_value < alpha:
+    print(f"  ✅ p-value ({p_value:.6f}) < α ({alpha})")
+    print(f"  → 拒绝原假设 (H0)")
+    print(f"  → 两组转化率差异具有统计显著性")
+    print(f"  → 实验方案确实有效！")
+else:
+    print(f"  ❌ p-value ({p_value:.6f}) >= α ({alpha})")
+    print(f"  → 无法拒绝原假设")
+    print(f"  → 差异可能是随机波动")
+    print(f"  → 需要更大样本量来验证")
+
+# 置信区间（95%）
+ci_margin = 1.96 * se
+diff = p_treatment - p_control
+ci_lower = diff - ci_margin
+ci_upper = diff + ci_margin
+
+print(f"\\n📐 95% 置信区间 (差异):")
+print(f"  [{ci_lower:.4%}, {ci_upper:.4%}]")
+print(f"  区间不包含 0 → 差异显著 ✓" if ci_lower > 0 else "  区间包含 0 → 差异不显著 ✗")
+`;
+
+const initialCodeStep3 = `# Step 3: 综合业务决策分析
+# 结合转化率、收益、置信区间和商业因素进行综合决策
+
+import math
+
+print("=" * 60)
+print("💼 数据驱动的业务决策分析")
+print("=" * 60)
+
+# ========== 场景设定 ==========
+# 某电商平台计划对首页推荐算法进行改版 (实验)
+# 需要评估是否应该全量上线新算法
+# =================================
+
+# 实验数据
+data = [
+    {"group": "控制组 (旧算法)", "users": 10000, "conversions": 520, "revenue": 125000},
+    {"group": "实验组 (新算法)", "users": 10000, "conversions": 610, "revenue": 148500}
+]
+
+print("\\n📊 实验概览:")
+print("-" * 60)
+
+metrics = []
+for d in data:
+    cr = d['conversions'] / d['users'] * 100
+    aov = d['revenue'] / d['conversions'] if d['conversions'] > 0 else 0
+    arpu = d['revenue'] / d['users']
+    metrics.append({"cr": cr, "aov": aov, "arpu": arpu, **d})
+    print(f"\\n  {d['group']}:")
+    print(f"    转化率 CR:    {cr:.2f}%")
+    print(f"    平均客单价:   ¥{aov:.2f}")
+    print(f"    每用户收入:   ¥{arpu:.2f}")
+
+# 指标提升
+ctrl = metrics[0]
+treat = metrics[1]
+
+cr_lift = (treat['cr'] - ctrl['cr']) / ctrl['cr'] * 100
+aov_lift = (treat['aov'] - ctrl['aov']) / ctrl['aov'] * 100
+arpu_lift = (treat['arpu'] - ctrl['arpu']) / ctrl['arpu'] * 100
+
+print(f"\\n📈 相对提升:")
+print(f"  转化率: {cr_lift:+.2f}%")
+print(f"  客单价: {aov_lift:+.2f}%")
+print(f"  ARPU:   {arpu_lift:+.2f}%")
+
+# ========== 统计检验 ==========
+print(f"\\n{'=' * 60}")
+print("🔬 统计检验")
+print(f"{'=' * 60}")
+
+p_ctrl = ctrl['conversions'] / ctrl['users']
+p_treat = treat['conversions'] / treat['users']
+n_ctrl = ctrl['users']
+n_treat = treat['users']
+
+p_pooled = (ctrl['conversions'] + treat['conversions']) / (n_ctrl + n_treat)
+se = math.sqrt(p_pooled * (1 - p_pooled) * (1/n_ctrl + 1/n_treat))
+z = (p_treat - p_ctrl) / se
+
+def erf_approx(x):
+    a1, a2, a3, a4, a5 = 0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429
+    p = 0.3275911
+    sign = 1 if x >= 0 else -1
+    x = abs(x)
+    t = 1.0 / (1.0 + p * x)
+    y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * math.exp(-x * x)
+    return sign * y
+
+def normal_cdf(z):
+    return 0.5 * (1 + erf_approx(z / math.sqrt(2)))
+
+p_value = 2 * (1 - normal_cdf(abs(z)))
+
+# 置信区间
+ci_diff = p_treat - p_ctrl
+ci_low = (ci_diff - 1.96 * se) * 100
+ci_high = (ci_diff + 1.96 * se) * 100
+
+print(f"  Z统计量: {z:.4f}")
+print(f"  p-value: {p_value:.6f}")
+print(f"  95% CI:  [{ci_low:.2f}%, {ci_high:.2f}%]")
+
+# ========== 业务影响评估 ==========
+print(f"\\n{'=' * 60}")
+print("💰 业务影响评估 (假设全量上线)")
+print(f"{'=' * 60}")
+
+monthly_visitors = 500000  # 月活用户
+arpu_diff = treat['arpu'] - ctrl['arpu']
+additional_revenue_monthly = arpu_diff * monthly_visitors
+additional_revenue_yearly = additional_revenue_monthly * 12
+
+print(f"\\n  假设月活用户数: {monthly_visitors:,}")
+print(f"  ARPU 增量:       ¥{arpu_diff:.2f}/用户")
+print(f"  月度增量收入:    ¥{additional_revenue_monthly:,.0f}")
+print(f"  年度增量收入:    ¥{additional_revenue_yearly:,.0f}")
+
+# ========== 综合决策报告 ==========
+print(f"\\n{'=' * 60}")
+print("📝 综合决策报告")
+print(f"{'=' * 60}")
+
+print("\\n【评估维度】")
+print("-" * 40)
+
+# 1. 统计显著性
+stat_sig = p_value < 0.05
+print(f"\\n1️⃣  统计显著性:")
+print(f"   p-value = {p_value:.6f}")
+print(f"   {'✅ 通过 (p < 0.05)' if stat_sig else '❌ 未通过'}")
+
+# 2. 实际业务价值
+has_value = arpu_lift > 0
+print(f"\\n2️⃣  业务价值:")
+print(f"   ARPU 提升: {arpu_lift:+.2f}%")
+print(f"   年度增量收入预测: ¥{additional_revenue_yearly:,.0f}")
+print(f"   {'✅ 具有正收益' if has_value else '❌ 收益不明显'}")
+
+# 3. 置信区间
+ci_reliable = ci_low > 0
+print(f"\\n3️⃣  置信区间可靠性:")
+print(f"   转化率差异 95% CI: [{ci_low:.2f}%, {ci_high:.2f}%]")
+print(f"   {'✅ 区间下限 > 0, 可靠' if ci_reliable else '⚠️  区间包含 0, 需谨慎'}")
+
+# 4. 效果幅度
+magnitude = "显著提升" if cr_lift > 10 else ("中等提升" if cr_lift > 5 else "小幅提升" if cr_lift > 0 else "无提升")
+print(f"\\n4️⃣  效果幅度: {magnitude} ({cr_lift:+.2f}%)")
+
+# ========== 最终建议 ==========
+print(f"\\n{'=' * 60}")
+print("🎯 最终建议")
+print(f"{'=' * 60}")
+
+if stat_sig and has_value and ci_reliable:
+    recommendation = "✅ 建议全量上线新算法"
+    reasons = [
+        "1. 统计检验显示差异显著 (p < 0.05)",
+        "2. 实验组在转化率和收入上均优于控制组",
+        "3. 置信区间不包含零，结果可靠",
+        "4. 预计年度可增加显著收入",
+        "",
+        "实施建议:",
+        "  - 分阶段灰度上线 (30% → 70% → 100%)",
+        "  - 持续监控核心指标至少2周",
+        "  - 关注新算法对不同用户群体的影响",
+        "  - 准备回滚方案应对可能的异常"
+    ]
+elif stat_sig and not has_value:
+    recommendation = "⚠️  统计显著但业务价值有限"
+    reasons = [
+        "1. 虽然统计上显著，但实际业务收益不明显",
+        "2. 需要评估上线成本 vs 收益",
+        "3. 建议优化实验方案后再做决策"
+    ]
+elif not stat_sig:
+    recommendation = "❌ 建议暂缓上线，继续验证"
+    reasons = [
+        "1. 差异未达到统计显著性",
+        "2. 当前效果可能来自随机波动",
+        "3. 建议:",
+        "   - 扩大样本量继续实验",
+        "   - 优化实验设计",
+        "   - 考虑其他改进方向"
+    ]
+else:
+    recommendation = "🤔 需要更多数据进行综合评估"
+    reasons = ["建议收集更多维度数据后重新分析"]
+
+print(f"\\n  {recommendation}")
+print(f"\\n  理由:")
+for r in reasons:
+    print(f"  {r}")
+
+print(f"\\n{'=' * 60}")
+print("📌 关键指标汇总")
+print(f"{'=' * 60}")
+print(f"  {'指标':<15} {'控制组':>12} {'实验组':>12} {'变化':>10}")
+print("-" * 55)
+print(f"  {'转化率':<15} {ctrl['cr']:>10.2f}% {treat['cr']:>10.2f}% {cr_lift:>+8.2f}%")
+print(f"  {'平均客单价':<15} ¥{ctrl['aov']:>10.2f} ¥{treat['aov']:>10.2f} {aov_lift:>+8.2f}%")
+print(f"  {'ARPU':<15} ¥{ctrl['arpu']:>10.2f} ¥{treat['arpu']:>10.2f} {arpu_lift:>+8.2f}%")
+`;
+
+  const [step1, setStep1] = useState<StepState>({ code: initialCodeStep1, output: null, showAnswer: false, isLoading: false });
+  const [step2, setStep2] = useState<StepState>({ code: initialCodeStep2, output: null, showAnswer: false, isLoading: false });
+  const [step3, setStep3] = useState<StepState>({ code: initialCodeStep3, output: null, showAnswer: false, isLoading: false });
 
   useEffect(() => {
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
     const checkPyodide = async () => {
       if (isPyodideReady()) {
         setPyodideStatus('ready');
+        setPyodideProgress({ stage: 4, percent: 100 });
+        clearInterval(timer);
         return;
       }
 
       try {
-        await initPyodide();
+        await initPyodide((p: PyodideProgress) => {
+          setPyodideProgress({ stage: p.stage, percent: p.percent });
+        });
         setPyodideStatus('ready');
-      } catch (error) {
+      } catch (error: any) {
         console.error('Pyodide 初始化失败:', error);
         setPyodideStatus('error');
+        setPyodideError(error instanceof Error ? error.message : String(error));
+      } finally {
+        clearInterval(timer);
       }
     };
 
     checkPyodide();
+
+    return () => clearInterval(timer);
   }, []);
 
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode);
-    setResult(null);
-  };
+  const handleRunCode = async (stepKey: 'step1' | 'step2' | 'step3') => {
+    const setState = stepKey === 'step1' ? setStep1 : stepKey === 'step2' ? setStep2 : setStep3;
+    const currentState = stepKey === 'step1' ? step1 : stepKey === 'step2' ? step2 : step3;
 
-  const handleRunCode = async () => {
-    if (!code.trim()) {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'InputError',
-          message: '请输入代码后再运行'
-        }
-      });
-      return;
-    }
-
-    if (pyodideStatus !== 'ready') {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'SystemError',
-          message: 'Python 环境正在初始化，请稍候...'
-        }
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    setResult(null);
+    setState({ ...currentState, isLoading: true, output: null });
 
     try {
-      const executionResult = await runPythonCode(code);
-      setResult(executionResult);
-    } catch (err) {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'ExecutionError',
-          message: '执行出错: ' + (err as Error).message
+      const result = await runPythonCode(currentState.code);
+      setState({
+        ...currentState,
+        isLoading: false,
+        output: {
+          success: result.success,
+          stdout: result.stdout,
+          stderr: result.stderr,
+          output: result.output,
+          error: result.error ? { type: result.error.type, message: result.error.message, lineNumber: result.error.lineNumber } : undefined
         }
       });
-    } finally {
-      setIsLoading(false);
+    } catch (err: any) {
+      setState({
+        ...currentState,
+        isLoading: false,
+        output: {
+          success: false,
+          stdout: '',
+          stderr: '',
+          output: '',
+          error: { type: 'ExecutionError', message: '执行出错: ' + (err as Error).message }
+        }
+      });
     }
   };
 
-  const placeholderCode = `# 商业数据分析练习
-# 点击下方按钮切换不同练习：
-# - "基础练习"：KPI指标计算
-# - "进阶练习"：实战案例分析
+  const handleReset = (stepKey: 'step1' | 'step2' | 'step3') => {
+    const initialCode = stepKey === 'step1' ? initialCodeStep1 : stepKey === 'step2' ? initialCodeStep2 : initialCodeStep3;
+    if (stepKey === 'step1') setStep1({ code: initialCode, output: null, showAnswer: false, isLoading: false });
+    if (stepKey === 'step2') setStep2({ code: initialCode, output: null, showAnswer: false, isLoading: false });
+    if (stepKey === 'step3') setStep3({ code: initialCode, output: null, showAnswer: false, isLoading: false });
+  };
 
-# 练习要求：
-# 1. 计算月环比增长率
-# 2. 进行客户价值分层
-# 3. 分析不同渠道的ROI
+  const handleShowAnswer = (stepKey: 'step1' | 'step2' | 'step3') => {
+    const answerCode = stepKey === 'step1' ? answerCodeStep1 : stepKey === 'step2' ? initialCodeStep2 : initialCodeStep3;
+    if (stepKey === 'step1') setStep1({ ...step1, code: answerCode, showAnswer: true });
+    if (stepKey === 'step2') setStep2({ ...step2, code: answerCode, showAnswer: true });
+    if (stepKey === 'step3') setStep3({ ...step3, code: answerCode, showAnswer: true });
+  };
 
-# 提示：使用 for 循环和字典进行数据处理
+  const handleCodeChange = (stepKey: 'step1' | 'step2' | 'step3', newCode: string) => {
+    if (stepKey === 'step1') setStep1({ ...step1, code: newCode, output: null });
+    if (stepKey === 'step2') setStep2({ ...step2, code: newCode, output: null });
+    if (stepKey === 'step3') setStep3({ ...step3, code: newCode, output: null });
+  };
 
-`;
-
-  const answerCode = `# 商业数据分析基础练习
-print("欢迎学习商业数据分析！")
-print("=" * 40)
-
-# ========== 练习1：基础商业指标计算 ==========
-print("\\n【练习1】基础商业指标计算")
-sales = [120, 150, 180, 160, 200, 220]
-orders = [600, 750, 900, 800, 1000, 1100]
-
-total_sales = sum(sales)
-total_orders = sum(orders)
-avg_order_value = total_sales / total_orders
-
-print(f"总销售额: ¥{total_sales}万")
-print(f"总订单数: {total_orders}")
-print(f"平均订单价值: ¥{avg_order_value:.2f}")
-
-# ========== 练习2：月度增长率计算 ==========
-print("\\n【练习2】月度增长率:")
-for i in range(1, len(sales)):
-    growth = (sales[i] - sales[i-1]) / sales[i-1] * 100
-    month = f"{i+1}月"
-    print(f"  {month}: {growth:+.1f}%")
-
-# ========== 练习3：产品分类统计 ==========
-print("\\n【练习3】产品销售额排名:")
-products = {
-    "手机": 299900,
-    "电脑": 509900,
-    "平板": 389844
-}
-
-for product, amount in sorted(products.items(), key=lambda x: x[1], reverse=True):
-    print(f"  {product}: ¥{amount:,}")
-
-print("\\n✓ 练习完成！尝试修改数据进行分析")`;
-
-  const answerCodeExercises = `# ========== 练习参考答案 ==========
-
-# 练习1答案：计算环比增长率
-print("【练习1】月环比增长率分析")
-monthly_data = {
-    "1月": 120, "2月": 150, "3月": 180,
-    "4月": 160, "5月": 200, "6月": 220
-}
-months = list(monthly_data.keys())
-values = list(monthly_data.values())
-
-for i in range(1, len(values)):
-    growth = (values[i] - values[i-1]) / values[i-1] * 100
-    print(f"  {months[i]}环比{months[i-1]}: {growth:+.1f}%")
-
-# 练习2答案：客户分层分析
-print("\\n【练习2】客户价值分层")
-customers = [
-    {"name": "A类客户", "purchase": 50000, "frequency": 12},
-    {"name": "B类客户", "purchase": 20000, "frequency": 6},
-    {"name": "C类客户", "purchase": 5000, "frequency": 2}
-]
-for c in customers:
-    ltv = c["purchase"] * c["frequency"]
-    print(f"  {c['name']}: 终身价值LTV = ¥{ltv:,}")
-
-# 练习3答案：渠道效果分析
-print("\\n【练习3】渠道ROI分析")
-channels = {
-    "电商平台": {"cost": 50000, "revenue": 180000},
-    "社交媒体": {"cost": 30000, "revenue": 75000},
-    "线下门店": {"cost": 80000, "revenue": 200000}
-}
-for ch, data in channels.items():
-    roi = (data["revenue"] - data["cost"]) / data["cost"] * 100
-    print(f"  {ch}: ROI = {roi:.1f}%")
-
-print("\\n✓ 恭喜完成所有练习！")`;
-
-  const projects = [
-    {
-      id: 1,
-      title: '核心KPI指标',
-      description: '学习销售额、订单量、转化率等关键商业指标'
-    },
-    {
-      id: 2,
-      title: '项目实战：经营分析',
-      description: '进行月度经营数据分析，制定优化策略'
-    },
-    {
-      id: 3,
-      title: '多维度分析',
-      description: '从时间、渠道、产品等维度进行深度分析'
+  const renderOutput = (state: StepState) => {
+    if (state.isLoading) {
+      return (
+        <div className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-yellow-300 rounded-lg flex items-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-300 mr-3"></div>
+          代码执行中，请稍候...
+        </div>
+      );
     }
-  ];
+
+    if (!state.output) {
+      return (
+        <div className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-gray-500 rounded-lg">
+          ⌨️ 点击"▶ 运行代码"查看输出结果
+        </div>
+      );
+    }
+
+    if (!state.output.success && state.output.error) {
+      return (
+        <>
+          <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-100 mb-3">
+            <div className="flex items-start">
+              <span className="text-2xl mr-3">⚠️</span>
+              <div>
+                <h4 className="font-bold text-red-300 mb-1">{state.output.error.type}</h4>
+                <p className="text-sm">{state.output.error.message}</p>
+                {state.output.error.lineNumber && <p className="text-xs mt-2 text-red-300">📍 错误位置: 第 {state.output.error.lineNumber} 行</p>}
+              </div>
+            </div>
+          </div>
+          {state.output.stdout && (
+            <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg">{state.output.stdout}</pre>
+          )}
+        </>
+      );
+    }
+
+    return (
+      <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg">
+        {state.output.output || state.output.stdout || '代码执行完成（无输出）'}
+      </pre>
+    );
+  };
+
+  const renderCodeSection = (
+    stepKey: 'step1' | 'step2' | 'step3',
+    title: string,
+    description: string,
+    state: StepState
+  ) => (
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+        <h3 className="text-2xl font-bold mb-2">{title}</h3>
+        <p className="text-blue-100 text-sm">{description}</p>
+      </div>
+
+      <div className="p-6">
+        <div className="mb-4">
+          <AceEditor
+            mode="python"
+            theme="monokai"
+            value={state.code}
+            onChange={(newCode) => handleCodeChange(stepKey, newCode)}
+            name={`business-analysis-editor-${stepKey}`}
+            editorProps={{ $blockScrolling: true }}
+            className="rounded-lg shadow-md border border-gray-300"
+            style={{ height: '450px', width: '100%', borderRadius: '0.5rem' }}
+            fontSize={13}
+            showPrintMargin={false}
+            highlightActiveLine={true}
+            setOptions={{
+              enableBasicAutocompletion: true,
+              enableLiveAutocompletion: true,
+              enableSnippets: true,
+              tabSize: 4,
+            }}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <button
+            onClick={() => handleRunCode(stepKey)}
+            disabled={state.isLoading || pyodideStatus !== 'ready'}
+            className="bg-primary text-white px-6 py-2 rounded-full font-bold shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none flex items-center"
+          >
+            {state.isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                运行中...
+              </>
+            ) : (
+              <>▶ 运行代码</>
+            )}
+          </button>
+
+          <button
+            onClick={() => handleShowAnswer(stepKey)}
+            className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
+          >
+            📖 查看参考答案
+          </button>
+
+          <button
+            onClick={() => handleReset(stepKey)}
+            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-all"
+          >
+            🔄 重置代码
+          </button>
+
+          {pyodideStatus !== 'ready' && (
+            <span className="text-sm text-orange-600 font-medium">
+              ⏳ Python 环境正在初始化...
+            </span>
+          )}
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-600 mb-2 font-medium">📤 输出结果:</p>
+          {renderOutput(state)}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 商业数据计算与分析</h1>
-            <p className="text-text">学习核心商业指标计算，掌握数据驱动的决策方法</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+
+        {/* Hero 区域 */}
+        <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-3xl shadow-2xl p-8 md:p-12 text-white mb-10 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+
+          <div className="relative flex flex-col md:flex-row items-center gap-8">
+            <div className="text-8xl md:text-9xl mb-4 md:mb-0 flex-shrink-0 animate-bounce-slow">
+              💼
+            </div>
+            <div className="text-center md:text-left">
+              <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
+                商业分析与 A/B 测试
+              </h1>
+              <p className="text-lg md:text-xl text-blue-100 mb-2 font-medium">
+                数据驱动决策 · 统计检验 · 业务价值评估
+              </p>
+              <p className="text-base md:text-lg text-blue-200 max-w-3xl leading-relaxed">
+                通过真实的 A/B 测试场景，学习如何读取实验数据、进行统计显著性检验、并基于转化率、收益和置信区间给出综合业务建议。掌握数据分析师的核心技能！
+              </p>
+            </div>
           </div>
 
-          {pyodideStatus === 'loading' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
-                <div>
-                  <p className="font-semibold text-blue-800">正在初始化 Python 环境...</p>
-                  <p className="text-sm text-blue-600">首次加载需要下载必要的库，请耐心等待</p>
-                </div>
+          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white border-opacity-20">
+            {[
+              { icon: '📊', title: '数据读取', desc: 'CSV 解析' },
+              { icon: '🔬', title: '统计检验', desc: 'Z-test & p-value' },
+              { icon: '📈', title: '置信区间', desc: '95% CI 计算' },
+              { icon: '💡', title: '业务决策', desc: '综合建议输出' }
+            ].map((item, idx) => (
+              <div key={idx} className="bg-white bg-opacity-10 rounded-xl p-4 backdrop-blur-sm hover:bg-opacity-20 transition-all">
+                <div className="text-3xl mb-2">{item.icon}</div>
+                <h4 className="font-bold text-lg">{item.title}</h4>
+                <p className="text-sm text-blue-200">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pyodide 加载状态 */}
+        {pyodideStatus === 'loading' && (
+          <div className="mb-10">
+            <PyodideLoader
+              stage={pyodideProgress.stage as any}
+              percent={pyodideProgress.percent}
+              elapsedSeconds={elapsed}
+            />
+          </div>
+        )}
+
+        {pyodideStatus === 'error' && (
+          <div className="mb-10">
+            <PyodideLoader
+              stage={0}
+              percent={0}
+              error={pyodideError || 'Pyodide 初始化失败，请刷新页面重试'}
+            />
+          </div>
+        )}
+
+        {/* 核心概念板块 */}
+        <div className="mb-10">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
+              📚 核心概念
+            </h2>
+            <p className="text-gray-600 text-lg">
+              掌握商业分析与 A/B 测试的基本原理
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 什么是商业分析 */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-all">
+              <div className="text-5xl mb-4">📊</div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">什么是商业分析？</h3>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                商业分析是通过<strong className="text-blue-600">数据、统计分析和建模</strong>来帮助企业做出更好业务决策的过程。
+              </p>
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-sm font-semibold text-blue-800 mb-2">🎯 核心目标:</p>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• 从海量数据中提取洞察</li>
+                  <li>• 评估业务决策的效果</li>
+                  <li>• 发现增长机会和风险</li>
+                  <li>• 支持数据驱动决策</li>
+                </ul>
               </div>
             </div>
-          )}
 
-          {pyodideStatus === 'error' && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-medium text-red-800">环境加载失败</h3>
-                  <p className="mt-1 text-sm text-red-600">请检查网络连接后刷新页面重试</p>
-                </div>
+            {/* 为什么重要 */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-all">
+              <div className="text-5xl mb-4">⚡</div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">为什么数据驱动重要？</h3>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                <strong className="text-green-600">凭直觉决策</strong>风险高，而<strong className="text-green-600">数据驱动决策</strong>能显著提高成功率。
+              </p>
+              <div className="bg-green-50 rounded-lg p-4">
+                <p className="text-sm font-semibold text-green-800 mb-2">🌟 数据驱动的优势:</p>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• 降低决策风险 30-50%</li>
+                  <li>• 可量化评估效果</li>
+                  <li>• 可复制的决策过程</li>
+                  <li>• 消除认知偏见影响</li>
+                </ul>
               </div>
             </div>
-          )}
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📚 学习路径</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {projects.map((project) => (
-                <button
-                  key={project.id}
-                  onClick={() => setActiveProject(project.id - 1)}
-                  className={`p-4 rounded-xl text-left transition-all ${
-                    activeProject === project.id - 1
-                      ? 'bg-primary text-white shadow-lg transform scale-105'
-                      : 'bg-gray-50 hover:bg-gray-100 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center mb-2">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                      activeProject === project.id - 1
-                        ? 'bg-white text-primary'
-                        : 'bg-primary text-white'
-                    }`}>
-                      {project.id}
-                    </span>
-                    <h3 className="font-semibold">{project.title}</h3>
+            {/* A/B 测试基础 */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-all">
+              <div className="text-5xl mb-4">🧪</div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">A/B 测试基础</h3>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                将用户<strong className="text-purple-600">随机分成两组</strong>，测试不同方案效果的对比实验。
+              </p>
+              <div className="bg-purple-50 rounded-lg p-4 space-y-3">
+                <div className="flex items-start">
+                  <span className="bg-purple-200 text-purple-800 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3 flex-shrink-0">A</span>
+                  <div>
+                    <p className="font-bold text-purple-800 text-sm">控制组 (Control)</p>
+                    <p className="text-xs text-purple-700">维持现有方案</p>
                   </div>
-                  <p className={`text-sm ${
-                    activeProject === project.id - 1
-                      ? 'text-blue-100'
-                      : 'text-gray-600'
-                  }`}>
-                    {project.description}
+                </div>
+                <div className="flex items-start">
+                  <span className="bg-purple-600 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm mr-3 flex-shrink-0">B</span>
+                  <div>
+                    <p className="font-bold text-purple-800 text-sm">实验组 (Treatment)</p>
+                    <p className="text-xs text-purple-700">应用新方案</p>
+                  </div>
+                </div>
+                <div className="border-t border-purple-200 pt-2">
+                  <p className="text-xs text-purple-700 font-medium">
+                    <strong>H₀ 原假设:</strong> 两组无显著差异<br/>
+                    <strong>H₁ 备择假设:</strong> 两组存在显著差异
                   </p>
-                </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 统计检验流程图 */}
+          <div className="mt-8 bg-white rounded-2xl shadow-lg p-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">🔄 A/B 测试分析流程</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[
+                { num: '1', title: '收集数据', desc: '用户数、转化、收入', icon: '📥' },
+                { num: '2', title: '计算指标', desc: 'CR、AOV、ARPU', icon: '🧮' },
+                { num: '3', title: '统计检验', desc: 'Z-test / t-test', icon: '🔬' },
+                { num: '4', title: '计算 p-value', desc: '判断显著性', icon: '📐' },
+                { num: '5', title: '业务决策', desc: '上线 or 放弃', icon: '🎯' }
+              ].map((step, idx) => (
+                <div key={idx} className="text-center relative">
+                  <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-3 text-2xl shadow-lg">
+                    {step.icon}
+                  </div>
+                  <div className="bg-gray-100 rounded-lg px-3 py-2">
+                    <p className="text-sm font-bold text-gray-800">Step {step.num}</p>
+                    <p className="text-xs font-semibold text-blue-600">{step.title}</p>
+                    <p className="text-xs text-gray-500 mt-1">{step.desc}</p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
+        </div>
 
-          <div className="mb-8 bg-accent rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">🎯 学习目标</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">理解核心商业指标的含义和计算方法</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">掌握多维度数据分析的基本思路</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">学会使用Python进行商业数据计算</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">能够将数据转化为商业决策建议</p>
-              </div>
-            </div>
+        {/* 三步递进练习 */}
+        <div className="mb-10">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
+              💻 实战练习
+            </h2>
+            <p className="text-gray-600 text-lg">
+              通过三个逐步深入的练习，掌握商业分析的完整流程
+            </p>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">💡 知识要点</h2>
-            <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-              {activeProject === 0 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">什么是KPI（关键绩效指标）？</h3>
-                    <p className="text-text mb-3">KPI是衡量业务绩效的可量化指标，帮助企业跟踪目标完成情况。</p>
-                    <div className="bg-purple-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-purple-800 mb-2">💡 常见的商业指标</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-white p-3 rounded">
-                          <p className="font-medium text-purple-700">销售额 (GMR)</p>
-                          <p className="text-xs text-gray-600">总销售收入</p>
-                        </div>
-                        <div className="bg-white p-3 rounded">
-                          <p className="font-medium text-purple-700">平均订单价值 (AOV)</p>
-                          <p className="text-xs text-gray-600">销售额 / 订单数</p>
-                        </div>
-                        <div className="bg-white p-3 rounded">
-                          <p className="font-medium text-purple-700">转化率 (CR)</p>
-                          <p className="text-xs text-gray-600">访客中完成购买的比例</p>
-                        </div>
-                        <div className="bg-white p-3 rounded">
-                          <p className="font-medium text-purple-700">复购率 (RR)</p>
-                          <p className="text-xs text-gray-600">重复购买的客户比例</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+          <div className="space-y-8">
+            {/* Step 1 */}
+            {renderCodeSection(
+              'step1',
+              'Step 1️⃣ 基础: 数据读取与基础统计对比',
+              '学习从 CSV 数据中读取 A/B 测试结果，计算控制组和实验组的核心指标（转化率、客单价、ARPU），并进行基础对比分析',
+              step1
+            )}
 
-              {activeProject === 1 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 实战案例：季度经营分析</h3>
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                      <p className="font-medium text-yellow-800 mb-1">📌 案例背景</p>
-                      <p className="text-sm text-yellow-700">某电商公司Q1销售额为450万，Q2增长到580万。但老板发现毛利率没有明显提升，需要分析原因。</p>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">月份</th>
-                            <th className="border border-gray-300 px-4 py-2">销售额(万)</th>
-                            <th className="border border-gray-300 px-4 py-2">订单数</th>
-                            <th className="border border-gray-300 px-4 py-2">毛利率</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">1月</td>
-                            <td className="border border-gray-300 px-4 py-2">120</td>
-                            <td className="border border-gray-300 px-4 py-2">6,000</td>
-                            <td className="border border-gray-300 px-4 py-2">38%</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">2月</td>
-                            <td className="border border-gray-300 px-4 py-2">150</td>
-                            <td className="border border-gray-300 px-4 py-2">7,500</td>
-                            <td className="border border-gray-300 px-4 py-2">42%</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">3月</td>
-                            <td className="border border-gray-300 px-4 py-2">180</td>
-                            <td className="border border-gray-300 px-4 py-2">9,000</td>
-                            <td className="border border-gray-300 px-4 py-2">43%</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="font-medium text-blue-800 mb-2">🔍 问题分析</p>
-                        <p className="text-sm text-blue-700">虽然销售额增长，但AOV（平均订单价值）从200元下降到了190元，说明客单价在下降。</p>
-                      </div>
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="font-medium text-green-800 mb-2">💡 优化建议</p>
-                        <p className="text-sm text-green-700">建议推出满减活动提升客单价，同时优化高毛利商品的推荐权重。</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+            {/* Step 2 */}
+            {renderCodeSection(
+              'step2',
+              'Step 2️⃣ 进阶: 统计显著性检验 (Z-test & p-value)',
+              '深入学习如何使用 Python 进行 Z-test 统计检验，计算 p-value 和置信区间，判断实验效果是否具有统计显著性',
+              step2
+            )}
 
-              {activeProject === 2 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">🔍 多维度分析方法</h3>
-                    <p className="text-text mb-3">单一维度只能告诉我们"发生了什么"，多维度分析才能告诉我们"为什么"。</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">时间维度</h4>
-                        <p className="text-sm text-text mb-2">日、周、月、季度、年</p>
-                        <p className="text-xs text-gray-600">分析趋势和季节性规律</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">渠道维度</h4>
-                        <p className="text-sm text-text mb-2">线上、线下、不同平台</p>
-                        <p className="text-xs text-gray-600">评估渠道效率和ROI</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">产品维度</h4>
-                        <p className="text-sm text-text mb-2">类别、品牌、价格区间</p>
-                        <p className="text-xs text-gray-600">识别爆款和滞销品</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">客户维度</h4>
-                        <p className="text-sm text-text mb-2">新/老客户、地区、年龄段</p>
-                        <p className="text-xs text-gray-600">细分市场精准营销</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Step 3 */}
+            {renderCodeSection(
+              'step3',
+              'Step 3️⃣ 挑战: 数据驱动的业务决策报告',
+              '综合运用前面的分析方法，结合转化率、收益、统计显著性和置信区间，输出一份完整的数据驱动业务决策报告，给出明确的上线建议',
+              step3
+            )}
           </div>
+        </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-6 text-primary">💻 动手练习</h2>
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
-              <p className="text-text mb-4">在下方编辑器中尝试修改代码，体验商业数据分析！</p>
-              
-              <div className="mb-4">
-                <AceEditor
-                  mode="python"
-                  theme="monokai"
-                  value={code || placeholderCode}
-                  onChange={handleCodeChange}
-                  name="business-analysis-editor"
-                  editorProps={{
-                    $blockScrolling: true
-                  }}
-                  className="rounded-lg shadow-md"
-                  style={{ height: '350px', width: '100%' }}
-                />
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handleRunCode}
-                  disabled={isLoading || pyodideStatus !== 'ready'}
-                  className={`px-8 py-3 rounded-full font-bold transition-all shadow-lg ${
-                    isLoading || pyodideStatus !== 'ready'
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-primary text-white hover:bg-secondary hover:shadow-button-hover transform hover:-translate-y-0.5'
-                  }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      运行中...
-                    </span>
-                  ) : (
-                    '▶ 运行代码'
-                  )}
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setShowExercises(false);
-                    setCode(answerCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all"
-                >
-                  📊 基础练习
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowExercises(true);
-                    setCode(answerCodeExercises);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-purple-500 text-white hover:bg-purple-600 transition-all"
-                >
-                  🎯 进阶练习
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setCode(placeholderCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
-                >
-                  重置代码
-                </button>
-              </div>
+        {/* 关键公式速查 */}
+        <div className="mb-10 bg-white rounded-2xl shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">📐 关键公式速查</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200">
+              <h4 className="font-bold text-blue-800 mb-2">📈 转化率 (CR)</h4>
+              <p className="font-mono text-sm bg-white p-3 rounded-lg text-gray-700 mb-2">
+                CR = 转化用户数 / 总用户数 × 100%
+              </p>
+              <p className="text-xs text-blue-700">衡量用户转化的比例</p>
             </div>
-            
-            <div className="mt-6 bg-gray-900 text-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <span className="ml-4 text-sm text-gray-400">运行结果</span>
-              </div>
-              
-              {!result ? (
-                <div className="text-gray-400 flex items-center justify-center py-8">
-                  <span className="text-2xl mr-2">⌨️</span>
-                  <span>点击"运行代码"查看输出结果</span>
-                </div>
-              ) : result.success ? (
-                <div className="space-y-3">
-                  {result.output && (
-                    <div>
-                      <pre className="text-green-400 whitespace-pre-wrap font-mono text-sm">{result.output}</pre>
-                    </div>
-                  )}
-                  {!result.output && !result.stdout && (
-                    <div className="text-green-400 flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      代码执行成功！
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="flex-1">
-                        <h4 className="text-red-400 font-semibold mb-1">
-                          {result.error?.type || '执行错误'}
-                        </h4>
-                        <p className="text-red-300 text-sm">{result.error?.message}</p>
-                        {result.error?.lineNumber && (
-                          <p className="text-red-400 text-xs mt-2">📍 错误位置: 第 {result.error.lineNumber} 行</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {result.stdout && (
-                    <div className="text-gray-400 text-sm">
-                      <p className="font-semibold mb-1">标准输出:</p>
-                      <pre className="text-gray-300 whitespace-pre-wrap">{result.stdout}</pre>
-                    </div>
-                  )}
-                </div>
-              )}
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border border-green-200">
+              <h4 className="font-bold text-green-800 mb-2">💰 平均客单价 (AOV)</h4>
+              <p className="font-mono text-sm bg-white p-3 rounded-lg text-gray-700 mb-2">
+                AOV = 总收入 / 转化用户数
+              </p>
+              <p className="text-xs text-green-700">衡量付费用户的平均消费</p>
             </div>
-          </div>
-
-          <div className="bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后练习题</h2>
-            <div className="space-y-4">
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">练习1：计算月环比增长率</p>
-                <p className="text-sm text-gray-600 mb-2">已知Q2各月销售额：4月160万、5月200万、6月220万，计算每月的环比增长率</p>
-                <p className="text-xs text-primary">提示：环比增长率 = (本月-上月)/上月 × 100%</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">练习2：客户价值分层</p>
-                <p className="text-sm text-gray-600 mb-2">某电商客户数据：A类客户年均消费5万购买12次，B类客户年均消费2万购买6次，计算两类客户的终身价值(LTV)</p>
-                <p className="text-xs text-primary">提示：LTV = 年均消费 × 年购买次数</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">练习3：渠道ROI分析</p>
-                <p className="text-sm text-gray-600 mb-2">电商平台成本5万收入18万，社交媒体成本3万收入7.5万，计算各渠道ROI并比较效果</p>
-                <p className="text-xs text-primary">提示：ROI = (收入-成本)/成本 × 100%</p>
-              </div>
-              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                <p className="font-medium text-yellow-800 mb-2">🎯 思考题</p>
-                <p className="text-sm text-yellow-700 mb-1">1. 如何选择关键KPI来衡量业务健康度？</p>
-                <p className="text-sm text-yellow-700">2. 数据分析结果如何转化为行动建议？</p>
-              </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 border border-purple-200">
+              <h4 className="font-bold text-purple-800 mb-2">💎 每用户平均收入 (ARPU)</h4>
+              <p className="font-mono text-sm bg-white p-3 rounded-lg text-gray-700 mb-2">
+                ARPU = 总收入 / 总用户数
+              </p>
+              <p className="text-xs text-purple-700">衡量每个用户带来的价值</p>
+            </div>
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 border border-orange-200">
+              <h4 className="font-bold text-orange-800 mb-2">🔬 Z 统计量</h4>
+              <p className="font-mono text-sm bg-white p-3 rounded-lg text-gray-700 mb-2">
+                Z = (p₂ - p₁) / √(p(1-p)(1/n₁+1/n₂))
+              </p>
+              <p className="text-xs text-orange-700">用于检验两组比例差异的显著性</p>
             </div>
           </div>
         </div>
+
+        {/* 课程完成 */}
+        <div className="mb-10">
+          <CourseCompletion
+            courseId="business-analysis"
+            courseTitle="商业分析"
+            badgeIcon="💼"
+            badgeName="商业分析达人"
+          />
+        </div>
+
+        {/* 页脚 */}
+        <div className="text-center py-6 text-gray-500 text-sm">
+          <p>🎓 完成所有练习后，点击上方按钮领取你的「商业分析达人」徽章！</p>
+        </div>
+
       </div>
     </div>
   );

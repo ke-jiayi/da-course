@@ -3,611 +3,919 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPythonCode, isPyodideReady, initPyodide } from '../services/pyodideService';
+import { runPythonCode, initPyodide, isPyodideReady, PyodideProgress } from '../services/pyodideService';
+import PyodideLoader from './PyodideLoader';
+import CourseCompletion from './CourseCompletion';
+
+const SALES_CSV = `month,sales
+2023-01,105
+2023-02,112
+2023-03,135
+2023-04,148
+2023-05,165
+2023-06,188
+2023-07,215
+2023-08,208
+2023-09,185
+2023-10,172
+2023-11,195
+2023-12,248
+2024-01,135
+2024-02,142
+2024-03,168
+2024-04,182
+2024-05,205
+2024-06,228
+2024-07,255
+2024-08,248
+2024-09,225
+2024-10,208
+2024-11,235
+2024-12,295`;
+
+const STEP1_DEFAULT = `# ==========================================
+# Step 1 基础：读取数据、可视化与统计
+# ==========================================
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# ===== 1. 从 CSV 字符串读取数据 =====
+csv_data = """${SALES_CSV}"""
+
+from io import StringIO
+df = pd.read_csv(StringIO(csv_data))
+df['month'] = pd.to_datetime(df['month'])
+df = df.sort_values('month').reset_index(drop=True)
+
+print("=" * 50)
+print("【数据概览】")
+print("=" * 50)
+print(f"总记录数：{len(df)} 条")
+print(f"时间范围：{df['month'].min().strftime('%Y-%m')} ~ {df['month'].max().strftime('%Y-%m')}")
+print()
+print("前 6 条记录：")
+print(df.head(6).to_string(index=False))
+print()
+
+# ===== 2. 绘制时序图 =====
+print("=" * 50)
+print("【时序图 Time Series Plot】")
+print("=" * 50)
+
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.plot(df['month'], df['sales'], marker='o', linewidth=2,
+        color='#2563eb', markerfacecolor='#60a5fa')
+ax.set_title('Monthly Sales Trend', fontsize=14)
+ax.set_xlabel('Month', fontsize=12)
+ax.set_ylabel('Sales (10,000 CNY)', fontsize=12)
+ax.grid(True, alpha=0.3)
+plt.xticks(rotation=45)
+plt.tight_layout()
+print("图表已生成，请查看下方图片。")
+print()
+
+# ===== 3. 基础统计描述 =====
+print("=" * 50)
+print("【基础统计描述】")
+print("=" * 50)
+
+stats = df['sales'].describe()
+print(f"总销售额: {df['sales'].sum():,.0f} 万元")
+print(f"平均月销售额: {stats['mean']:.1f} 万元")
+print(f"销售额中位数: {df['sales'].median():.1f} 万元")
+print(f"最低销售额: {stats['min']:.1f} 万元 ({df.loc[df['sales'].idxmin(), 'month'].strftime('%Y-%m')})")
+print(f"最高销售额: {stats['max']:.1f} 万元 ({df.loc[df['sales'].idxmax(), 'month'].strftime('%Y-%m')})")
+print(f"标准差: {stats['std']:.1f} 万元")
+print(f"25% 分位数: {df['sales'].quantile(0.25):.1f} 万元")
+print(f"75% 分位数: {df['sales'].quantile(0.75):.1f} 万元")
+print()
+
+# ===== 4. 按年份汇总 =====
+print("=" * 50)
+print("【按年份汇总】")
+print("=" * 50)
+df['year'] = df['month'].dt.year
+yearly = df.groupby('year')['sales'].agg(['sum', 'mean', 'max', 'min'])
+yearly.columns = ['总销售额', '平均', '最高', '最低']
+print(yearly.to_string(float_format="%.1f"))
+print()
+print("✓ Step 1 完成！")
+`;
+
+const STEP1_ANSWER = STEP1_DEFAULT;
+
+const STEP2_DEFAULT = `# ==========================================
+# Step 2 进阶：移动平均、指数平滑、趋势分解
+# ==========================================
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from io import StringIO
+
+# ===== 读取数据 =====
+csv_data = """${SALES_CSV}"""
+df = pd.read_csv(StringIO(csv_data))
+df['month'] = pd.to_datetime(df['month'])
+df = df.sort_values('month').reset_index(drop=True)
+
+print("=" * 50)
+print("【移动平均 Moving Average】")
+print("=" * 50)
+
+# TODO: 请在下方代码区域完成练习
+# 1. 计算 3 个月移动平均 MA3
+# 2. 计算 6 个月移动平均 MA6
+# 3. 绘制原始数据与 MA3、MA6 对比图
+
+df['MA3'] = df['sales'].rolling(window=3).mean()
+df['MA6'] = df['sales'].rolling(window=6).mean()
+
+print("移动平均结果（后 12 个月）：")
+print(df[['month', 'sales', 'MA3', 'MA6']].tail(12).to_string(
+    float_format="%.1f", index=False))
+print()
+
+# ===== 绘制移动平均对比图 =====
+fig, ax = plt.subplots(figsize=(11, 6))
+ax.plot(df['month'], df['sales'], marker='o', linewidth=2,
+        label='Original', color='#2563eb', alpha=0.7)
+ax.plot(df['month'], df['MA3'], linewidth=2, label='MA(3)', color='#f59e0b')
+ax.plot(df['month'], df['MA6'], linewidth=2, label='MA(6)', color='#10b981')
+ax.set_title('Sales Moving Average', fontsize=14)
+ax.set_xlabel('Month')
+ax.set_ylabel('Sales')
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.xticks(rotation=45)
+plt.tight_layout()
+print("移动平均对比图已生成。")
+print()
+
+# ===== 简单指数平滑 (Simple Exponential Smoothing) =====
+print("=" * 50)
+print("【简单指数平滑 SES】")
+print("=" * 50)
+
+alpha = 0.3  # 平滑系数
+df['SES'] = df['sales'].ewm(alpha=alpha, adjust=False).mean()
+
+print(f"平滑系数 alpha = {alpha}")
+print("简单指数平滑结果（后 8 个月）：")
+print(df[['month', 'sales', 'SES']].tail(8).to_string(
+    float_format="%.1f", index=False))
+print()
+
+# 尝试不同 alpha 值
+print("不同 alpha 值对比（最后一个月）：")
+for a in [0.1, 0.3, 0.5, 0.9]:
+    ses_val = df['sales'].ewm(alpha=a, adjust=False).mean().iloc[-1]
+    print(f"  alpha={a}: {ses_val:.1f}")
+print()
+
+# ===== 趋势分解 =====
+print("=" * 50)
+print("【趋势分解 Trend Decomposition】")
+print("=" * 50)
+
+# 使用线性回归提取趋势
+x = np.arange(len(df))
+y = df['sales'].values
+
+# 手动计算线性回归 (y = a + b*x)
+n = len(x)
+b = (n * np.sum(x * y) - np.sum(x) * np.sum(y)) / (n * np.sum(x ** 2) - (np.sum(x)) ** 2)
+a = (np.sum(y) - b * np.sum(x)) / n
+
+df['trend'] = a + b * x
+df['residual'] = df['sales'] - df['trend']
+
+print(f"趋势线方程：Sales = {a:.2f} + {b:.2f} * t")
+print(f"斜率 b = {b:.2f}（每月平均增长 {b:.2f} 万元")
+print()
+
+# 绘制分解图
+fig, axes = plt.subplots(3, 1, figsize=(11, 9))
+
+axes[0].plot(df['month'], df['sales'], color='#2563eb', linewidth=2)
+axes[0].set_title('Original Data (Observed)', fontsize=12)
+axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(df['month'], df['trend'], color='#f59e0b', linewidth=2)
+axes[1].set_title(f'Trend (Linear Regression)', fontsize=12)
+axes[1].grid(True, alpha=0.3)
+
+axes[2].plot(df['month'], df['residual'], color='#10b981', linewidth=2,
+           marker='o', markersize=3)
+axes[2].axhline(y=0, color='gray', linestyle='--', alpha=0.5)
+axes[2].set_title('Residual (Random Component)', fontsize=12)
+axes[2].grid(True, alpha=0.3)
+
+plt.tight_layout()
+print("趋势分解图已生成。")
+print()
+
+# ===== 季节性分析 =====
+print("=" * 50)
+print("【季节性分析】")
+print("=" * 50)
+
+df['month_num'] = df['month'].dt.month
+seasonal = df.groupby('month_num')['sales'].mean()
+print("各月平均销售额：")
+for m in range(1, 13):
+    avg = seasonal[m]
+    deviation = avg - df['sales'].mean()
+    print(f"  {m:02d}月: {avg:.1f} 万元 (偏离均值 {deviation:+.1f})")
+print()
+print(f"最高销售月份: {seasonal.idxmax():02d}月")
+print(f"最低销售月份: {seasonal.idxmin():02d}月")
+print()
+
+print("✓ Step 2 完成！")
+`;
+
+const STEP2_ANSWER = STEP2_DEFAULT;
+
+const STEP3_DEFAULT = `# ==========================================
+# Step 3 挑战：线性回归预测与误差评估
+# ==========================================
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from io import StringIO
+
+# ===== 读取数据 =====
+csv_data = """${SALES_CSV}"""
+df = pd.read_csv(StringIO(csv_data))
+df['month'] = pd.to_datetime(df['month'])
+df = df.sort_values('month').reset_index(drop=True)
+df['t'] = np.arange(len(df))  # 时间索引
+
+print("=" * 50)
+print("【线性回归预测模型】")
+print("=" * 50)
+
+# ===== 1. 使用线性回归模型 =====
+# y = a + b * t
+n = len(df)
+x = df['t'].values
+y = df['sales'].values
+
+b = (n * np.sum(x * y) - np.sum(x) * np.sum(y)) / (n * np.sum(x ** 2) - (np.sum(x)) ** 2)
+a = (np.sum(y) - b * np.sum(x)) / n
+
+df['prediction'] = a + b * df['t']
+
+print(f"回归方程: Sales = {a:.2f} + {b:.2f} * t")
+print(f"截距 a = {a:.2f}")
+print(f"斜率 b = {b:.2f}")
+print()
+
+# ===== 2. 计算拟合优度 R² =====
+ss_res = np.sum((y - df['prediction']) ** 2)
+ss_tot = np.sum((y - np.mean(y)) ** 2)
+r_squared = 1 - (ss_res / ss_tot)
+print(f"拟合优度 R² = {r_squared:.4f}")
+print(f"R² 越接近 1，拟合越好。")
+print()
+
+# ===== 3. 评估预测误差 =====
+print("=" * 50)
+print("【预测误差评估】")
+print("=" * 50)
+
+df['error'] = df['sales'] - df['prediction']
+df['abs_error'] = np.abs(df['error'])
+df['pct_error'] = df['abs_error'] / df['sales'] * 100
+
+mae = df['abs_error'].mean()
+mape = df['pct_error'].mean()
+rmse = np.sqrt((df['error'] ** 2).mean())
+
+print(f"MAE  (Mean Absolute Error) 平均绝对误差: {mae:.2f} 万元")
+print(f"MAPE (Mean Absolute Percentage Error) 平均绝对百分比误差: {mape:.2f}%")
+print(f"RMSE (Root Mean Squared Error) 均方根误差: {rmse:.2f} 万元")
+print()
+print("近 6 个月的实际 vs 预测 vs 误差 (后 6 个月):")
+print(df[['month', 'sales', 'prediction', 'error']].tail(6).to_string(
+    float_format="%.1f", index=False))
+print()
+
+# ===== 4. 预测未来 6 个月 =====
+print("=" * 50)
+print("【未来 6 个月销量预测】")
+print("=" * 50)
+
+future_months = []
+future_t = []
+future_pred = []
+
+last_t = df['t'].iloc[-1]
+last_date = df['month'].iloc[-1]
+
+for i in range(1, 7):
+    new_t = last_t + i
+    new_date = last_date + pd.DateOffset(months=i)
+    pred = a + b * new_t
+    future_months.append(new_date)
+    future_t.append(new_t)
+    future_pred.append(pred)
+
+future_df = pd.DataFrame({
+    'month': future_months,
+    't': future_t,
+    'predicted_sales': future_pred
+})
+
+print(future_df.to_string(float_format="%.1f", index=False))
+print()
+print(f"未来 6 个月预测总销售额: {sum(future_pred):.1f} 万元")
+print(f"月均预测销售额: {np.mean(future_pred):.1f} 万元")
+print()
+
+# ===== 5. 生成预测图表 =====
+print("=" * 50)
+print("【预测图表】")
+print("=" * 50)
+
+fig, ax = plt.subplots(figsize=(12, 6))
+
+# 历史数据
+ax.plot(df['month'], df['sales'], marker='o', linewidth=2,
+        color='#2563eb', label='Actual (Historical)', zorder=3)
+
+# 历史拟合
+ax.plot(df['month'], df['prediction'], linewidth=2, linestyle='--',
+        color='#f59e0b', label='Fitted Values', alpha=0.7)
+
+# 未来预测
+ax.plot(future_df['month'], future_df['predicted_sales'],
+        marker='s', linewidth=2, color='#ef4444',
+        label='Predicted (Future)', zorder=3)
+
+# 置信区间 (简单估计：±2*MAE)
+confidence = 2 * mae
+ax.fill_between(future_df['month'],
+                [p - confidence for p in future_pred],
+                [p + confidence for p in future_pred],
+                color='#ef4444', alpha=0.15,
+                label=f'Confidence Interval (±{confidence:.0f})')
+
+ax.set_title('Sales Forecast with Linear Regression', fontsize=14, fontweight='bold')
+ax.set_xlabel('Month', fontsize=12)
+ax.set_ylabel('Sales (10,000 CNY)', fontsize=12)
+ax.legend(loc='upper left', fontsize=11)
+ax.grid(True, alpha=0.3, linestyle=':')
+plt.xticks(rotation=45)
+plt.tight_layout()
+print("预测图表已生成。红色虚线区域为置信区间。")
+print()
+
+# ===== 6. 误差分布图 =====
+fig2, ax2 = plt.subplots(figsize=(10, 5))
+ax2.bar(range(len(df)), df['error'].values, color='#2563eb', alpha=0.7, edgecolor='white')
+ax2.axhline(y=0, color='red', linestyle='--', linewidth=1.5)
+ax2.set_title('Prediction Errors by Month', fontsize=13)
+ax2.set_xlabel('Time Index (t)')
+ax2.set_ylabel('Error (Actual - Predicted)')
+ax2.grid(True, alpha=0.3, axis='y')
+plt.tight_layout()
+print("误差分布图已生成。")
+print()
+
+print("✓ Step 3 完成！恭喜你完成了完整的时间序列分析之旅！")
+`;
+
+const STEP3_ANSWER = STEP3_DEFAULT;
+
+type PythonExecutionResult = {
+  success: boolean;
+  output?: string;
+  stdout: string;
+  stderr: string;
+  error?: { type: string; message: string };
+};
 
 const TimeSeries: React.FC = () => {
-  const [code, setCode] = useState('');
-  const [result, setResult] = useState<{ success: boolean; output?: string; stdout: string; stderr: string; error?: any; } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [pyodideStatus, setPyodideStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [activeProject, setActiveProject] = useState(0);
+  const [pyodideStage, setPyodideStage] = useState<number>(0);
+  const [pyodidePercent, setPyodidePercent] = useState<number>(0);
+  const [pyodideError, setPyodideError] = useState<string | null>(null);
+  const [isPyodideInit, setIsPyodideInit] = useState<boolean>(false);
+
+  const [code1, setCode1] = useState<string>(STEP1_DEFAULT);
+  const [code2, setCode2] = useState<string>(STEP2_DEFAULT);
+  const [code3, setCode3] = useState<string>(STEP3_DEFAULT);
+
+  const [result1, setResult1] = useState<PythonExecutionResult | null>(null);
+  const [result2, setResult2] = useState<PythonExecutionResult | null>(null);
+  const [result3, setResult3] = useState<PythonExecutionResult | null>(null);
+
+  const [loading1, setLoading1] = useState<boolean>(false);
+  const [loading2, setLoading2] = useState<boolean>(false);
+  const [loading3, setLoading3] = useState<boolean>(false);
+
+  const [showAnswer1, setShowAnswer1] = useState<boolean>(false);
+  const [showAnswer2, setShowAnswer2] = useState<boolean>(false);
+  const [showAnswer3, setShowAnswer3] = useState<boolean>(false);
 
   useEffect(() => {
-    const checkPyodide = async () => {
+    const init = async () => {
       if (isPyodideReady()) {
-        setPyodideStatus('ready');
+        setIsPyodideInit(true);
+        setPyodideStage(4);
+        setPyodidePercent(100);
         return;
       }
-
       try {
-        await initPyodide();
-        setPyodideStatus('ready');
-      } catch (error) {
-        console.error('Pyodide 初始化失败:', error);
-        setPyodideStatus('error');
+        await initPyodide((p: PyodideProgress) => {
+          setPyodideStage(p.stage);
+          setPyodidePercent(p.percent);
+        });
+        setIsPyodideInit(true);
+      } catch (err: any) {
+        setPyodideError(err?.message || 'Pyodide 初始化失败');
       }
     };
-
-    checkPyodide();
+    init();
   }, []);
 
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode);
-    setResult(null);
-  };
-
-  const handleRunCode = async () => {
+  const handleRun = async (
+    code: string,
+    setResult: (r: PythonExecutionResult | null) => void,
+    setLoading: (b: boolean) => void
+  ) => {
     if (!code.trim()) {
       setResult({
         success: false,
         stdout: '',
         stderr: '',
-        error: {
-          type: 'InputError',
-          message: '请输入代码后再运行'
-        }
+        error: { type: 'InputError', message: '请输入代码后再运行' }
       });
       return;
     }
-
-    if (pyodideStatus !== 'ready') {
+    if (!isPyodideInit) {
       setResult({
         success: false,
         stdout: '',
         stderr: '',
-        error: {
-          type: 'SystemError',
-          message: 'Python 环境正在初始化，请稍候...'
-        }
+        error: { type: 'SystemError', message: 'Python 环境尚未准备好，请稍候...' }
       });
       return;
     }
-
-    setIsLoading(true);
+    setLoading(true);
     setResult(null);
-
     try {
-      const executionResult = await runPythonCode(code);
-      setResult(executionResult);
-    } catch (err) {
+      const r = await runPythonCode(code);
+      setResult(r as PythonExecutionResult);
+    } catch (err: any) {
       setResult({
         success: false,
         stdout: '',
         stderr: '',
-        error: {
-          type: 'ExecutionError',
-          message: '执行出错: ' + (err as Error).message
-        }
+        error: { type: 'ExecutionError', message: (err as Error).message }
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const defaultCode = `# 时间序列分析练习
-print("欢迎学习时间序列分析！")
-print("=" * 40)
-
-# 1. 模拟销售数据（12个月）
-months = ["1月", "2月", "3月", "4月", "5月", "6月", 
-          "7月", "8月", "9月", "10月", "11月", "12月"]
-sales = [120, 135, 150, 145, 160, 175, 180, 190, 185, 200, 210, 230]
-
-print("月度销售数据:")
-for m, s in zip(months, sales):
-    print(f"  {m}: {s}万元")
-
-# 2. 计算基本统计量
-avg_sales = sum(sales) / len(sales)
-max_sales = max(sales)
-min_sales = min(sales)
-
-print(f"\\n基本统计:")
-print(f"  平均销售额: {avg_sales:.1f}万元")
-print(f"  最高销售额: {max_sales}万元 ({months[sales.index(max_sales)]})")
-print(f"  最低销售额: {min_sales}万元 ({months[sales.index(min_sales)]})")
-
-# 3. 计算环比增长率
-print("\\n环比增长率:")
-growth_rates = []
-for i in range(1, len(sales)):
-    rate = (sales[i] - sales[i-1]) / sales[i-1] * 100
-    growth_rates.append(rate)
-    print(f"  {months[i]}: {rate:+.1f}%")
-
-# 4. 计算移动平均（3个月）
-print("\\n3个月移动平均:")
-ma_3 = []
-for i in range(2, len(sales)):
-    ma = (sales[i-2] + sales[i-1] + sales[i]) / 3
-    ma_3.append(ma)
-    print(f"  {months[i]}: {ma:.1f}万元")
-
-# 5. 简单趋势预测（线性增长）
-avg_growth = sum(growth_rates) / len(growth_rates)
-next_month = sales[-1] * (1 + avg_growth/100)
-print(f"\\n预测下月销售额: {next_month:.1f}万元")
-
-print("\\n✓ 时间序列分析完成！")`;
-
-  const answerCode = `# 移动平均计算示例
-print("移动平均法 - 平滑时间序列")
-print("=" * 40)
-
-# 模拟某公司近12个月的销售数据（单位：万元）
-sales_data = [42, 48, 55, 51, 58, 65, 70, 68, 75, 82, 88, 95]
-months = ["1月", "2月", "3月", "4月", "5月", "6月",
-          "7月", "8月", "9月", "10月", "11月", "12月"]
-
-print("原始销售数据:")
-for m, s in zip(months, sales_data):
-    print(f"  {m}: {s}万元")
-
-# 1. 计算简单移动平均（SMA）- 3个月窗口
-print("\\n【3个月简单移动平均】")
-sma_3 = []
-for i in range(len(sales_data) - 2):
-    ma = sum(sales_data[i:i+3]) / 3
-    sma_3.append(ma)
-    print(f"  {months[i+2]}: {ma:.2f}万元")
-
-# 2. 计算加权移动平均（WMA）- 3个月窗口，权重[1,2,3]
-print("\\n【3个月加权移动平均】")
-weights = [1, 2, 3]
-wma_3 = []
-for i in range(len(sales_data) - 2):
-    weighted_sum = sum(sales_data[i:i+3][j] * weights[j] for j in range(3))
-    ma = weighted_sum / sum(weights)
-    wma_3.append(ma)
-    print(f"  {months[i+2]}: {ma:.2f}万元")
-
-# 3. 简单趋势分析 - 计算增长率
-print("\\n【月环比增长率分析】")
-growth_rates = []
-for i in range(1, len(sales_data)):
-    rate = (sales_data[i] - sales_data[i-1]) / sales_data[i-1] * 100
-    growth_rates.append(rate)
-    trend = "↑" if rate > 0 else "↓"
-    print(f"  {months[i]}: {rate:+.2f}% {trend}")
-
-# 4. 简单预测 - 基于平均增长率
-avg_growth = sum(growth_rates) / len(growth_rates)
-next_month_prediction = sales_data[-1] * (1 + avg_growth/100)
-print(f"\\n【预测下月销售额】")
-print(f"  基于历史增长率预测: {next_month_prediction:.2f}万元")
-print(f"  平均月增长率: {avg_growth:.2f}%")
-
-# 5. 季节性分析示例
-print("\\n【季节性因素分析】")
-# 假设Q4是销售旺季
-quarters = {
-    "Q1": [42, 48, 55],
-    "Q2": [51, 58, 65],
-    "Q3": [70, 68, 75],
-    "Q4": [82, 88, 95]
-}
-for q, values in quarters.items():
-    avg = sum(values) / len(values)
-    print(f"  {q}平均: {avg:.2f}万元")
-
-print("\\n✓ 完整的时间序列分析完成！")
-print("提示：尝试修改数据，观察分析结果的变化！")`;
-
-  const projects = [
-    {
-      id: 1,
-      title: '基础概念',
-      description: '趋势、季节性、周期性和随机性'
-    },
-    {
-      id: 2,
-      title: '实战案例：销售预测',
-      description: '使用移动平均法进行销售预测'
-    },
-    {
-      id: 3,
-      title: '高级技巧',
-      description: '指数平滑与趋势分析方法'
+  const renderOutput = (result: PythonExecutionResult | null) => {
+    if (!result) {
+      return (
+        <div className="text-gray-400 flex items-center justify-center py-8">
+          <span>点击"运行代码"查看输出</span>
+        </div>
+      );
     }
-  ];
+    if (!result.success) {
+      return (
+        <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-100">
+          <div className="font-semibold text-red-300 mb-2">
+            ⚠️ {result.error?.type || '错误'}
+          </div>
+          <div className="whitespace-pre-wrap font-mono text-sm">
+            {result.error?.message}
+          </div>
+          {result.stderr && (
+            <div className="mt-2 text-xs text-red-200 border-t border-red-800 pt-2">
+              <details>
+                <summary className="cursor-pointer">详细输出</summary>
+                <pre className="mt-1 whitespace-pre-wrap">{result.stderr}</pre>
+              </details>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return (
+      <div
+        className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg"
+        dangerouslySetInnerHTML={{ __html: result.output || result.stdout || '代码执行完成（无输出）' }}
+      />
+    );
+  };
+
+  const renderEditor = (
+    code: string,
+    setCode: (s: string) => void,
+    loading: boolean,
+    result: PythonExecutionResult | null,
+    showAnswer: boolean,
+    setShowAnswer: (b: boolean) => void,
+    defaultCode: string,
+    _answerCode: string,
+    handleRunFn: () => void,
+    title: string
+  ) => {
+    return (
+      <div className="space-y-4">
+        <AceEditor
+          mode="python"
+          theme="monokai"
+          value={code}
+          onChange={setCode}
+          name={`ts-editor-${title}`}
+          editorProps={{ $blockScrolling: true }}
+          className="rounded-lg shadow-md"
+          setOptions={{
+            fontSize: 13,
+            showLineNumbers: true,
+            tabSize: 4,
+          }}
+          style={{ height: '420px', width: '100%' }}
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleRunFn}
+            disabled={loading || !isPyodideInit}
+            className={`bg-primary text-white px-6 py-2 rounded-full font-bold shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all ${
+            loading || !isPyodideInit ? 'opacity-60 cursor-not-allowed' : ''
+          }`}
+          >
+            {loading ? '⏳ 运行中...' : '▶ 运行代码'}
+          </button>
+          <button
+            onClick={() => setShowAnswer(!showAnswer)}
+            className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
+          >
+            {showAnswer ? '隐藏参考答案' : '💡 参考答案'}
+          </button>
+          <button
+            onClick={() => {
+              setCode(defaultCode);
+            }}
+            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-all"
+          >
+            🔄 重置
+          </button>
+        </div>
+        {showAnswer && (
+          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="text-yellow-800 font-semibold mb-2">💡 参考答案提示</div>
+            <div className="text-yellow-700 text-sm whitespace-pre-wrap">
+              此步骤的完整代码已预填在编辑器中。你可以点击"重置"按钮恢复初始状态，或自行修改代码进行实验。
+              <br />
+              <strong>重点学习：</strong>
+              {title === 'Step 1' && (
+                <>
+                  <br />• 理解 pandas 读取 CSV、describe() 统计描述
+                  <br />• matplotlib 绘制时序图的基本语法
+                  <br />• 数据清洗与排序
+                </>
+              )}
+              {title === 'Step 2' && (
+                <>
+                  <br />• rolling(window=N).mean() 计算移动平均
+                  <br />• ewm(alpha=α) 指数平滑
+                  <br />• 线性回归提取趋势
+                </>
+              )}
+              {title === 'Step 3' && (
+                <>
+                  <br />• MAE、MAPE、RMSE 的计算
+                  <br />• 线性回归预测未来值
+                  <br />• 预测图表与置信区间
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => {
+              }}
+              className="mt-3 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm hover:bg-blue-200 transition-all"
+            >
+              📖 查看完整答案代码
+            </button>
+          </div>
+        )}
+        <div className="border border-gray-800 rounded-lg overflow-hidden">
+          <div className="bg-gray-950 px-4 py-2 text-gray-400 text-sm flex items-center justify-between">
+            <span>📊 输出结果</span>
+            {result?.success && <span className="text-green-500">✓ 执行成功</span>}
+          </div>
+          <div className="p-4">{renderOutput(result)}</div>
+        </div>
+      </div>
+    );
+  };
+
+  if (pyodideStage < 4 && !pyodideError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-4">📉</div>
+            <h1 className="text-3xl font-bold text-gray-800">时间序列分析</h1>
+            <p className="text-gray-600 mt-2">从数据到预测的完整之旅</p>
+          </div>
+          <PyodideLoader
+            stage={pyodideStage as 0 | 1 | 2 | 3 | 4}
+            percent={pyodidePercent}
+            error={pyodideError}
+            elapsedSeconds={0}
+            onRetry={() => window.location.reload()}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 时间序列分析</h1>
-            <p className="text-text">学习时间序列数据的分析方法，掌握预测和趋势分析技术</p>
-          </div>
-
-          {pyodideStatus === 'loading' && (
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6 mb-8">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
-                <div>
-                  <p className="font-semibold text-indigo-800">正在初始化 Python 环境...</p>
-                  <p className="text-sm text-indigo-600">首次加载需要下载必要的库，请耐心等待</p>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Hero 区域 */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl shadow-2xl p-8 md:p-12 mb-8 text-white relative overflow-hidden">
+        <div className="relative z-10 text-center">
+          <div className="text-7xl md:text-8xl mb-6 animate-bounce-slow">📉</div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            时间序列分析
+          </h1>
+          <p className="text-lg md:text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
+            从原始销售数据出发，一步步掌握趋势分析、移动平均、指数平滑，
+            并使用线性回归进行未来预测，完整实战之旅！
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+            <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+              📊 24 个月数据
             </div>
-          )}
-
-          {pyodideStatus === 'error' && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-medium text-red-800">环境加载失败</h3>
-                  <p className="mt-1 text-sm text-red-600">请检查网络连接后刷新页面重试</p>
-                </div>
-              </div>
+            <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+              🐍 Python 实战
             </div>
-          )}
-
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📚 学习路径</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {projects.map((project) => (
-                <button
-                  key={project.id}
-                  onClick={() => setActiveProject(project.id - 1)}
-                  className={`p-4 rounded-xl text-left transition-all ${
-                    activeProject === project.id - 1
-                      ? 'bg-primary text-white shadow-lg transform scale-105'
-                      : 'bg-gray-50 hover:bg-gray-100 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center mb-2">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                      activeProject === project.id - 1
-                        ? 'bg-white text-primary'
-                        : 'bg-primary text-white'
-                    }`}>
-                      {project.id}
-                    </span>
-                    <h3 className="font-semibold">{project.title}</h3>
-                  </div>
-                  <p className={`text-sm ${
-                    activeProject === project.id - 1
-                      ? 'text-indigo-100'
-                      : 'text-gray-600'
-                  }`}>
-                    {project.description}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-8 bg-accent rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">🎯 学习目标</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="bg-indigo-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">理解时间序列数据的组成要素</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-indigo-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">掌握趋势和季节性分析方法</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-indigo-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">学会使用移动平均等技术</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-indigo-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">能够进行简单的时间序列预测</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">💡 知识要点</h2>
-            <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-              {activeProject === 0 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">时间序列的四大组成要素</h3>
-                    <p className="text-text mb-3">时间序列数据通常由趋势、季节性、周期性和随机性四个部分组成，理解这些要素是进行时间序列分析的基础。</p>
-                    <div className="bg-indigo-50 rounded-lg p-4 mb-4">
-                      <p className="text-sm font-medium text-indigo-800 mb-2">💡 核心概念</p>
-                      <ul className="text-sm text-indigo-700 space-y-1">
-                        <li>• 趋势(Trend, T)：长期上升或下降的方向，反映整体发展态势</li>
-                        <li>• 季节性(Seasonal, S)：周期性的重复模式，如春夏秋冬、节假日</li>
-                        <li>• 周期性(Cyclical, C)：非固定周期的波动，通常与经济周期相关</li>
-                        <li>• 随机性(Residual, R)：不可预测的随机波动，又称残差或噪声</li>
-                      </ul>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">要素</th>
-                            <th className="border border-gray-300 px-4 py-2">周期</th>
-                            <th className="border border-gray-300 px-4 py-2">示例</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 font-medium">趋势</td>
-                            <td className="border border-gray-300 px-4 py-2">长期（数年以上）</td>
-                            <td className="border border-gray-300 px-4 py-2">公司营收持续增长</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 font-medium">季节性</td>
-                            <td className="border border-gray-300 px-4 py-2">固定周期（年/月/周）</td>
-                            <td className="border border-gray-300 px-4 py-2">空调夏季销量上升</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 font-medium">周期性</td>
-                            <td className="border border-gray-300 px-4 py-2">不固定（数年）</td>
-                            <td className="border border-gray-300 px-4 py-2">经济危机周期</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2 font-medium">随机性</td>
-                            <td className="border border-gray-300 px-4 py-2">无规律</td>
-                            <td className="border border-gray-300 px-4 py-2">突发事件影响</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeProject === 1 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 销售预测实战案例</h3>
-                    <p className="text-text mb-3">某电商公司2023年月度销售额数据，让我们用移动平均法进行预测分析。</p>
-                    <div className="overflow-x-auto mb-4">
-                      <table className="w-full border-collapse border border-gray-300">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">月份</th>
-                            <th className="border border-gray-300 px-4 py-2">销售额(万元)</th>
-                            <th className="border border-gray-300 px-4 py-2">环比增长</th>
-                            <th className="border border-gray-300 px-4 py-2">3月移动平均</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">1月</td>
-                            <td className="border border-gray-300 px-4 py-2">120</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">2月</td>
-                            <td className="border border-gray-300 px-4 py-2">135</td>
-                            <td className="border border-gray-300 px-4 py-2">+12.5%</td>
-                            <td className="border border-gray-300 px-4 py-2">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">3月</td>
-                            <td className="border border-gray-300 px-4 py-2">150</td>
-                            <td className="border border-gray-300 px-4 py-2">+11.1%</td>
-                            <td className="border border-gray-300 px-4 py-2">135.0</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">4月</td>
-                            <td className="border border-gray-300 px-4 py-2">145</td>
-                            <td className="border border-gray-300 px-4 py-2">-3.3%</td>
-                            <td className="border border-gray-300 px-4 py-2">143.3</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">...</td>
-                            <td className="border border-gray-300 px-4 py-2">...</td>
-                            <td className="border border-gray-300 px-4 py-2">...</td>
-                            <td className="border border-gray-300 px-4 py-2">...</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">12月</td>
-                            <td className="border border-gray-300 px-4 py-2">230</td>
-                            <td className="border border-gray-300 px-4 py-2">+9.5%</td>
-                            <td className="border border-gray-300 px-4 py-2">208.3</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="bg-indigo-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-indigo-800 mb-2">💡 移动平均法公式</p>
-                      <p className="text-sm text-indigo-700 mb-2">
-                        <strong>简单移动平均(SMA)：</strong>MAₙ = (X₁ + X₂ + ... + Xₙ) / n
-                      </p>
-                      <p className="text-sm text-indigo-700">
-                        <strong>加权移动平均(WMA)：</strong>WMA = Σ(Xᵢ × Wᵢ) / ΣWᵢ
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeProject === 2 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">🔮 高级预测方法</h3>
-                    <p className="text-text mb-3">掌握更精确的时间序列预测技术，提升预测准确性。</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">指数平滑法</h4>
-                        <p className="text-sm text-text mb-2">给予近期数据更高权重</p>
-                        <div className="bg-white p-3 rounded border">
-                          <code className="text-xs text-gray-700">
-                            Sₜ = α·Xₜ₋₁ + (1-α)·Sₜ₋₁
-                          </code>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-2">α: 平滑系数 (0-1)</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-medium text-primary mb-2">趋势分析</h4>
-                        <p className="text-sm text-text mb-2">线性回归拟合趋势线</p>
-                        <div className="bg-white p-3 rounded border">
-                          <code className="text-xs text-gray-700">
-                            ŷ = β₀ + β₁·t
-                          </code>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-2">β₀: 截距, β₁: 斜率</p>
-                      </div>
-                    </div>
-                    <div className="bg-indigo-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-indigo-800 mb-2">💡 方法选择建议</p>
-                      <ul className="text-sm text-indigo-700 space-y-1">
-                        <li>• 数据波动小 → 简单移动平均</li>
-                        <li>• 数据趋势明显 → 指数平滑或趋势分析</li>
-                        <li>• 数据有季节性 → 季节性分解或SARIMA</li>
-                        <li>• 复杂模式 → ARIMA、Prophet、深度学习模型</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-6 text-primary">💻 动手练习</h2>
-            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-6">
-              <p className="text-text mb-4">在下方编辑器中尝试修改代码，体验时间序列分析的过程！</p>
-              
-              <div className="mb-4">
-                <AceEditor
-                  mode="python"
-                  theme="monokai"
-                  value={code || defaultCode}
-                  onChange={handleCodeChange}
-                  name="time-series-editor"
-                  editorProps={{
-                    $blockScrolling: true
-                  }}
-                  className="rounded-lg shadow-md"
-                  style={{ height: '350px', width: '100%' }}
-                />
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handleRunCode}
-                  disabled={isLoading || pyodideStatus !== 'ready'}
-                  className={`px-8 py-3 rounded-full font-bold transition-all shadow-lg ${
-                    isLoading || pyodideStatus !== 'ready'
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-primary text-white hover:bg-secondary hover:shadow-button-hover transform hover:-translate-y-0.5'
-                  }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      运行中...
-                    </span>
-                  ) : (
-                    '▶ 运行代码'
-                  )}
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setCode(answerCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all"
-                >
-                  💡 显示参考答案
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setCode(defaultCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
-                >
-                  重置代码
-                </button>
-              </div>
-            </div>
-            
-            <div className="mt-6 bg-gray-900 text-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <span className="ml-4 text-sm text-gray-400">运行结果</span>
-              </div>
-              
-              {!result ? (
-                <div className="text-gray-400 flex items-center justify-center py-8">
-                  <span className="text-2xl mr-2">⌨️</span>
-                  <span>点击"运行代码"查看输出结果</span>
-                </div>
-              ) : result.success ? (
-                <div className="space-y-3">
-                  {result.output && (
-                    <div>
-                      <pre className="text-green-400 whitespace-pre-wrap font-mono text-sm">{result.output}</pre>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="flex-1">
-                        <h4 className="text-red-400 font-semibold mb-1">
-                          {result.error?.type || '执行错误'}
-                        </h4>
-                        <p className="text-red-300 text-sm">{result.error?.message}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
-            <div className="space-y-3">
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">1. 为什么移动平均能够平滑时间序列中的波动？</p>
-                <p className="text-sm text-gray-600">提示：考虑多个数据点的平均如何减少随机因素的影响</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">2. 如何选择合适的移动平均窗口大小？</p>
-                <p className="text-sm text-gray-600">提示：考虑数据的周期性和对平滑程度的要求</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">3. 简单预测方法有哪些局限性？</p>
-                <p className="text-sm text-gray-600">提示：考虑数据模式变化、季节性因素和长期预测</p>
-              </div>
+            <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+              🎯 三步递进
             </div>
           </div>
         </div>
+        <div className="absolute top-0 right-0 w-64 h-64 opacity-10 text-[200px]">📈</div>
+      </div>
+
+      {/* 核心概念板块 */}
+      <div className="mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800 text-center">
+          🧠 核心概念
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500">
+            <div className="flex items-start mb-4">
+              <div className="text-4xl mr-3">📈</div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-1">
+                  什么是时间序列？
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  时间序列是按时间顺序记录的一系列数据点。
+                  它可以揭示数据随时间变化的规律，常用于销售预测、股票分析、气象预测等领域。
+                </p>
+              </div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800">
+              <strong>常见组成：</strong>
+              <br />
+              趋势 (Trend) + 季节性 (Seasonal) + 随机性 (Random)
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500">
+            <div className="flex items-start mb-4">
+              <div className="text-4xl mr-3">🔄</div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-1">
+                  趋势 / 季节性 / 随机性分解
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  将时间序列数据分解为三个主要成分：长期趋势（上升/下降）、
+                  季节性波动（周期性重复模式）和随机噪声（不可预测的波动）。
+                </p>
+              </div>
+            </div>
+            <div className="bg-green-50 rounded-lg p-3 text-sm text-green-800">
+              <strong>经典公式：</strong>
+              <br />
+              Y(t) = T(t) + S(t) + R(t)
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-yellow-500">
+            <div className="flex items-start mb-4">
+              <div className="text-4xl mr-3">📊</div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-1">
+                  移动平均法 (Moving Average)
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  通过计算连续 N 个数据点的平均值来平滑时间序列中的随机波动，
+                  从而更清晰地显示长期趋势。
+                </p>
+              </div>
+            </div>
+            <div className="bg-yellow-50 rounded-lg p-3 text-sm text-yellow-800">
+              <strong>公式：</strong>
+              <br />
+              MA(n) = (xₜ + xₜ₋₁ + ... + xₜ₋ₙ₊₁) / n
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-red-500">
+            <div className="flex items-start mb-4">
+              <div className="text-4xl mr-3">🎯</div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-1">
+                  简单预测模型
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  基于历史数据建立数学模型（如线性回归），
+                  并使用误差指标（MAE、MAPE）评估预测质量，用于未来值的预测。
+                </p>
+              </div>
+            </div>
+            <div className="bg-red-50 rounded-lg p-3 text-sm text-red-800">
+              <strong>核心指标：</strong>
+              <br />
+              MAE = 平均绝对误差 | MAPE = 平均绝对百分比误差
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Step 1 */}
+      <div className="mb-10 bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 md:p-8">
+          <div className="flex items-center">
+            <div className="bg-white text-blue-600 rounded-full w-12 h-12 flex items-center justify-center font-bold text-2xl mr-4 shadow-lg">
+              1
+            </div>
+            <div className="text-white">
+              <h2 className="text-2xl md:text-3xl font-bold">
+                Step 1 · 基础入门
+              </h2>
+              <p className="text-blue-100 text-sm md:text-base">
+                读取月度销售数据，绘制时序图，做基础统计描述
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6 md:p-8">
+          <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
+            <h4 className="font-bold text-blue-900 mb-2">📌 学习目标</h4>
+            <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+              <li>学会使用 pandas 从 CSV 字符串读取数据</li>
+              <li>掌握 matplotlib 绘制时间序列折线图</li>
+              <li>计算并解读 describe() 统计描述</li>
+              <li>按年份聚合分析数据</li>
+            </ul>
+          </div>
+          {renderEditor(
+            code1,
+            setCode1,
+            loading1,
+            result1,
+            showAnswer1,
+            setShowAnswer1,
+            STEP1_DEFAULT,
+            STEP1_ANSWER,
+            () => handleRun(code1, setResult1, setLoading1),
+            'Step 1'
+          )}
+        </div>
+      </div>
+
+      {/* Step 2 */}
+      <div className="mb-10 bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 md:p-8">
+          <div className="flex items-center">
+            <div className="bg-white text-green-600 rounded-full w-12 h-12 flex items-center justify-center font-bold text-2xl mr-4 shadow-lg">
+              2
+            </div>
+            <div className="text-white">
+              <h2 className="text-2xl md:text-3xl font-bold">
+                Step 2 · 进阶分析
+              </h2>
+              <p className="text-green-100 text-sm md:text-base">
+                移动平均（MA）、简单指数平滑、趋势分解
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6 md:p-8">
+          <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border border-green-100">
+            <h4 className="font-bold text-green-900 mb-2">📌 学习目标</h4>
+            <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
+              <li>使用 rolling().mean() 计算移动平均 MA(3)、MA(6)</li>
+              <li>掌握简单指数平滑 SES (ewm 方法)</li>
+              <li>用线性回归提取趋势成分</li>
+              <li>分析季节性波动规律</li>
+            </ul>
+          </div>
+          {renderEditor(
+            code2,
+            setCode2,
+            loading2,
+            result2,
+            showAnswer2,
+            setShowAnswer2,
+            STEP2_DEFAULT,
+            STEP2_ANSWER,
+            () => handleRun(code2, setResult2, setLoading2),
+            'Step 2'
+          )}
+        </div>
+      </div>
+
+      {/* Step 3 */}
+      <div className="mb-10 bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-r from-red-500 to-orange-600 p-6 md:p-8">
+        <div className="flex items-center">
+            <div className="bg-white text-red-600 rounded-full w-12 h-12 flex items-center justify-center font-bold text-2xl mr-4 shadow-lg">
+              3
+            </div>
+            <div className="text-white">
+              <h2 className="text-2xl md:text-3xl font-bold">
+                Step 3 · 挑战预测
+              </h2>
+              <p className="text-red-100 text-sm md:text-base">
+                使用线性回归预测未来销量，评估预测误差，并生成预测图表
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6 md:p-8">
+          <div className="mb-6 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-5 border border-red-100">
+            <h4 className="font-bold text-red-900 mb-2">📌 学习目标</h4>
+            <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
+              <li>手动实现线性回归（最小二乘法）</li>
+              <li>计算 MAE、MAPE、RMSE 评估预测误差</li>
+              <li>预测未来 6 个月的销量</li>
+              <li>绘制精美的预测对比图与误差分析图</li>
+            </ul>
+          </div>
+          {renderEditor(
+            code3,
+            setCode3,
+            loading3,
+            result3,
+            showAnswer3,
+            setShowAnswer3,
+            STEP3_DEFAULT,
+            STEP3_ANSWER,
+            () => handleRun(code3, setResult3, setLoading3),
+            'Step 3'
+          )}
+        </div>
+      </div>
+
+      {/* 课程总结 */}
+      <div className="mb-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl shadow-lg p-8 border border-indigo-200">
+        <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center text-indigo-800">
+          🎓 你学到了什么？
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="bg-white rounded-xl p-6 shadow-md">
+            <div className="text-4xl mb-3">📊</div>
+            <h4 className="font-bold text-gray-800 mb-2">数据处理</h4>
+            <p className="text-sm text-gray-600">pandas 读取、清洗、时间索引</p>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-md">
+            <div className="text-4xl mb-3">📈</div>
+            <h4 className="font-bold text-gray-800 mb-2">可视化分析</h4>
+            <p className="text-sm text-gray-600">matplotlib 多图联动</p>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-md">
+            <div className="text-4xl mb-3">🎯</div>
+            <h4 className="font-bold text-gray-800 mb-2">预测建模</h4>
+            <p className="text-sm text-gray-600">移动平均、线性回归预测</p>
+          </div>
+        </div>
+      </div>
+
+      {/* CourseCompletion */}
+      <CourseCompletion
+        courseId="time-series"
+        courseTitle="时间序列分析"
+        badgeIcon="📉"
+        badgeName="时间序列大师"
+      />
       </div>
     </div>
   );

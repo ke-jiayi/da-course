@@ -3,7 +3,8 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPythonCode, isPyodideReady, initPyodide, PythonExecutionResult } from '../services/pyodideService';
+import { runPythonCode, isPyodideReady, initPyodide, PythonExecutionResult, PyodideProgress } from '../services/pyodideService';
+import PyodideLoader from './PyodideLoader';
 
 const PythonPlayground: React.FC = () => {
   const [code, setCode] = useState(`# Python代码编辑器
@@ -30,40 +31,52 @@ for i in range(1, 6):
     print(i)`);
   const [result, setResult] = useState<PythonExecutionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [pyodideStatus, setPyodideStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [pyodideStatus, setPyodideStatus] = useState<{ stage: number; percent: number; isReady: boolean }>({ stage: 0, percent: 0, isReady: isPyodideReady() });
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const editorRef = useRef<any>(null);
 
   useEffect(() => {
-    const checkPyodide = async () => {
-      if (isPyodideReady()) {
-        setPyodideStatus('ready');
-        return;
-      }
+    if (pyodideStatus.isReady) return;
+    let secondsTimer: ReturnType<typeof setInterval> | null = null;
+    let isCancelled = false;
 
+    const init = async () => {
+      secondsTimer = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
       try {
-        await initPyodide();
-        setPyodideStatus('ready');
-      } catch (error) {
-        console.error('Pyodide 初始化失败:', error);
-        setPyodideStatus('error');
+        await initPyodide((p: PyodideProgress) => {
+          if (!isCancelled) {
+            setPyodideStatus({ stage: p.stage, percent: p.percent, isReady: p.stage === 4 });
+          }
+        });
+        if (!isCancelled) setPyodideStatus({ stage: 4, percent: 100, isReady: true });
+      } catch (err: any) {
+        if (!isCancelled) setLoadError(err?.message || '初始化失败，请检查网络连接');
+      } finally {
+        if (secondsTimer) clearInterval(secondsTimer);
       }
     };
 
-    checkPyodide();
+    init();
 
-    // 键盘快捷键：Ctrl+Enter 或 Cmd+Enter 运行代码
+    return () => {
+      isCancelled = true;
+    };
+  }, [pyodideStatus.isReady]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
-        if (pyodideStatus === 'ready' && !isLoading) {
+        if (pyodideStatus.isReady && !isLoading) {
           handleRunCode();
         }
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [pyodideStatus, isLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pyodideStatus.isReady, isLoading]);
 
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
@@ -84,7 +97,7 @@ for i in range(1, 6):
       return;
     }
 
-    if (pyodideStatus !== 'ready') {
+    if (!pyodideStatus.isReady) {
       setResult({
         success: false,
         stdout: '',
@@ -260,31 +273,19 @@ print(f"方差: {np.var(data):.2f}")`;
           </div>
 
           {/* 加载状态 */}
-          {pyodideStatus === 'loading' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
-                <div>
-                  <p className="font-semibold text-blue-800">正在初始化 Python 环境...</p>
-                  <p className="text-sm text-blue-600">首次加载需要下载必要的库，请耐心等待（约30秒）</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {pyodideStatus === 'error' && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-medium text-red-800">环境加载失败</h3>
-                  <p className="mt-1 text-sm text-red-600">请检查网络连接后刷新页面重试</p>
-                </div>
-              </div>
+          {!pyodideStatus.isReady && (
+            <div className="mb-8">
+              <PyodideLoader
+                stage={pyodideStatus.stage as 0 | 1 | 2 | 3 | 4}
+                percent={pyodideStatus.percent}
+                error={loadError}
+                elapsedSeconds={elapsedSeconds}
+                onRetry={() => {
+                  setLoadError(null);
+                  setElapsedSeconds(0);
+                  setPyodideStatus({ stage: 0, percent: 0, isReady: false });
+                }}
+              />
             </div>
           )}
 
@@ -376,9 +377,9 @@ print(f"方差: {np.var(data):.2f}")`;
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={handleRunCode}
-                disabled={isLoading || pyodideStatus !== 'ready'}
+                disabled={isLoading || !pyodideStatus.isReady}
                 className={`flex-1 py-4 rounded-xl font-bold text-lg transition-all shadow-lg ${
-                  isLoading || pyodideStatus !== 'ready'
+                  isLoading || !pyodideStatus.isReady
                     ? 'bg-gray-400 cursor-not-allowed text-white'
                     : 'bg-gradient-to-r from-primary to-secondary text-white hover:shadow-xl transform hover:-translate-y-0.5'
                 }`}

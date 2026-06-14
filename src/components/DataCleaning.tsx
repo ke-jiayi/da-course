@@ -2,70 +2,295 @@ import React, { useState, useEffect } from 'react';
 import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
-import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPythonCode, isPyodideReady, initPyodide } from '../services/pyodideService';
+import { runPythonCode, initPyodide, isPyodideReady, PyodideProgress } from '../services/pyodideService';
+import PyodideLoader from './PyodideLoader';
+import CourseCompletion from './CourseCompletion';
+
+type PyodideStage = 0 | 1 | 2 | 3 | 4;
 
 const DataCleaning: React.FC = () => {
-  const [code, setCode] = useState('');
-  const [result, setResult] = useState<{ success: boolean; output?: string; stdout: string; stderr: string; error?: any; } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [pyodideStatus, setPyodideStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [activeProject, setActiveProject] = useState(0);
+  const [pyodideStage, setPyodideStage] = useState<PyodideStage>(0);
+  const [pyodidePercent, setPyodidePercent] = useState(0);
+  const [pyodideError, setPyodideError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
     const checkPyodide = async () => {
       if (isPyodideReady()) {
         setPyodideStatus('ready');
+        setPyodideStage(4);
+        setPyodidePercent(100);
+        clearInterval(timer);
         return;
       }
 
       try {
-        await initPyodide();
+        await initPyodide((p: PyodideProgress) => {
+          setPyodideStage(p.stage);
+          setPyodidePercent(p.percent);
+        });
         setPyodideStatus('ready');
       } catch (error) {
         console.error('Pyodide 初始化失败:', error);
         setPyodideStatus('error');
+        setPyodideError(error instanceof Error ? error.message : String(error));
+      } finally {
+        clearInterval(timer);
       }
     };
 
     checkPyodide();
+    return () => clearInterval(timer);
   }, []);
 
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode);
-    setResult(null);
+  const handleRetry = () => {
+    setPyodideStatus('loading');
+    setPyodideError(null);
+    setPyodideStage(0);
+    setPyodidePercent(0);
+    setElapsedSeconds(0);
+    const checkPyodide = async () => {
+      try {
+        await initPyodide((p: PyodideProgress) => {
+          setPyodideStage(p.stage);
+          setPyodidePercent(p.percent);
+        });
+        setPyodideStatus('ready');
+      } catch (error) {
+        setPyodideStatus('error');
+        setPyodideError(error instanceof Error ? error.message : String(error));
+      }
+    };
+    checkPyodide();
   };
 
-  const handleRunCode = async () => {
-    if (!code.trim()) {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'InputError',
-          message: '请输入代码后再运行'
-        }
-      });
-      return;
-    }
+  // ====================== Step 1 ======================
+  const step1Placeholder = `# Step 1: 数据诊断
+# 任务：读取订单 CSV 数据，统计缺失值、重复值、异常值
+#
+# 数据集包含以下字段：
+#   order_id, product, quantity, price, region, date
+#
+# 提示：
+#   1. 使用 csv 模块或手动解析 data 字符串
+#   2. 统计每列 None / 空字符串的数量
+#   3. 检查重复行（完全相同的记录）
+#   4. 检查 quantity 和 price 是否存在异常值（如负数或极端大值）
+#   5. 输出一份清洗前的数据质量报告
 
-    if (pyodideStatus !== 'ready') {
-      setResult({
-        success: false,
-        stdout: '',
-        stderr: '',
-        error: {
-          type: 'SystemError',
-          message: 'Python 环境正在初始化，请稍候...'
-        }
-      });
-      return;
-    }
+data = """下面参考答案中包含完整的脏数据集，
+你也可以先尝试自己写一个简单的诊断脚本。"""
 
-    setIsLoading(true);
+print("请编写你的诊断脚本...")
+`;
+
+  const step1Answer = `# ============================================================
+# Step 1: 数据诊断 —— 清洗前质量报告
+# ============================================================
+import csv
+from io import StringIO
+from collections import Counter
+
+# ---------------------- 1. 脏数据（CSV 字符串） ----------------------
+csv_data = """order_id,product,quantity,price,region,date
+1001,iPhone,2,5999,北京,2024-01-15
+1002,MacBook,1,12999,上海,2024-01-16
+1003,AirPods,,1299,北京,2024-01-17
+1004,iPad,3,,广州,2024-01-18
+1005,iPhone,2,5999,北京,2024-01-15
+1006,MacBook,1,99999,深圳,2024-01-19
+1007,Watch,-2,2199,上海,2024-01-20
+1008,,1,899,北京,2024-01-21
+1009,iPhone,2,5999,beijing,2024/01/15
+1010,MacBook,1,12999,上海,2024-01-16
+1011,iPad,5,3499,杭州,2024-01-22
+1012,AirPods,2,1299,,
+1013,Watch,1,2199,上海,2024-01-23
+1014,iPhone,-1,5999,北京,2024-01-24
+1015,MacBook,1,12999,上海,2024-01-16
+1016,iPad,0,3499,南京,2024-01-25
+1017,AirPods,3,12999,北京,2024-01-26
+1018,Watch,1,,上海,2024-01-27
+1019,iPhone,2,5999,北京,2024-01-15
+1020,MacBook,100,12999,上海,2024-01-28
+"""
+
+# ---------------------- 2. 解析 CSV ----------------------
+reader = csv.DictReader(StringIO(csv_data))
+rows = list(reader)
+fields = reader.fieldnames
+
+print("=" * 60)
+print("            📊 数据清洗前质量诊断报告")
+print("=" * 60)
+print(f"总记录数: {len(rows)} 行")
+print(f"字段数:   {len(fields)} 列")
+print(f"字段名:   {', '.join(fields)}")
+
+# ---------------------- 3. 缺失值统计 ----------------------
+print("\\n" + "-" * 60)
+print(" 🔍 1) 缺失值统计 (空字符串或 NaN)")
+print("-" * 60)
+
+missing_by_col = Counter()
+missing_rows = 0
+for row in rows:
+    has_missing = False
+    for col in fields:
+        val = (row[col] or "").strip()
+        if val == "" or val.lower() == "nan":
+            missing_by_col[col] += 1
+            has_missing = True
+    if has_missing:
+        missing_rows += 1
+
+for col in fields:
+    count = missing_by_col.get(col, 0)
+    pct = count / len(rows) * 100
+    bar = "█" * int(pct / 2) + "·" * (50 - int(pct / 2))
+    print(f"  {col:<12} [{bar}] {count:>3} 条  ({pct:>5.1f}%)")
+
+print(f"\\n  ⚠️  含有缺失值的行: {missing_rows} 行 ({missing_rows/len(rows)*100:.1f}%)")
+
+# ---------------------- 4. 重复值统计 ----------------------
+print("\\n" + "-" * 60)
+print(" 🔁 2) 重复行统计 (按所有字段完全匹配)")
+print("-" * 60)
+
+row_strings = [tuple(r[f] for f in fields) for r in rows]
+counter = Counter(row_strings)
+dup_groups = [(k, v) for k, v in counter.items() if v > 1]
+
+if dup_groups:
+    total_dup = sum(v - 1 for _, v in dup_groups)
+    print(f"  发现 {len(dup_groups)} 组重复记录,共 {total_dup} 条多余行")
+    for i, (key, cnt) in enumerate(dup_groups[:5], 1):
+        print(f"    #{i}: {dict(zip(fields, key))} → 出现 {cnt} 次")
+    if len(dup_groups) > 5:
+        print(f"    ... 以及其他 {len(dup_groups) - 5} 组重复")
+else:
+    print("  ✅ 未发现重复记录")
+
+# ---------------------- 5. 异常值统计 ----------------------
+print("\\n" + "-" * 60)
+print(" ⚠️  3) 数值字段异常值检测 (quantity, price)")
+print("-" * 60)
+
+def safe_float(v):
+    try:
+        return float(v)
+    except (ValueError, TypeError):
+        return None
+
+for num_col in ["quantity", "price"]:
+    vals = [safe_float(r[num_col]) for r in rows if safe_float(r[num_col]) is not None]
+    if not vals:
+        continue
+    n = len(vals)
+    mean_v = sum(vals) / n
+    sorted_v = sorted(vals)
+    q1 = sorted_v[n // 4]
+    q3 = sorted_v[3 * n // 4]
+    iqr = q3 - q1
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+
+    neg_vals = [(i + 1, v) for i, r in enumerate(rows)
+                for vv in [safe_float(r[num_col])] if vv is not None and vv < 0]
+    zero_vals = [(i + 1, v) for i, r in enumerate(rows)
+                 for vv in [safe_float(r[num_col])] if vv is not None and vv == 0]
+    outlier_vals = [(i + 1, v) for i, r in enumerate(rows)
+                    for vv in [safe_float(r[num_col])] if vv is not None and (vv < lower or vv > upper)]
+
+    print(f"\\n  【{num_col}】")
+    print(f"    有效值: {n} | 均值: {mean_v:.1f} | Q1: {q1} | Q3: {q3} | IQR: {iqr}")
+    print(f"    正常范围 (IQR 法): [{lower:.1f}, {upper:.1f}]")
+    print(f"    负数异常: {len(neg_vals)} 条 → {neg_vals[:3]}{'...' if len(neg_vals) > 3 else ''}")
+    print(f"    零值异常: {len(zero_vals)} 条 → {zero_vals[:3]}{'...' if len(zero_vals) > 3 else ''}")
+    print(f"    极端值(IQR外): {len(outlier_vals)} 条 → {outlier_vals[:3]}{'...' if len(outlier_vals) > 3 else ''}")
+
+# ---------------------- 6. 格式不一致 ----------------------
+print("\\n" + "-" * 60)
+print(" 🔤 4) 文本字段格式不一致")
+print("-" * 60)
+
+for txt_col in ["region", "date"]:
+    unique_vals = sorted(set(r[txt_col].strip() for r in rows if r[txt_col].strip()))
+    print(f"\\n  【{txt_col}】共有 {len(unique_vals)} 种取值:")
+    for v in unique_vals:
+        print(f"    - '{v}'")
+
+# ---------------------- 7. 汇总 ----------------------
+print("\\n" + "=" * 60)
+print("                  📝 诊断报告汇总")
+print("=" * 60)
+issues_total = missing_rows + sum(v - 1 for _, v in counter.items() if v > 1) + 0
+print(f"  ✅ 总记录数:       {len(rows)}")
+print(f"  ⚠️  含缺失值的行:  {missing_rows}")
+print(f"  🔁 重复记录数:     {sum(v - 1 for _, v in counter.items() if v > 1)}")
+print(f"  ❌ 异常值需关注:   quantity={sum(1 for r in rows if safe_float(r['quantity']) is not None and (safe_float(r['quantity']) <= 0))} 条")
+print(f"  🔤 需统一格式:     region(中英文混杂), date(分隔符不一致)")
+print("\\n  👉 建议处理顺序: 缺失值 → 去重 → 格式化 → 异常值修正")
+print("=" * 60)
+`;
+
+  const [step1Code, setStep1Code] = useState(step1Placeholder);
+  const [step1Result, setStep1Result] = useState<any>(null);
+  const [step1Loading, setStep1Loading] = useState(false);
+  const [step1ShowAnswer, setStep1ShowAnswer] = useState(false);
+
+  // ====================== Step 2 ======================
+  const step2Placeholder = `# Step 2: 缺失值处理 + 去重 + 格式标准化
+# 任务：在 Step 1 的基础上，将脏数据变成干净数据
+#
+# 建议步骤：
+#   1. 处理缺失值：
+#      - quantity: 用中位数填充
+#      - price: 用同 product 的均值填充
+#      - region/date/product: 用众数或标记为"未知"
+#   2. 删除重复行（保留第一条）
+#   3. 格式化：
+#      - region 统一英文小写或中文（如 "beijing" → "北京"）
+#      - date 统一为 YYYY-MM-DD
+#   4. 输出清洗后的记录数 + 前 5 行预览
+`;
+
+
+  const [step2Code, setStep2Code] = useState(step2Placeholder);
+  const [step2Result, setStep2Result] = useState<any>(null);
+  const [step2Loading, setStep2Loading] = useState(false);
+  const [step2ShowAnswer, setStep2ShowAnswer] = useState(false);
+
+  // ====================== Step 3 ======================
+  const step3Placeholder = `# Step 3: 异常值检测与修正
+# 任务：
+#   1. 使用 IQR 方法检测 quantity / price 的异常值
+#   2. 用描述性统计（均值/中位数/合理边界）修正异常
+#   3. 对比清洗前后数据集（行数、均值、中位数、极值）
+#   4. 输出修正报告
+`;
+
+  const [step3Code, setStep3Code] = useState(step3Placeholder);
+  const [step3Result, setStep3Result] = useState<any>(null);
+  const [step3Loading, setStep3Loading] = useState(false);
+  const [step3ShowAnswer, setStep3ShowAnswer] = useState(false);
+
+  // ====================== 通用运行函数 ======================
+  const runCode = async (
+    code: string,
+    setResult: (r: any) => void,
+    setLoading: (b: boolean) => void
+  ) => {
+    if (!code.trim()) return;
+    if (pyodideStatus !== 'ready') return;
+    setLoading(true);
     setResult(null);
-
     try {
       const executionResult = await runPythonCode(code);
       setResult(executionResult);
@@ -74,668 +299,376 @@ const DataCleaning: React.FC = () => {
         success: false,
         stdout: '',
         stderr: '',
-        error: {
-          type: 'ExecutionError',
-          message: '执行出错: ' + (err as Error).message
-        }
+        error: { type: 'ExecutionError', message: '执行出错: ' + (err as Error).message }
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const projects = [
-    {
-      id: 1,
-      title: '基础概念',
-      description: '缺失值处理、重复值处理、数据类型转换'
-    },
-    {
-      id: 2,
-      title: '实战案例：电商数据清洗',
-      description: '使用Python处理真实电商数据'
-    },
-    {
-      id: 3,
-      title: '高级技巧',
-      description: '异常值处理与数据标准化'
-    }
-  ];
+  // ====================== 渲染代码编辑器 + 输出 ======================
+  const renderCodeBlock = (
+    title: string,
+    codeValue: string,
+    onChange: (c: string) => void,
+    result: any,
+    loading: boolean,
+    showAnswer: boolean,
+    setShowAnswer: (b: boolean) => void,
+    resetCode: () => void,
+    runFn: () => void
+  ) => (
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+        <h3 className="text-lg font-bold text-gray-800">{title}</h3>
+      </div>
+      <div className="p-6">
+        <AceEditor
+          mode="python"
+          theme="monokai"
+          value={codeValue}
+          onChange={onChange}
+          name={`editor-${title}`}
+          editorProps={{ $blockScrolling: true }}
+          className="rounded-lg"
+          style={{ height: '320px', width: '100%', fontSize: '13px' }}
+          setOptions={{
+            fontSize: '13px',
+            showLineNumbers: true,
+            tabSize: 4,
+          }}
+        />
 
-  const placeholderCode = `# 在这里编写你的代码
-# 点击"显示参考答案"按钮可以查看示例代码
+        <div className="flex flex-wrap items-center gap-3 mt-4">
+          <button
+            onClick={runFn}
+            disabled={loading || pyodideStatus !== 'ready'}
+            className={`px-6 py-2 rounded-full font-bold shadow-button transition-all ${
+              loading || pyodideStatus !== 'ready'
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : 'bg-primary text-white hover:shadow-button-hover hover:-translate-y-0.5'
+            }`}
+          >
+            {loading ? (
+              <span className="flex items-center">
+                <span className="animate-spin inline-block w-4 h-4 border-b-2 border-white mr-2 rounded-full"></span>
+                运行中...
+              </span>
+            ) : (
+              '▶ 运行代码'
+            )}
+          </button>
 
-# 提示：
-# 1. 可以尝试检测和处理缺失值
-# 2. 可以识别和处理重复数据
-# 3. 可以检测和处理异常值
+          <button
+            onClick={() => setShowAnswer(!showAnswer)}
+            className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
+          >
+            {showAnswer ? '隐藏参考答案' : '💡 查看参考答案'}
+          </button>
 
-`;
+          <button
+            onClick={resetCode}
+            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-all"
+          >
+            🔄 重置
+          </button>
+        </div>
 
-  const answerCode = `# 数据清洗实战练习
-print("=" * 50)
-print("       欢迎学习数据清洗！")
-print("=" * 50)
+        {result && !result.success && result.error && (
+          <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-100 mt-4">
+            <div className="font-bold mb-2">❌ {result.error.type}</div>
+            <div className="text-sm whitespace-pre-wrap">{result.error.message}</div>
+            {result.error.details && (
+              <div className="text-xs mt-2 whitespace-pre-wrap opacity-80">{result.error.details}</div>
+            )}
+          </div>
+        )}
 
-# ===== 1. 处理缺失值 =====
-print("\\n【第1步】处理缺失值")
-print("-" * 40)
+        {result && (result.stdout || result.output) && (
+          <div className="mt-4">
+            <div className="flex items-center mb-2 text-sm text-gray-600">
+              <span className="inline-block w-3 h-3 rounded-full bg-green-400 mr-2"></span>
+              <span>运行结果</span>
+            </div>
+            <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg overflow-x-auto">
+              {result.output || result.stdout || '(无输出)'}
+            </pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
-data = [10, None, 25, None, 30, 45, None, 50]
-print(f"原始数据: {data}")
-
-missing_count = sum(1 for x in data if x is None)
-print(f"缺失值数量: {missing_count}")
-
-valid_values = [x for x in data if x is not None]
-avg = sum(valid_values) / len(valid_values)
-cleaned_data = [x if x is not None else round(avg, 1) for x in data]
-print(f"平均值: {avg:.1f}")
-print(f"填充后数据: {cleaned_data}")
-
-# ===== 2. 处理重复数据 =====
-print("\\n【第2步】处理重复数据")
-print("-" * 40)
-
-products = ["手机", "电脑", "手机", "平板", "电脑", "耳机"]
-print(f"原始产品列表: {products}")
-unique_products = list(dict.fromkeys(products))
-print(f"去重后产品: {unique_products}")
-print(f"重复数量: {len(products) - len(unique_products)}")
-
-# ===== 3. 处理异常值 =====
-print("\\n【第3步】处理异常值")
-print("-" * 40)
-
-sales = [100, 120, 115, 90, 95, 200, 110, 105, 98, 102]
-print(f"原始销售额: {sales}")
-
-mean_val = sum(sales) / len(sales)
-variance = sum((x - mean_val) ** 2 for x in sales) / len(sales)
-std_val = variance ** 0.5
-
-print(f"平均值: {mean_val:.2f}")
-print(f"标准差: {std_val:.2f}")
-
-outliers = [x for x in sales if abs(x - mean_val) > 2 * std_val]
-print(f"异常值 (2倍标准差外): {outliers}")
-
-cleaned_sales = [x for x in sales if abs(x - mean_val) <= 2 * std_val]
-print(f"清洗后销售额: {cleaned_sales}")
-
-print("\\n" + "=" * 50)
-print("✓ 数据清洗完成！")
-print("=" * 50)`;
-
+  // ====================== 主渲染 ======================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Python编程 数据清洗实战</h1>
-            <p className="text-text">掌握数据清洗的核心技术，处理缺失值、异常值和重复数据</p>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      <div className="container mx-auto px-4 py-8 md:py-12 max-w-6xl">
+        {/* ==================== Hero 区域 ==================== */}
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-10">
+          <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-10 md:p-14 text-center text-white">
+            <div className="text-7xl md:text-8xl mb-4 inline-block animate-bounce-slow">🧹</div>
+            <h1 className="text-3xl md:text-5xl font-bold mb-4">数据清洗实战</h1>
+            <p className="text-lg md:text-xl text-emerald-50 max-w-3xl mx-auto leading-relaxed">
+              掌握数据分析的第一步基本功——从脏数据中提取高质量信息。<br />
+              通过 3 步递进练习，你将学会诊断、清理、修正一份真实的订单数据集。
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 md:p-10">
+            {[
+              { icon: '🔍', title: '问题诊断', desc: '发现缺失值、重复值、异常值' },
+              { icon: '🧼', title: '清洗处理', desc: '填充、去重、格式标准化' },
+              { icon: '✅', title: '修正对比', desc: 'IQR 法检测 + 前后对比' },
+            ].map((item, i) => (
+              <div key={i} className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <div className="text-4xl mb-3">{item.icon}</div>
+                <div className="text-lg font-bold text-gray-800 mb-1">Step {i + 1}: {item.title}</div>
+                <div className="text-sm text-gray-600">{item.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ==================== Pyodide 加载 ==================== */}
+        {pyodideStatus !== 'ready' && (
+          <div className="mb-10">
+            <PyodideLoader
+              stage={pyodideStage}
+              percent={pyodidePercent}
+              error={pyodideError}
+              elapsedSeconds={elapsedSeconds}
+              onRetry={handleRetry}
+            />
+          </div>
+        )}
+
+        {/* ==================== 核心概念板块 ==================== */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2 text-center">
+            📖 核心概念
+          </h2>
+          <p className="text-center text-gray-600 mb-8">在动手之前，先了解数据清洗的"为什么"和"是什么"</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-orange-200 rounded-2xl p-6">
+              <div className="text-4xl mb-3">🤔</div>
+              <h3 className="text-xl font-bold text-orange-900 mb-2">什么是脏数据？</h3>
+              <p className="text-orange-800 leading-relaxed">
+                脏数据是指<strong>不完整、不准确、不一致或格式混乱</strong>的数据。
+                它会导致分析结果失真，严重时会让模型做出完全错误的决策。
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-red-50 to-pink-50 border border-red-200 rounded-2xl p-6">
+              <div className="text-4xl mb-3">⚠️</div>
+              <h3 className="text-xl font-bold text-red-900 mb-2">为什么要清洗？—— GIGO 原则</h3>
+              <p className="text-red-800 leading-relaxed">
+                <strong>Garbage In, Garbage Out</strong>（垃圾进，垃圾出）。
+                再先进的算法也救不了劣质数据。据统计，数据分析师花在数据清洗上的时间
+                占整个工作的 <strong>60%–80%</strong>。
+              </p>
+            </div>
           </div>
 
-          {pyodideStatus === 'loading' && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-4"></div>
-                <div>
-                  <p className="font-semibold text-green-800">正在初始化 Python 环境...</p>
-                  <p className="text-sm text-green-600">首次加载需要下载必要的库，请耐心等待</p>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">🔖 常见的脏数据类型</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { icon: '🔲', title: '缺失值 (Missing Values)', color: 'from-blue-50 to-blue-100 border-blue-200',
+                desc: '字段为空或 NaN。可能由录入遗漏、系统错误或用户未填写造成。',
+                example: 'price: "" 或 quantity: NaN' },
+              { icon: '📊', title: '异常值 (Outliers)', color: 'from-purple-50 to-purple-100 border-purple-200',
+                desc: '与整体分布显著偏离的值，可能是录入错误（如多写了一个 9），也可能是真实极端情况。',
+                example: 'price: 99999, quantity: -2' },
+              { icon: '🔁', title: '重复值 (Duplicates)', color: 'from-green-50 to-green-100 border-green-200',
+                desc: '同一记录出现多次，通常由系统重复提交或数据合并不当造成。',
+                example: '订单 1001 出现了 3 次' },
+              { icon: '🔤', title: '格式不一致 (Inconsistent Format)', color: 'from-amber-50 to-amber-100 border-amber-200',
+                desc: '同一含义的数据有不同写法，导致相同值被误认为不同。',
+                example: '"北京" vs "beijing"  vs "2024/01/15" vs "2024-01-15"' },
+            ].map((card, i) => (
+              <div key={i} className={`bg-gradient-to-br ${card.color} border rounded-2xl p-5`}>
+                <div className="flex items-start gap-3">
+                  <div className="text-3xl flex-shrink-0">{card.icon}</div>
+                  <div>
+                    <div className="font-bold text-gray-800 mb-1">{card.title}</div>
+                    <p className="text-sm text-gray-700 leading-relaxed mb-2">{card.desc}</p>
+                    <div className="text-xs font-mono bg-white/60 rounded-lg px-3 py-2 text-gray-700">
+                      例：{card.example}
+                    </div>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ==================== Step 1 ==================== */}
+        <div className="mb-10">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl shadow-xl p-6 md:p-8 text-white mb-6">
+            <div className="flex items-start gap-4">
+              <div className="text-5xl md:text-6xl font-bold opacity-30">1</div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-blue-100 uppercase tracking-wider">Step 1 · 基础</div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">问题诊断</h2>
+                <p className="text-blue-50 leading-relaxed">
+                  读取订单数据 → 统计缺失值、重复值、异常值 → 输出一份数据质量诊断报告。
+                  这一步的目标是：<strong>看清数据到底有多脏</strong>。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {step1ShowAnswer && (
+            <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+              <p className="text-sm text-blue-800">
+                💡 <strong>参考答案已载入编辑器</strong>。点击"▶ 运行代码"查看诊断报告。
+                你也可以在编辑器基础上自由修改/添加自己的诊断逻辑。
+              </p>
             </div>
           )}
 
-          {pyodideStatus === 'error' && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-medium text-red-800">环境加载失败</h3>
-                  <p className="mt-1 text-sm text-red-600">请检查网络连接后刷新页面重试</p>
-                </div>
+          {renderCodeBlock(
+            'Step 1 代码编辑器',
+            step1Code,
+            setStep1Code,
+            step1Result,
+            step1Loading,
+            step1ShowAnswer,
+            setStep1ShowAnswer,
+            () => { setStep1Code(step1Placeholder); setStep1Result(null); },
+            () => runCode(step1Code, setStep1Result, setStep1Loading)
+          )}
+
+          {step1ShowAnswer && step1Code !== step1Answer && (
+            <div className="mt-4"></div>
+          )}
+        </div>
+
+        {/* ==================== Step 2 ==================== */}
+        <div className="mb-10">
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl shadow-xl p-6 md:p-8 text-white mb-6">
+            <div className="flex items-start gap-4">
+              <div className="text-5xl md:text-6xl font-bold opacity-30">2</div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-emerald-100 uppercase tracking-wider">Step 2 · 进阶</div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">缺失值处理与去重</h2>
+                <p className="text-emerald-50 leading-relaxed">
+                  填充缺失值（中位数 / 同产品均值 / 众数）→ 删除重复行 → 统一字段格式。
+                  这一步的目标是：<strong>让数据完整且一致</strong>。
+                </p>
               </div>
+            </div>
+          </div>
+
+          {step2ShowAnswer && (
+            <div className="mb-4 p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-lg">
+              <p className="text-sm text-emerald-800">
+                💡 <strong>参考答案已载入编辑器</strong>。点击"▶ 运行代码"查看清洗后的数据。
+                观察从原始行数到去重后行数的变化，以及缺失字段被合理值填充的过程。
+              </p>
             </div>
           )}
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📚 学习路径</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {projects.map((project) => (
-                <button
-                  key={project.id}
-                  onClick={() => setActiveProject(project.id - 1)}
-                  className={`p-4 rounded-xl text-left transition-all ${
-                    activeProject === project.id - 1
-                      ? 'bg-primary text-white shadow-lg transform scale-105'
-                      : 'bg-gray-50 hover:bg-gray-100 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center mb-2">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                      activeProject === project.id - 1
-                        ? 'bg-white text-primary'
-                        : 'bg-primary text-white'
-                    }`}>
-                      {project.id}
-                    </span>
-                    <h3 className="font-semibold">{project.title}</h3>
-                  </div>
-                  <p className={`text-sm ${
-                    activeProject === project.id - 1
-                      ? 'text-green-100'
-                      : 'text-gray-600'
-                  }`}>
-                    {project.description}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
+          {renderCodeBlock(
+            'Step 2 代码编辑器',
+            step2Code,
+            setStep2Code,
+            step2Result,
+            step2Loading,
+            step2ShowAnswer,
+            setStep2ShowAnswer,
+            () => { setStep2Code(step2Placeholder); setStep2Result(null); },
+            () => runCode(step2Code, setStep2Result, setStep2Loading)
+          )}
+        </div>
 
-          <div className="mb-8 bg-accent rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">🎯 学习目标</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">识别数据中的缺失值并选择合适的填充策略</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">掌握数据去重的多种方法</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">学会检测和处理异常值</p>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-green-100 rounded-full p-2 mr-3 flex-shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-text text-sm">理解数据质量对分析结果的影响</p>
+        {/* ==================== Step 3 ==================== */}
+        <div className="mb-10">
+          <div className="bg-gradient-to-r from-fuchsia-600 to-pink-600 rounded-3xl shadow-xl p-6 md:p-8 text-white mb-6">
+            <div className="flex items-start gap-4">
+              <div className="text-5xl md:text-6xl font-bold opacity-30">3</div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-fuchsia-100 uppercase tracking-wider">Step 3 · 挑战</div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">异常值检测与修正</h2>
+                <p className="text-fuchsia-50 leading-relaxed">
+                  使用 <strong>IQR 四分位距法</strong> + <strong>描述性统计</strong> 识别异常，
+                  用合理值替换异常字段，并最终输出<strong>清洗前后对比表</strong>。
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">💡 知识要点</h2>
-            <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-              {activeProject === 0 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">什么是数据清洗？</h3>
-                    <p className="text-text mb-3">数据清洗是数据分析前的重要步骤，用于处理数据中的不完整、不一致和错误数据。</p>
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-green-800 mb-2">💡 数据清洗的重要性</p>
-                      <ul className="text-sm text-green-700 space-y-1">
-                        <li>• 原始数据往往存在各种质量问题</li>
-                        <li>• 脏数据会导致分析结果不准确</li>
-                        <li>• 数据清洗占整个数据分析70%的时间</li>
-                        <li>• 高质量数据是可靠分析的基础</li>
-                      </ul>
-                    </div>
-                  </div>
+          {step3ShowAnswer && (
+            <div className="mb-4 p-4 bg-fuchsia-50 border-l-4 border-fuchsia-500 rounded-lg">
+              <p className="text-sm text-fuchsia-800">
+                💡 <strong>参考答案已载入编辑器</strong>。注意观察对比表中 min / max / mean 的变化——
+                这是判断"清洗是否有效"的核心证据。
+              </p>
+            </div>
+          )}
 
-                  <div className="mt-6">
-                    <h3 className="font-semibold text-lg mb-3">📊 缺失值处理示例</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">订单号</th>
-                            <th className="border border-gray-300 px-4 py-2">客户姓名</th>
-                            <th className="border border-gray-300 px-4 py-2">购买数量</th>
-                            <th className="border border-gray-300 px-4 py-2">联系电话</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">1001</td>
-                            <td className="border border-gray-300 px-4 py-2">张三</td>
-                            <td className="border border-gray-300 px-4 py-2">2</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">NULL</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">1002</td>
-                            <td className="border border-gray-300 px-4 py-2">李四</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">NULL</td>
-                            <td className="border border-gray-300 px-4 py-2">138****1234</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">1003</td>
-                            <td className="border border-gray-300 px-4 py-2">王五</td>
-                            <td className="border border-gray-300 px-4 py-2">5</td>
-                            <td className="border border-gray-300 px-4 py-2">139****5678</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="bg-yellow-50 rounded-lg p-4 mt-3">
-                      <p className="text-sm font-medium text-yellow-800 mb-2">💡 缺失值处理方法</p>
-                      <ul className="text-sm text-yellow-700 space-y-1">
-                        <li>• 删除法：删除含有缺失值的行（数据量充足时）</li>
-                        <li>• 均值填充：用该列均值填充数值型缺失</li>
-                        <li>• 众数填充：用出现最多的值填充分类型缺失</li>
-                        <li>• 前后填充：用相邻值填充（时间序列数据）</li>
-                      </ul>
-                    </div>
-                  </div>
+          {renderCodeBlock(
+            'Step 3 代码编辑器',
+            step3Code,
+            setStep3Code,
+            step3Result,
+            step3Loading,
+            step3ShowAnswer,
+            setStep3ShowAnswer,
+            () => { setStep3Code(step3Placeholder); setStep3Result(null); },
+            () => runCode(step3Code, setStep3Result, setStep3Loading)
+          )}
+        </div>
 
-                  <div className="mt-6">
-                    <h3 className="font-semibold text-lg mb-3">📊 重复值处理示例</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">产品名称</th>
-                            <th className="border border-gray-300 px-4 py-2">出现次数</th>
-                            <th className="border border-gray-300 px-4 py-2">是否为重复</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">手机</td>
-                            <td className="border border-gray-300 px-4 py-2">2</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">是</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">电脑</td>
-                            <td className="border border-gray-300 px-4 py-2">2</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">是</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">平板</td>
-                            <td className="border border-gray-300 px-4 py-2">1</td>
-                            <td className="border border-gray-300 px-4 py-2 text-green-500">否</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeProject === 1 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">🛒 电商数据清洗实战</h3>
-                    <p className="text-text mb-3">让我们分析一个电商订单数据集，学习如何处理真实世界的数据问题。</p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">订单ID</th>
-                            <th className="border border-gray-300 px-4 py-2">商品</th>
-                            <th className="border border-gray-300 px-4 py-2">数量</th>
-                            <th className="border border-gray-300 px-4 py-2">单价</th>
-                            <th className="border border-gray-300 px-4 py-2">备注</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">10001</td>
-                            <td className="border border-gray-300 px-4 py-2">iPhone</td>
-                            <td className="border border-gray-300 px-4 py-2">1</td>
-                            <td className="border border-gray-300 px-4 py-2">8999</td>
-                            <td className="border border-gray-300 px-4 py-2 text-gray-400">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">10002</td>
-                            <td className="border border-gray-300 px-4 py-2">MacBook</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">NULL</td>
-                            <td className="border border-gray-300 px-4 py-2">12999</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">数据异常</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">10003</td>
-                            <td className="border border-gray-300 px-4 py-2">AirPods</td>
-                            <td className="border border-gray-300 px-4 py-2">2</td>
-                            <td className="border border-gray-300 px-4 py-2">1599</td>
-                            <td className="border border-gray-300 px-4 py-2 text-gray-400">-</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">10004</td>
-                            <td className="border border-gray-300 px-4 py-2">MacBook</td>
-                            <td className="border border-gray-300 px-4 py-2">1</td>
-                            <td className="border border-gray-300 px-4 py-2">12999</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">重复订单</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-green-800 mb-2">💡 数据问题分析</p>
-                      <ul className="text-sm text-green-700 space-y-1">
-                        <li>• 缺失值：MacBook订单缺少数量信息</li>
-                        <li>• 重复订单：10002和10004疑似重复</li>
-                        <li>• 异常检测：数量和价格需要验证一致性</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium text-primary mb-3">Python代码示例：电商数据清洗</h4>
-                    <pre className="text-xs text-gray-700 overflow-x-auto">
-{`# 模拟电商订单数据清洗
-orders = [
-    {"id": "10001", "product": "iPhone", "qty": 1, "price": 8999},
-    {"id": "10002", "product": "MacBook", "qty": None, "price": 12999},
-    {"id": "10003", "product": "AirPods", "qty": 2, "price": 1599},
-    {"id": "10004", "product": "MacBook", "qty": 1, "price": 12999},
-]
-
-# 1. 检测缺失值
-for order in orders:
-    if order["qty"] is None:
-        print(f"订单 {order['id']} 缺少数量信息")
-
-# 2. 检测重复订单（基于商品和价格）
-seen = {}
-duplicates = []
-for order in orders:
-    key = (order["product"], order["price"])
-    if key in seen:
-        duplicates.append(order["id"])
-    else:
-        seen[key] = order["id"]
-
-print(f"重复订单: {duplicates}")`}
-                    </pre>
-                  </div>
-                </div>
-              )}
-
-              {activeProject === 2 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">📊 异常值检测与处理</h3>
-                    <p className="text-text mb-3">异常值是与其他观测值显著不同的数据点，可能是真实异常或数据错误。</p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">客户ID</th>
-                            <th className="border border-gray-300 px-4 py-2">月消费金额</th>
-                            <th className="border border-gray-300 px-4 py-2">Z-Score</th>
-                            <th className="border border-gray-300 px-4 py-2">是否为异常</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">C001</td>
-                            <td className="border border-gray-300 px-4 py-2">1200</td>
-                            <td className="border border-gray-300 px-4 py-2">-0.45</td>
-                            <td className="border border-gray-300 px-4 py-2 text-green-500">正常</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">C002</td>
-                            <td className="border border-gray-300 px-4 py-2">850</td>
-                            <td className="border border-gray-300 px-4 py-2">-0.89</td>
-                            <td className="border border-gray-300 px-4 py-2 text-green-500">正常</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">C003</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500 font-bold">15000</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">3.52</td>
-                            <td className="border border-gray-300 px-4 py-2 text-red-500">异常</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">C004</td>
-                            <td className="border border-gray-300 px-4 py-2">980</td>
-                            <td className="border border-gray-300 px-4 py-2">-0.72</td>
-                            <td className="border border-gray-300 px-4 py-2 text-green-500">正常</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm font-medium text-green-800 mb-2">💡 异常值检测方法</p>
-                      <ul className="text-sm text-green-700 space-y-1">
-                        <li>• 箱线图法：超出1.5倍IQR范围的值视为异常</li>
-                        <li>• Z-Score法：|z| {'>'} 3 的值视为异常</li>
-                        <li>• 百分位法：超出1%和99%分位数的值</li>
-                        <li>• 业务规则：根据业务逻辑定义合理范围</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <h3 className="font-semibold text-lg mb-2">📊 数据标准化</h3>
-                    <p className="text-text mb-3">不同量纲的数据需要进行标准化处理，以便于比较和分析。</p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300 mb-4">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 px-4 py-2">学生</th>
-                            <th className="border border-gray-300 px-4 py-2">数学成绩</th>
-                            <th className="border border-gray-300 px-4 py-2">英语成绩</th>
-                            <th className="border border-gray-300 px-4 py-2">数学标准化</th>
-                            <th className="border border-gray-300 px-4 py-2">英语标准化</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">小明</td>
-                            <td className="border border-gray-300 px-4 py-2">85</td>
-                            <td className="border border-gray-300 px-4 py-2">92</td>
-                            <td className="border border-gray-300 px-4 py-2">0.25</td>
-                            <td className="border border-gray-300 px-4 py-2">0.45</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">小红</td>
-                            <td className="border border-gray-300 px-4 py-2">78</td>
-                            <td className="border border-gray-300 px-4 py-2">88</td>
-                            <td className="border border-gray-300 px-4 py-2">-0.15</td>
-                            <td className="border border-gray-300 px-4 py-2">0.25</td>
-                          </tr>
-                          <tr>
-                            <td className="border border-gray-300 px-4 py-2">小刚</td>
-                            <td className="border border-gray-300 px-4 py-2">92</td>
-                            <td className="border border-gray-300 px-4 py-2">95</td>
-                            <td className="border border-gray-300 px-4 py-2">0.65</td>
-                            <td className="border border-gray-300 px-4 py-2">0.65</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium text-primary mb-3">Python代码示例：异常值处理</h4>
-                    <pre className="text-xs text-gray-700 overflow-x-auto">
-{`import statistics
-
-# 消费数据
-consumption = [1200, 850, 15000, 980, 1100, 920, 1050]
-
-# 计算统计量
-mean_val = statistics.mean(consumption)
-stdev_val = statistics.stdev(consumption)
-
-# Z-Score 方法检测异常值
-outliers = []
-for i, value in enumerate(consumption):
-    z_score = (value - mean_val) / stdev_val
-    if abs(z_score) > 2:
-        outliers.append((i, value, z_score))
-
-print(f"异常值: {outliers}")
-
-# 箱线图方法
-sorted_data = sorted(consumption)
-q1 = sorted_data[len(sorted_data)//4]
-q3 = sorted_data[3*len(sorted_data)//4]
-iqr = q3 - q1
-lower_bound = q1 - 1.5 * iqr
-upper_bound = q3 + 1.5 * iqr
-
-print(f"正常范围: [{lower_bound}, {upper_bound}]")`}
-                    </pre>
-                  </div>
-                </div>
-              )}
+        {/* ==================== 关键知识点小卡片 ==================== */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-10 mb-10">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">🎯 清洗策略速记</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border-l-4 border-blue-500 bg-blue-50 rounded-lg p-5">
+              <h4 className="font-bold text-blue-900 mb-2">缺失值处理策略</h4>
+              <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                <li><strong>数值型：</strong>中位数/同组均值</li>
+                <li><strong>分类型：</strong>众数（最常见的值）</li>
+                <li><strong>时间型：</strong>前向填充 (ffill)</li>
+                <li><strong>缺失率 &gt; 50%：</strong>直接删除该列</li>
+              </ul>
+            </div>
+            <div className="border-l-4 border-purple-500 bg-purple-50 rounded-lg p-5">
+              <h4 className="font-bold text-purple-900 mb-2">IQR 法公式</h4>
+              <pre className="text-sm font-mono text-purple-800 bg-white/60 rounded p-3 mt-2">
+{`IQR = Q3 − Q1
+下界 = Q1 − 1.5 × IQR
+上界 = Q3 + 1.5 × IQR
+超出 [下界, 上界] → 视为异常`}
+              </pre>
+            </div>
+            <div className="border-l-4 border-green-500 bg-green-50 rounded-lg p-5">
+              <h4 className="font-bold text-green-900 mb-2">去重原则</h4>
+              <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
+                <li>按业务主键（如 order_id）去重</li>
+                <li>保留第一条 / 最新一条</li>
+                <li>删除前务必先统计数量</li>
+              </ul>
+            </div>
+            <div className="border-l-4 border-amber-500 bg-amber-50 rounded-lg p-5">
+              <h4 className="font-bold text-amber-900 mb-2">格式标准化清单</h4>
+              <ul className="text-sm text-amber-800 space-y-1 list-disc list-inside">
+                <li>日期：YYYY-MM-DD</li>
+                <li>地区：统一中文 / 英文</li>
+                <li>金额：保留 2 位小数</li>
+                <li>字符串：去除首尾空格</li>
+              </ul>
             </div>
           </div>
+        </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-6 text-primary">💻 动手练习</h2>
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6">
-              <p className="text-text mb-4">在下方编辑器中尝试修改代码，体验数据清洗的过程！</p>
-              
-              <div className="mb-4">
-                <AceEditor
-                  mode="python"
-                  theme="monokai"
-                  value={code || placeholderCode}
-                  onChange={handleCodeChange}
-                  name="data-cleaning-editor"
-                  editorProps={{
-                    $blockScrolling: true
-                  }}
-                  className="rounded-lg shadow-md"
-                  style={{ height: '350px', width: '100%' }}
-                />
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handleRunCode}
-                  disabled={isLoading || pyodideStatus !== 'ready'}
-                  className={`px-8 py-3 rounded-full font-bold transition-all shadow-lg ${
-                    isLoading || pyodideStatus !== 'ready'
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-primary text-white hover:bg-secondary hover:shadow-button-hover transform hover:-translate-y-0.5'
-                  }`}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      运行中...
-                    </span>
-                  ) : (
-                    '▶ 运行代码'
-                  )}
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setCode(answerCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-blue-500 text-white hover:bg-blue-600 transition-all"
-                >
-                  💡 显示参考答案
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setCode(placeholderCode);
-                    setResult(null);
-                  }}
-                  className="px-6 py-3 rounded-full font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
-                >
-                  重置代码
-                </button>
-              </div>
-            </div>
-            
-            <div className="mt-6 bg-gray-900 text-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <span className="ml-4 text-sm text-gray-400">运行结果</span>
-              </div>
-              
-              {!result ? (
-                <div className="text-gray-400 flex items-center justify-center py-8">
-                  <span className="text-2xl mr-2">⌨️</span>
-                  <span>点击"运行代码"查看输出结果</span>
-                </div>
-              ) : result.success ? (
-                <div className="space-y-3">
-                  {result.output && (
-                    <div>
-                      <pre className="text-green-400 whitespace-pre-wrap font-mono text-sm">{result.output}</pre>
-                    </div>
-                  )}
-                  {!result.output && !result.stdout && (
-                    <div className="text-green-400 flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      代码执行成功！
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <svg className="w-6 h-6 text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div className="flex-1">
-                        <h4 className="text-red-400 font-semibold mb-1">
-                          {result.error?.type || '执行错误'}
-                        </h4>
-                        <p className="text-red-300 text-sm">{result.error?.message}</p>
-                        {result.error?.lineNumber && (
-                          <p className="text-red-400 text-xs mt-2">📍 错误位置: 第 {result.error.lineNumber} 行</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {result.stdout && (
-                    <div className="text-gray-400 text-sm">
-                      <p className="font-semibold mb-1">标准输出:</p>
-                      <pre className="text-gray-300 whitespace-pre-wrap">{result.stdout}</pre>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-purple rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">📝 课后思考</h2>
-            <div className="space-y-3">
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">1. 在什么情况下应该删除缺失值而不是填充？</p>
-                <p className="text-sm text-gray-600">提示：考虑缺失比例、数据重要性和数据量大小</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">2. 异常值一定是错误数据吗？应该如何区分？</p>
-                <p className="text-sm text-gray-600">提示：有些异常值可能代表真实的极端情况</p>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="font-medium mb-2">3. 如何选择合适的数据标准化方法？</p>
-                <p className="text-sm text-gray-600">提示：考虑数据分布特点和使用场景</p>
-              </div>
-            </div>
-          </div>
+        {/* ==================== CourseCompletion ==================== */}
+        <div className="mb-6">
+          <CourseCompletion
+            courseId="data-cleaning"
+            courseTitle="数据清洗实战"
+            badgeIcon="🧹"
+            badgeName="数据清洁师"
+          />
         </div>
       </div>
     </div>

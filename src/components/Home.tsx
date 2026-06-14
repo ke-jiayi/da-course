@@ -1,265 +1,118 @@
-import React from 'react';
+import React from 'react'
+
+interface Course {
+  title: string
+  difficulty: '入门' | '进阶' | '高级'
+  duration: string
+  icon: string
+  dataset: string
+  link: string
+  gradient: string
+}
+
+const courses: Course[] = [
+  { title: '数据可视化', difficulty: '入门', duration: '30分钟', icon: '📊', dataset: 'retail_orders.csv', link: '/data-visualization', gradient: 'from-blue-400 to-purple-500' },
+  { title: '机器学习', difficulty: '入门', duration: '30分钟', icon: '🤖', dataset: 'customer_features.csv', link: '/machine-learning', gradient: 'from-purple-400 to-pink-500' },
+  { title: '数据挖掘', difficulty: '入门', duration: '30分钟', icon: '⛏️', dataset: 'market_basket.csv', link: '/data-mining', gradient: 'from-amber-400 to-orange-500' },
+  { title: '商业分析', difficulty: '进阶', duration: '45分钟', icon: '💼', dataset: 'ab_test.csv', link: '/business-analysis', gradient: 'from-emerald-400 to-teal-500' },
+  { title: '数据清洗实战', difficulty: '入门', duration: '30分钟', icon: '🧹', dataset: 'retail_orders.csv', link: '/data-cleaning', gradient: 'from-cyan-400 to-blue-500' },
+  { title: '分组聚合分析', difficulty: '入门', duration: '30分钟', icon: '📈', dataset: 'retail_orders.csv', link: '/group-aggregation', gradient: 'from-green-400 to-emerald-500' },
+  { title: '购物篮分析', difficulty: '进阶', duration: '45分钟', icon: '🛒', dataset: 'market_basket.csv', link: '/market-basket', gradient: 'from-rose-400 to-pink-500' },
+  { title: 'A/B测试分析', difficulty: '进阶', duration: '45分钟', icon: '🧪', dataset: 'ab_test.csv', link: '/ab-testing', gradient: 'from-violet-400 to-purple-500' },
+  { title: '时间序列分析', difficulty: '进阶', duration: '45分钟', icon: '📉', dataset: 'time_series_sales.csv', link: '/time-series', gradient: 'from-indigo-400 to-blue-500' },
+  { title: '异常值检测', difficulty: '高级', duration: '60分钟', icon: '🔍', dataset: 'customer_features.csv', link: '/anomaly-detection', gradient: 'from-red-400 to-orange-500' },
+]
+
+const badges = [
+  { icon: '📦', label: '真实数据集' },
+  { icon: '⚡', label: '实时运行代码' },
+  { icon: '📚', label: '循序渐进' },
+  { icon: '🏅', label: '徽章认证' },
+]
+
+const difficultyStyles: Record<Course['difficulty'], string> = {
+  入门: 'bg-green-100 text-green-700',
+  进阶: 'bg-yellow-100 text-yellow-700',
+  高级: 'bg-red-100 text-red-700',
+}
 
 const Home: React.FC = () => {
-  // 课程分类数据
-  const courseCategories = [
-    {
-      id: 1,
-      title: "数据可视化",
-      description: "学习如何使用各种工具创建直观、有效的数据可视化",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20visualization%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/data-visualization",
-      icon: "📊",
-      gradient: "from-blue-400 to-purple-500",
-      difficulty: "入门",
-      duration: "30分钟",
-      dataset: "retail_orders.csv"
-    },
-    {
-      id: 2,
-      title: "机器学习",
-      description: "掌握机器学习算法和模型，解决实际业务问题",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=machine%20learning%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/machine-learning",
-      icon: "🤖",
-      gradient: "from-purple-400 to-pink-500",
-      difficulty: "入门",
-      duration: "30分钟",
-      dataset: "customer_features.csv"
-    },
-    {
-      id: 3,
-      title: "数据挖掘",
-      description: "学习从大量数据中提取有价值信息的技术和方法",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=data%20mining%20concept%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/data-mining",
-      icon: "⛏️",
-      gradient: "from-amber-400 to-orange-500",
-      difficulty: "入门",
-      duration: "30分钟",
-      dataset: "market_basket.csv"
-    },
-    {
-      id: 4,
-      title: "商业分析",
-      description: "利用数据分析技能解决商业问题，制定决策",
-      image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=business%20analytics%20dashboard%20with%20pastel%20colors%20and%20cute%20design&image_size=square",
-      link: "/business-analysis",
-      icon: "💼",
-      gradient: "from-emerald-400 to-teal-500",
-      difficulty: "进阶",
-      duration: "45分钟",
-      dataset: "ab_test.csv"
-    },
-    {
-      id: 5,
-      title: "数据清洗实战",
-      description: "掌握数据清洗的核心技术，处理缺失值、异常值和重复数据",
-      link: "/data-cleaning",
-      icon: "🧹",
-      gradient: "from-cyan-400 to-blue-500",
-      difficulty: "入门",
-      duration: "30分钟",
-      dataset: "retail_orders.csv"
-    },
-    {
-      id: 6,
-      title: "分组聚合分析",
-      description: "学习数据分组和聚合操作，掌握SQL和Pandas中的聚合技巧",
-      link: "/group-aggregation",
-      icon: "📈",
-      gradient: "from-green-400 to-emerald-500",
-      difficulty: "入门",
-      duration: "30分钟",
-      dataset: "retail_orders.csv"
-    },
-    {
-      id: 7,
-      title: "购物篮分析",
-      description: "学习关联规则挖掘，发现商品之间的关联关系",
-      link: "/market-basket",
-      icon: "🛒",
-      gradient: "from-rose-400 to-pink-500",
-      difficulty: "进阶",
-      duration: "45分钟",
-      dataset: "market_basket.csv"
-    },
-    {
-      id: 8,
-      title: "A/B测试分析",
-      description: "掌握A/B测试的设计与分析方法，做出数据驱动的决策",
-      link: "/ab-testing",
-      icon: "🧪",
-      gradient: "from-violet-400 to-purple-500",
-      difficulty: "进阶",
-      duration: "45分钟",
-      dataset: "ab_test.csv"
-    },
-    {
-      id: 9,
-      title: "时间序列分析",
-      description: "学习时间序列数据的分析方法，掌握预测和趋势分析技术",
-      link: "/time-series",
-      icon: "📉",
-      gradient: "from-indigo-400 to-blue-500",
-      difficulty: "进阶",
-      duration: "45分钟",
-      dataset: "time_series_sales.csv"
-    },
-    {
-      id: 10,
-      title: "异常值检测",
-      description: "学习异常检测算法，识别数据中的异常模式和离群点",
-      link: "/anomaly-detection",
-      icon: "🔍",
-      gradient: "from-red-400 to-orange-500",
-      difficulty: "高级",
-      duration: "60分钟",
-      dataset: "customer_features.csv"
-    }
-  ]
-
-  // 最新动态数据
-  const latestNews = [
-    {
-      id: 1,
-      title: "平台新增10门数据分析课程",
-      date: "2026-04-01",
-      description: "我们新增了10门数据分析相关课程，涵盖数据可视化、机器学习等多个领域。"
-    },
-    {
-      id: 2,
-      title: "数据学院与知名企业达成合作",
-      date: "2026-03-15",
-      description: "我们与多家知名企业达成合作，为学员提供更多实战项目和就业机会。"
-    },
-    {
-      id: 3,
-      title: "2026年数据分析行业趋势报告发布",
-      date: "2026-03-01",
-      description: "我们发布了2026年数据分析行业趋势报告，为学员提供行业洞察。"
-    }
-  ]
-
   return (
     <div className="min-h-screen bg-background">
-      {/* 平台介绍 */}
-      <section className="bg-primary text-white py-16 md:py-24 rounded-b-3xl shadow-cute">
+      <section className="bg-gradient-to-br from-primary via-secondary to-accent text-white py-16 md:py-24 rounded-b-[2.5rem] shadow-cute">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-8 leading-tight animate-bounce-slow">数据学院</h1>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-10 leading-relaxed">
-              专注于数据分析教育的在线学习平台，提供高质量的课程和实战项目，
-              帮助学员掌握数据分析技能，开启职业新篇章。
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
+              🐍 数据学院
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl mb-10 leading-relaxed opacity-95">
+              10个精选实战项目，从入门到进阶，完全在浏览器中运行代码
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <a href="#courses" className="bg-white text-primary py-3 px-6 sm:px-8 rounded-full font-bold hover:bg-yellow transition-all duration-300 shadow-button hover:shadow-button-hover transform hover:-translate-y-0.5">
-                浏览课程
-              </a>
-              <a href="#about" className="bg-transparent border-2 border-white text-white py-3 px-6 sm:px-8 rounded-full font-bold hover:bg-white hover:text-primary transition-all duration-300 shadow-button transform hover:-translate-y-0.5">
-                了解更多
-              </a>
+            <div className="flex flex-wrap justify-center gap-3">
+              {badges.map((badge) => (
+                <span
+                  key={badge.label}
+                  className="bg-white/20 backdrop-blur-sm border border-white/30 text-white text-sm sm:text-base px-4 py-2 rounded-full font-medium shadow-cute"
+                >
+                  <span className="mr-1">{badge.icon}</span>
+                  {badge.label}
+                </span>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* 课程分类 */}
-      <section id="courses" className="py-16 md:py-20 bg-white">
+      <section className="py-16 md:py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-12 md:mb-16 text-center text-text">课程分类</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8">
-            {courseCategories.map((category) => (
-              <div key={category.id} className="bg-yellow rounded-2xl overflow-hidden shadow-cute hover:shadow-cute-hover transition-all duration-300 transform hover:-translate-y-2">
-                <div className={`relative w-full h-48 sm:h-56 bg-gradient-to-br ${category.gradient} flex items-center justify-center`}>
-                  <div className="text-center">
-                    <div className="text-6xl sm:text-7xl mb-2 drop-shadow-lg">{category.icon}</div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-center text-text">
+            精选课程
+          </h2>
+          <p className="text-center text-gray-600 mb-12 md:mb-16 text-base sm:text-lg">
+            选择一门课程，开启你的数据分析之旅
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            {courses.map((course) => (
+              <a
+                key={course.link}
+                href={course.link}
+                className="group bg-white rounded-2xl p-5 shadow-cute hover:shadow-cute-hover transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
+              >
+                <div className="flex justify-center mb-4">
+                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${course.gradient} flex items-center justify-center text-3xl shadow-md`}>
+                    <span>{course.icon}</span>
                   </div>
                 </div>
-                <div className="p-4 sm:p-6">
-                  <div className="flex items-center mb-2">
-                    <h3 className="text-lg sm:text-xl font-semibold text-text">{category.title}</h3>
-                  </div>
-                  <p className="text-text mb-4 sm:mb-6 leading-relaxed">{category.description}</p>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      category.difficulty === '入门' ? 'bg-green-100 text-green-700' :
-                      category.difficulty === '进阶' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {category.difficulty}
+                <h3 className="text-lg font-semibold text-text text-center mb-3">
+                  {course.title}
+                </h3>
+                <div className="flex flex-wrap justify-center gap-2 mb-3">
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${difficultyStyles[course.difficulty]}`}>
+                    {course.difficulty}
+                  </span>
+                  <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                      ⏱ {course.duration}
                     </span>
-                    <span className="text-xs text-gray-500 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {category.duration}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded mb-4 flex items-center">
-                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                    {category.dataset}
-                  </div>
-                  <a href={category.link} className="inline-flex items-center text-primary font-medium hover:underline transition-all duration-300 group">
-                    开始学习
-                    <svg className="w-4 h-4 ml-1 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </a>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 最新动态 */}
-      <section id="news" className="py-16 md:py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-12 md:mb-16 text-center text-text">最新动态</h2>
-          <div className="max-w-3xl mx-auto">
-            {latestNews.map((news) => (
-              <div key={news.id} className="bg-white rounded-2xl p-6 sm:p-8 mb-6 sm:mb-8 shadow-cute hover:shadow-cute-hover transition-all duration-300 transform hover:-translate-y-1">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
-                  <h3 className="text-lg sm:text-xl font-semibold text-text">{news.title}</h3>
-                  <span className="text-gray-500 text-sm bg-purple px-3 py-1 rounded-full inline-flex items-center">
-                    {news.date}
+                <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded mb-4 text-center">
+                  📁 {course.dataset}
+                </div>
+                <div className="mt-auto text-center">
+                  <span className="inline-flex items-center justify-center bg-primary text-white text-sm font-medium px-4 py-2 rounded-full shadow-button group-hover:shadow-button-hover group-hover:-translate-y-0.5 transition-all duration-300">
+                    开始学习 →
                   </span>
                 </div>
-                <p className="text-text leading-relaxed">{news.description}</p>
-              </div>
+              </a>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 关于我们 */}
-      <section id="about" className="py-16 md:py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-12 md:mb-16 text-center text-text">关于我们</h2>
-          <div className="max-w-3xl mx-auto text-center">
-            <p className="text-text mb-8 sm:mb-12 leading-relaxed">
-              数据学院成立于2020年，是一家专注于数据分析教育的在线学习平台。我们的使命是通过高质量的教育内容，
-              帮助更多人掌握数据分析技能，实现职业发展。我们拥有一支由行业专家组成的教师团队，
-              为学员提供理论与实践相结合的学习体验。
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-              <div className="bg-accent p-6 sm:p-8 rounded-2xl shadow-cute hover:shadow-cute-hover transition-all duration-300 transform hover:scale-105">
-                <div className="text-primary text-3xl sm:text-4xl font-bold mb-3">50+</div>
-                <div className="text-text text-base sm:text-lg">精品课程</div>
-              </div>
-              <div className="bg-secondary p-6 sm:p-8 rounded-2xl shadow-cute hover:shadow-cute-hover transition-all duration-300 transform hover:scale-105">
-                <div className="text-primary text-3xl sm:text-4xl font-bold mb-3">10,000+</div>
-                <div className="text-text text-base sm:text-lg">注册学员</div>
-              </div>
-              <div className="bg-yellow p-6 sm:p-8 rounded-2xl shadow-cute hover:shadow-cute-hover transition-all duration-300 transform hover:scale-105">
-                <div className="text-primary text-3xl sm:text-4xl font-bold mb-3">95%</div>
-                <div className="text-text text-base sm:text-lg">学员满意度</div>
-              </div>
-            </div>
-          </div>
+      <section className="py-10 bg-white">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-600 text-base sm:text-lg">
+            让数据分析学习更直观有趣 ✨
+          </p>
         </div>
       </section>
     </div>

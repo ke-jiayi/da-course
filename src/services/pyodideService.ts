@@ -21,12 +21,29 @@ export interface PythonError {
   details?: string;
 }
 
+export type PyodideStage = 0 | 1 | 2 | 3 | 4;
+
+export interface PyodideProgress {
+  stage: PyodideStage;
+  percent: number;
+  message: string;
+}
+
 export interface PyodideServiceConfig {
   cdnUrl?: string;
   packages?: string[];
   onLoading?: (message: string) => void;
   onError?: (error: Error) => void;
+  onProgress?: (progress: PyodideProgress) => void;
 }
+
+export const STAGE_MESSAGES: Record<PyodideStage, string> = {
+  0: '准备初始化...',
+  1: '正在连接 Python 运行环境...',
+  2: '正在加载核心库 (pandas / numpy)...',
+  3: '正在配置可视化工具 (matplotlib)...',
+  4: '准备就绪！'
+};
 
 interface LoadingState {
   isLoading: boolean;
@@ -44,6 +61,8 @@ let loadingState: LoadingState = {
   error: null
 };
 
+let currentStage: PyodideStage = 0;
+
 class PyodideService {
   private config: Required<PyodideServiceConfig>;
   private initPromise: Promise<any> | null = null;
@@ -53,13 +72,20 @@ class PyodideService {
       cdnUrl: config.cdnUrl || DEFAULT_CDN_URL,
       packages: config.packages || DEFAULT_PACKAGES,
       onLoading: config.onLoading || (() => {}),
-      onError: config.onError || (() => {})
+      onError: config.onError || (() => {}),
+      onProgress: config.onProgress || (() => {})
     };
   }
 
   private log(message: string): void {
     console.log(`[PyodideService] ${message}`);
     this.config.onLoading(message);
+  }
+
+  private reportProgress(stage: PyodideStage, percent: number): void {
+    currentStage = stage;
+    const message = STAGE_MESSAGES[stage];
+    this.config.onProgress({ stage, percent, message });
   }
 
   private handleError(error: Error): void {
@@ -100,8 +126,10 @@ class PyodideService {
 
   private async loadPyodideCore(): Promise<any> {
     try {
+      this.reportProgress(1, 5);
       this.log('正在加载 Pyodide 核心库...');
       await this.loadScript(this.config.cdnUrl);
+      this.reportProgress(1, 20);
       
       this.log('正在初始化 Pyodide 运行时...');
       const indexURL = this.config.cdnUrl.replace('/pyodide.js', '/');
@@ -112,6 +140,7 @@ class PyodideService {
         stderr: (msg: string) => console.error(`[Pyodide stderr] ${msg}`)
       });
 
+      this.reportProgress(1, 30);
       this.log('Pyodide 运行时初始化成功');
       return pyodide;
     } catch (error) {
@@ -121,10 +150,12 @@ class PyodideService {
 
   private async loadPackages(pyodide: any): Promise<void> {
     const packages = this.config.packages;
+    this.reportProgress(2, 35);
     this.log(`正在加载 Python 包: ${packages.join(', ')}...`);
     
     try {
       await pyodide.loadPackage(packages);
+      this.reportProgress(2, 65);
       this.log('所有 Python 包加载完成');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -133,6 +164,7 @@ class PyodideService {
   }
 
   private setupMatplotlib(pyodide: any): void {
+    this.reportProgress(3, 70);
     this.log('正在配置 Matplotlib...');
     
     pyodide.runPython(`
@@ -203,6 +235,7 @@ def clear_plots():
     plt.close('all')
 `);
     
+    this.reportProgress(3, 90);
     this.log('Matplotlib 配置完成');
   }
 
@@ -232,6 +265,7 @@ def clear_plots():
       loadingState.isReady = true;
       loadingState.isLoading = false;
       
+      this.reportProgress(4, 100);
       this.log('Pyodide 初始化完成');
       return pyodide;
     } catch (error) {
@@ -485,9 +519,12 @@ sys.stderr = _original_stderr
   }
 }
 
-const defaultService = new PyodideService();
+let defaultService = new PyodideService();
 
-export async function initPyodide(): Promise<any> {
+export async function initPyodide(onProgress?: (p: PyodideProgress) => void): Promise<any> {
+  if (onProgress) {
+    defaultService = new PyodideService({ onProgress });
+  }
   return defaultService.initialize();
 }
 
@@ -501,6 +538,15 @@ export function isPyodideReady(): boolean {
 
 export function isPyodideLoading(): boolean {
   return defaultService.isLoading();
+}
+
+export function getPyodideStatus(): { stage: PyodideStage; isReady: boolean; isLoading: boolean; error: Error | null } {
+  return {
+    stage: currentStage,
+    isReady: loadingState.isReady,
+    isLoading: loadingState.isLoading,
+    error: loadingState.error
+  };
 }
 
 export async function resetPyodide(): Promise<void> {

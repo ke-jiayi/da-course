@@ -3,560 +3,721 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/ext-language_tools';
-import { runPythonCode, isPyodideReady, isPyodideLoading } from '../services/pyodideService';
+import { runPythonCode, initPyodide, isPyodideReady, PyodideProgress } from '../services/pyodideService';
+import PyodideLoader from './PyodideLoader';
+import CourseCompletion from './CourseCompletion';
 
-const projects = [
-  {
-    id: 1,
-    title: '项目一：房价预测',
-    description: '使用线性回归预测房价',
-    placeholderCode: `# 在这里编写你的代码
-# 点击"显示参考答案"按钮可以查看示例代码
+const step1Placeholder = `# Step 1：使用 pandas 读取客户特征数据并进行探索性分析
+# 数据包含：年龄(age)、月消费金额(spend)、购买频次(frequency)
 
-# 提示：
-# 1. 创建房屋面积数据 X 和对应价格 y
-# 2. 计算均值
-# 3. 使用公式计算斜率 w 和截距 b
-# 4. 使用模型进行预测
+import pandas as pd
+import io
 
-`,
-    answerCode: `# 线性回归预测房价
-import numpy as np
+csv_data = """age,spend,frequency
+23,850,12
+35,2300,28
+45,5600,45
+28,1200,18
+52,7800,52
+31,1800,22
+40,4200,38
+25,950,15
+38,3200,30
+48,6500,48
+29,1500,20
+42,4800,42
+33,2100,25
+55,8200,55
+27,1100,16
+"""
 
-# 模拟数据：房屋面积（平方米）
-X = np.array([50, 60, 70, 80, 90, 100, 110, 120])
-# 对应价格（万元）
-y = np.array([150, 180, 210, 240, 270, 300, 330, 360])
+# 在这里编写你的代码：
+# 1. 使用 pd.read_csv 读取 CSV 字符串
+# 2. 打印数据基本信息（info, describe）
+# 3. 打印前几行数据 head()
 
-# 计算均值
-X_mean = np.mean(X)
-y_mean = np.mean(y)
+`;
 
-# 计算斜率 w 和截距 b
-numerator = np.sum((X - X_mean) * (y - y_mean))
-denominator = np.sum((X - X_mean) ** 2)
-w = numerator / denominator
-b = y_mean - w * X_mean
+const step1Answer = `# Step 1：使用 pandas 读取客户特征数据并进行探索性分析
+import pandas as pd
+import io
 
-print("=" * 40)
-print("线性回归模型训练完成！")
-print("=" * 40)
-print(f"\\n模型参数:")
-print(f"  斜率 (w): {w:.2f}")
-print(f"  截距 (b): {b:.2f}")
-print(f"\\n预测公式: y = {w:.2f}x + {b:.2f}")
-print("=" * 40)
+csv_data = """age,spend,frequency
+23,850,12
+35,2300,28
+45,5600,45
+28,1200,18
+52,7800,52
+31,1800,22
+40,4200,38
+25,950,15
+38,3200,30
+48,6500,48
+29,1500,20
+42,4800,42
+33,2100,25
+55,8200,55
+27,1100,16
+"""
 
-# 测试预测
-test_area = 85  # 85平米的房子
-predicted_price = w * test_area + b
-print(f"\\n🏠 预测结果:")
-print(f"   面积: {test_area} 平方米")
-print(f"   预测价格: {predicted_price:.2f} 万元")
-
-# 计算R²分数
-y_pred = w * X + b
-ss_res = np.sum((y - y_pred) ** 2)
-ss_tot = np.sum((y - y_mean) ** 2)
-r2 = 1 - (ss_res / ss_tot)
-print(f"\\n📊 模型评估:")
-print(f"   R² 分数: {r2:.4f}")
-print(f"   (越接近1越好)")
-`
-  },
-  {
-    id: 2,
-    title: '项目二：水果分类',
-    description: '使用KNN算法分类水果',
-    placeholderCode: `# 在这里编写你的代码
-# 点击"显示参考答案"按钮可以查看示例代码
-
-# 提示：
-# 1. 创建水果特征数据（重量、直径）
-# 2. 定义欧几里得距离函数
-# 3. 实现KNN预测函数
-# 4. 对测试样本进行分类
-
-`,
-    answerCode: `# KNN 水果分类器
-import numpy as np
-
-# 水果特征数据 [重量(克), 直径(厘米)]
-X_train = np.array([
-    [120, 6.5],   # 苹果
-    [130, 7.0],   # 苹果
-    [115, 6.2],   # 苹果
-    [180, 8.5],   # 橙子
-    [190, 9.0],   # 橙子
-    [175, 8.2],   # 橙子
-    [140, 7.5],   # 葡萄柚
-    [160, 8.0],   # 葡萄柚
-])
-y_train = ['苹果', '苹果', '苹果', '橙子', '橙子', '橙子', '葡萄柚', '葡萄柚']
-
-def euclidean_distance(point1, point2):
-    """计算欧几里得距离"""
-    return np.sqrt(np.sum((point1 - point2) ** 2))
-
-def knn_predict(X_train, y_train, test_point, k=3):
-    """KNN预测"""
-    distances = []
-    for i, train_point in enumerate(X_train):
-        dist = euclidean_distance(train_point, test_point)
-        distances.append((dist, y_train[i]))
-    
-    # 按距离排序
-    distances.sort(key=lambda x: x[0])
-    
-    # 取最近的k个邻居
-    k_nearest = distances[:k]
-    
-    # 投票
-    votes = {}
-    for _, label in k_nearest:
-        votes[label] = votes.get(label, 0) + 1
-    
-    return max(votes, key=votes.get)
-
-print("=" * 40)
-print("🍎🍊 KNN 水果分类器")
-print("=" * 40)
-
-# 测试样本
-test_samples = [
-    [125, 6.8],  # 接近苹果
-    [185, 8.8],  # 接近橙子
-    [150, 7.7],  # 中间地带
-]
-
-k = 3
-print(f"\\n使用 K={k} 近邻算法\\n")
-
-for i, sample in enumerate(test_samples, 1):
-    prediction = knn_predict(X_train, y_train, np.array(sample), k)
-    print(f"测试样本 {i}:")
-    print(f"  特征: 重量={sample[0]}g, 直径={sample[1]}cm")
-    print(f"  预测结果: {prediction}")
-    print()
-
-print("=" * 40)
-print("✅ 分类完成！")
-`
-  },
-  {
-    id: 3,
-    title: '项目三：客户分群',
-    description: '使用K-Means聚类分析客户',
-    placeholderCode: `# 在这里编写你的代码
-# 点击"显示参考答案"按钮可以查看示例代码
-
-# 提示：
-# 1. 创建客户数据（月消费、月登录次数）
-# 2. 定义欧几里得距离函数
-# 3. 实现K-Means聚类算法
-# 4. 分析聚类结果
-
-`,
-    answerCode: `# K-Means 客户分群
-import numpy as np
-
-# 客户数据 [月消费, 月登录次数]
-X = np.array([
-    [500, 25], [550, 28], [480, 22], [600, 30],
-    [1500, 15], [1600, 18], [1400, 12], [1700, 20],
-    [3000, 8], [3200, 10], [2800, 7], [3500, 12],
-])
-
-def euclidean_distance(a, b):
-    return np.sqrt(np.sum((a - b) ** 2))
-
-def kmeans(X, k=3, max_iter=100):
-    """K-Means 聚类算法"""
-    n_samples = len(X)
-    
-    # 随机选择k个初始中心
-    np.random.seed(42)
-    indices = np.random.choice(n_samples, k, replace=False)
-    centroids = X[indices].copy()
-    
-    for iteration in range(max_iter):
-        # 分配样本到最近的中心
-        clusters = [[] for _ in range(k)]
-        for i, sample in enumerate(X):
-            distances = [euclidean_distance(sample, c) for c in centroids]
-            cluster = np.argmin(distances)
-            clusters[cluster].append(i)
-        
-        # 更新中心点
-        new_centroids = np.zeros_like(centroids)
-        for i, cluster in enumerate(clusters):
-            if len(cluster) > 0:
-                new_centroids[i] = np.mean(X[cluster], axis=0)
-            else:
-                new_centroids[i] = centroids[i]
-        
-        # 检查收敛
-        if np.allclose(centroids, new_centroids):
-            print(f"✓ 在第 {iteration + 1} 次迭代后收敛")
-            break
-        
-        centroids = new_centroids
-    
-    return centroids, clusters
+# 读取 CSV 数据
+df = pd.read_csv(io.StringIO(csv_data))
 
 print("=" * 50)
-print("📊 客户分群分析")
+print("📊 客户特征数据探索性分析")
 print("=" * 50)
 
-# 执行聚类
-k = 3
-centroids, clusters = kmeans(X, k)
+print("\n【1】数据前 5 行 (head):")
+print(df.head())
 
-print(f"\\n发现 {k} 个客户群体:\\n")
+print("\n【2】数据形状 (shape):", df.shape)
+print("    行数:", len(df), "行")
+print("    列数:", len(df.columns), "列")
 
-labels = ['💰 普通客户', '💎 活跃客户', '👑 VIP客户']
-for i, (centroid, cluster) in enumerate(zip(centroids, clusters)):
-    avg_spend = np.mean(X[cluster][:, 0])
-    avg_login = np.mean(X[cluster][:, 1])
-    
-    # 根据消费水平确定客户类型
-    if avg_spend > 2500:
-        label = '👑 VIP客户'
-    elif avg_spend > 1000:
-        label = '💎 活跃客户'
+print("\n【3】数据基本信息 (info):")
+print(df.info())
+
+print("\n【4】描述性统计 (describe):")
+print(df.describe())
+
+print("\n【5】各列均值:")
+print("  平均年龄: {:.1f} 岁".format(df['age'].mean()))
+print("  平均月消费: {:.1f} 元".format(df['spend'].mean()))
+print("  平均购买频次: {:.1f} 次".format(df['frequency'].mean()))
+
+print("\n【6】年龄范围: {} ~ {} 岁".format(df['age'].min(), df['age'].max()))
+print("【7】消费金额范围: {} ~ {} 元".format(df['spend'].min(), df['spend'].max()))
+print("\n✅ 数据探索完成！接下来可以进行聚类分析。")
+`;
+
+const step2Placeholder = `# Step 2：使用 K-Means 聚类算法对客户进行分群
+# 使用 sklearn.cluster.KMeans 和 sklearn.preprocessing.StandardScaler
+
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
+import io
+import numpy as np
+
+csv_data = """age,spend,frequency
+23,850,12
+35,2300,28
+45,5600,45
+28,1200,18
+52,7800,52
+31,1800,22
+40,4200,38
+25,950,15
+38,3200,30
+48,6500,48
+29,1500,20
+42,4800,42
+33,2100,25
+55,8200,55
+27,1100,16
+"""
+
+df = pd.read_csv(io.StringIO(csv_data))
+
+# 在这里编写你的代码：
+# 1. 使用 StandardScaler 对数据进行标准化
+# 2. 使用 KMeans(n_clusters=3, random_state=42) 进行聚类
+# 3. 将聚类结果添加到原始 DataFrame 中
+# 4. 打印每个群体的统计信息
+
+`;
+
+const step2Answer = `# Step 2：使用 K-Means 聚类算法对客户进行分群
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
+import io
+import numpy as np
+
+csv_data = """age,spend,frequency
+23,850,12
+35,2300,28
+45,5600,45
+28,1200,18
+52,7800,52
+31,1800,22
+40,4200,38
+25,950,15
+38,3200,30
+48,6500,48
+29,1500,20
+42,4800,42
+33,2100,25
+55,8200,55
+27,1100,16
+"""
+
+df = pd.read_csv(io.StringIO(csv_data))
+
+print("=" * 50)
+print("🎯 K-Means 客户分群分析")
+print("=" * 50)
+
+# 选择用于聚类的特征
+features = ['age', 'spend', 'frequency']
+X = df[features].values
+
+print("\n【1】数据标准化 (StandardScaler)")
+print("    标准化前 - 各列均值:", np.mean(X, axis=0).round(2))
+print("    标准化前 - 各列标准差:", np.std(X, axis=0).round(2))
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+print("    标准化后 - 各列均值:", np.mean(X_scaled, axis=0).round(4))
+print("    标准化后 - 各列标准差:", np.std(X_scaled, axis=0).round(4))
+
+print("\n【2】执行 K-Means 聚类 (n_clusters=3, random_state=42)")
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+labels = kmeans.fit_predict(X_scaled)
+
+df['cluster'] = labels
+
+print("\n【3】各群体客户数量:")
+cluster_counts = df['cluster'].value_counts().sort_index()
+for cluster_id, count in cluster_counts.items():
+    print(f"    群体 {cluster_id}: {count} 位客户")
+
+print("\n【4】各群体特征统计:")
+for cluster_id in sorted(df['cluster'].unique()):
+    cluster_data = df[df['cluster'] == cluster_id]
+    avg_age = cluster_data['age'].mean()
+    avg_spend = cluster_data['spend'].mean()
+    avg_freq = cluster_data['frequency'].mean()
+
+    # 根据消费水平命名群体
+    if avg_spend > 6000:
+        group_name = "👑 VIP高价值客户"
+    elif avg_spend > 3000:
+        group_name = "💎 活跃中产客户"
     else:
-        label = '💰 普通客户'
-    
-    print(f"群体 {i + 1}: {label}")
-    print(f"  客户数量: {len(cluster)}")
-    print(f"  平均月消费: {avg_spend:.0f} 元")
-    print(f"  平均月登录: {avg_login:.1f} 次")
-    print()
+        group_name = "💰 普通新兴客户"
+
+    print(f"\n    【群体 {cluster_id}】{group_name}")
+    print(f"      客户数量: {len(cluster_data)} 位")
+    print(f"      平均年龄: {avg_age:.1f} 岁")
+    print(f"      平均月消费: {avg_spend:.0f} 元")
+    print(f"      平均购买频次: {avg_freq:.1f} 次")
+
+print("\n【5】聚类中心 (标准化后):")
+for i, center in enumerate(kmeans.cluster_centers_):
+    print(f"    群体 {i}: {center.round(4)}")
+
+print("\n【6】聚类中心 (原始特征):")
+original_centers = scaler.inverse_transform(kmeans.cluster_centers_)
+for i, center in enumerate(original_centers):
+    print(f"    群体 {i}: 年龄={center[0]:.1f}, 消费={center[1]:.0f}, 频次={center[2]:.1f}")
+
+print(f"\n【7】模型评估 - Inertia: {kmeans.inertia_:.2f}")
+print("    (Inertia 越小，样本越靠近各自的聚类中心)")
+
+print("\n✅ 聚类完成！下一步进行可视化分析。")
+`;
+
+const step3Placeholder = `# Step 3：聚类结果可视化与业务解读
+# 使用 matplotlib 绘制散点图，展示客户分群结果
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import io
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+csv_data = """age,spend,frequency
+23,850,12
+35,2300,28
+45,5600,45
+28,1200,18
+52,7800,52
+31,1800,22
+40,4200,38
+25,950,15
+38,3200,30
+48,6500,48
+29,1500,20
+42,4800,42
+33,2100,25
+55,8200,55
+27,1100,16
+"""
+
+df = pd.read_csv(io.StringIO(csv_data))
+
+# 在这里编写你的代码：
+# 1. 对数据进行标准化并执行 K-Means 聚类
+# 2. 使用 plt.scatter() 绘制消费金额 vs 购买频次的散点图
+# 3. 用不同颜色区分不同聚类
+# 4. 添加标题、坐标轴标签和图例
+# 5. 调用 plt.show() 显示图表
+
+`;
+
+const step3Answer = `# Step 3：聚类结果可视化与业务解读
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import io
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+csv_data = """age,spend,frequency
+23,850,12
+35,2300,28
+45,5600,45
+28,1200,18
+52,7800,52
+31,1800,22
+40,4200,38
+25,950,15
+38,3200,30
+48,6500,48
+29,1500,20
+42,4800,42
+33,2100,25
+55,8200,55
+27,1100,16
+"""
+
+df = pd.read_csv(io.StringIO(csv_data))
 
 print("=" * 50)
-print("✅ 客户分群完成！")
-`
-  }
-];
+print("📈 聚类结果可视化分析")
+print("=" * 50)
 
-const exercises = [
-  {
-    id: 1,
-    title: '练习一：预测考试成绩',
-    description: '使用线性回归，根据学习时间预测学生考试成绩',
-    task: '给定以下学习时间数据，预测学习6小时后的考试成绩',
-    data: 'X = [1, 2, 3, 4, 5]（学习时间）\\ny = [50, 60, 70, 80, 90]（考试成绩）',
-    hint: '使用最小二乘法计算斜率和截距，然后进行预测'
-  },
-  {
-    id: 2,
-    title: '练习二：动物分类',
-    description: '使用KNN算法，根据体重和身高分类动物类型',
-    task: '给定以下动物数据，对新样本进行分类：\\n[体重(kg), 身高(cm)]\\n猫: [4, 25], [3.5, 24]\\n狗: [20, 60], [25, 65]\\n测试: [5, 30]',
-    hint: '使用K=3近邻投票决定分类结果'
-  },
-  {
-    id: 3,
-    title: '练习三：购物行为分群',
-    description: '使用K-Means对网购用户进行聚类分析',
-    task: '根据用户的月消费和购物频率，将用户分为不同群体：\\n[月消费(元), 月购物次数]\\n数据: [200, 2], [300, 3], [250, 2], [2000, 15], [2500, 20], [1800, 12]',
-    hint: '尝试k=2或k=3，观察不同的聚类效果'
-  }
-];
+# 标准化与聚类
+features = ['age', 'spend', 'frequency']
+X = df[features].values
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+labels = kmeans.fit_predict(X_scaled)
+df['cluster'] = labels
+
+print("\n【聚类结果概览】")
+for cluster_id in sorted(df['cluster'].unique()):
+    cluster_data = df[df['cluster'] == cluster_id]
+    avg_spend = cluster_data['spend'].mean()
+    if avg_spend > 6000:
+        group_name = "👑 VIP高价值客户"
+    elif avg_spend > 3000:
+        group_name = "💎 活跃中产客户"
+    else:
+        group_name = "💰 普通新兴客户"
+    print(f"  群体 {cluster_id}: {group_name}, {len(cluster_data)} 位客户")
+
+print("\n【业务解读】")
+print("  → 群体分析已完成，下方图表展示各群体的分布情况")
+print("  → 建议针对不同群体制定差异化营销策略")
+
+# ========== 绘制散点图: 消费金额 vs 购买频次 ==========
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+colors = ['#FF6B6B', '#4ECDC4', '#FFE66D']
+markers = ['o', 's', '^']
+
+# 图1: 消费金额 vs 购买频次
+for cluster_id in sorted(df['cluster'].unique()):
+    cluster_data = df[df['cluster'] == cluster_id]
+    axes[0].scatter(
+        cluster_data['spend'],
+        cluster_data['frequency'],
+        c=colors[cluster_id],
+        marker=markers[cluster_id],
+        s=150,
+        alpha=0.8,
+        edgecolors='black',
+        linewidths=1.5,
+        label=f'Cluster {cluster_id}'
+    )
+
+axes[0].set_xlabel('Spending Amount (CNY)', fontsize=12, fontweight='bold')
+axes[0].set_ylabel('Purchase Frequency', fontsize=12, fontweight='bold')
+axes[0].set_title('Customer Segmentation: Spending vs Frequency', fontsize=13, fontweight='bold', pad=12)
+axes[0].legend(loc='upper left', fontsize=10, framealpha=0.9)
+axes[0].grid(True, alpha=0.3, linestyle='--')
+axes[0].spines['top'].set_visible(False)
+axes[0].spines['right'].set_visible(False)
+
+# 图2: 年龄 vs 消费金额
+for cluster_id in sorted(df['cluster'].unique()):
+    cluster_data = df[df['cluster'] == cluster_id]
+    axes[1].scatter(
+        cluster_data['age'],
+        cluster_data['spend'],
+        c=colors[cluster_id],
+        marker=markers[cluster_id],
+        s=150,
+        alpha=0.8,
+        edgecolors='black',
+        linewidths=1.5,
+        label=f'Cluster {cluster_id}'
+    )
+
+axes[1].set_xlabel('Age (years)', fontsize=12, fontweight='bold')
+axes[1].set_ylabel('Spending Amount (CNY)', fontsize=12, fontweight='bold')
+axes[1].set_title('Customer Segmentation: Age vs Spending', fontsize=13, fontweight='bold', pad=12)
+axes[1].legend(loc='upper left', fontsize=10, framealpha=0.9)
+axes[1].grid(True, alpha=0.3, linestyle='--')
+axes[1].spines['top'].set_visible(False)
+axes[1].spines['right'].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+
+print("\n【营销策略建议】")
+print("  🎯 VIP客户: 提供专属权益、优先服务、个性化推荐")
+print("  🎯 活跃客户: 推出会员计划、增加互动、提升复购")
+print("  🎯 普通客户: 开展促销活动、降低首购门槛、引导成长")
+`;
+
+interface StepState {
+  code: string;
+  output: string;
+  error: string;
+  showAnswer: boolean;
+  isRunning: boolean;
+  showImage: boolean;
+}
 
 const MachineLearning: React.FC = () => {
-  const [selectedProject, setSelectedProject] = useState(0);
-  const [code, setCode] = useState(projects[0].placeholderCode);
-  const [result, setResult] = useState<any>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
-  const [pyodideReady, setPyodideReady] = useState(false);
-  const [errorDetails, setErrorDetails] = useState<any>(null);
+  const [stage, setStage] = useState<number>(0);
+  const [percent, setPercent] = useState<number>(0);
+  const [isReady, setIsReady] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+
+  const [step1, setStep1] = useState<StepState>({
+    code: step1Placeholder,
+    output: '',
+    error: '',
+    showAnswer: false,
+    isRunning: false,
+    showImage: false,
+  });
+
+  const [step2, setStep2] = useState<StepState>({
+    code: step2Placeholder,
+    output: '',
+    error: '',
+    showAnswer: false,
+    isRunning: false,
+    showImage: false,
+  });
+
+  const [step3, setStep3] = useState<StepState>({
+    code: step3Placeholder,
+    output: '',
+    error: '',
+    showAnswer: false,
+    isRunning: false,
+    showImage: false,
+  });
 
   useEffect(() => {
-    const checkPyodideStatus = () => {
-      const ready = isPyodideReady();
-      const loading = isPyodideLoading();
-      
-      if (ready) {
-        setLoadingMessage('✓ Pyodide 已就绪');
-        setPyodideReady(true);
-      } else if (loading) {
-        setLoadingMessage('正在加载 Python 环境...');
-      }
-    };
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
 
-    checkPyodideStatus();
-    const interval = setInterval(checkPyodideStatus, 500);
-    return () => clearInterval(interval);
+    if (!isPyodideReady()) {
+      initPyodide((p: PyodideProgress) => {
+        setStage(p.stage);
+        setPercent(p.percent);
+        if (p.stage === 4 && p.percent >= 100) {
+          setIsReady(true);
+        }
+      }).catch((err: Error) => {
+        setLoadError(err.message);
+      });
+    } else {
+      setStage(4);
+      setPercent(100);
+      setIsReady(true);
+    }
+
+    return () => clearInterval(timer);
   }, []);
 
-  const handleProjectSelect = (index: number) => {
-    setSelectedProject(index);
-    setCode(projects[index].placeholderCode);
-    setResult(null);
-    setErrorDetails(null);
-  };
-
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode);
-    setResult(null);
-    setErrorDetails(null);
-  };
-
-  const handleRunCode = async () => {
-    if (!code.trim()) {
-      setErrorDetails({
-        type: 'InputError',
-        message: '请输入代码后再运行'
-      });
-      return;
-    }
-
-    setIsRunning(true);
-    setResult(null);
-    setErrorDetails(null);
-
+  const handleRun = async (_stepKey: 'step1' | 'step2' | 'step3', setState: React.Dispatch<React.SetStateAction<StepState>>, code: string) => {
+    setState(prev => ({ ...prev, isRunning: true, output: '', error: '', showImage: false }));
     try {
-      const executionResult = await runPythonCode(code);
-      setResult(executionResult);
-      
-      if (!executionResult.success && executionResult.error) {
-        setErrorDetails(executionResult.error);
+      const result = await runPythonCode(code);
+      if (result.success) {
+        const hasImg = !!(result.output && result.output.includes('<img'));
+        setState(prev => ({
+          ...prev,
+          isRunning: false,
+          output: result.output || '',
+          error: '',
+          showImage: hasImg,
+        }));
+      } else {
+        setState(prev => ({
+          ...prev,
+          isRunning: false,
+          output: '',
+          error: result.error ? `${result.error.type}: ${result.error.message}` : '未知错误',
+          showImage: false,
+        }));
       }
-    } catch (err) {
-      setErrorDetails({
-        type: 'ExecutionError',
-        message: '执行过程中发生错误: ' + (err as Error).message
-      });
-    } finally {
-      setIsRunning(false);
+    } catch (err: any) {
+      setState(prev => ({
+        ...prev,
+        isRunning: false,
+        output: '',
+        error: `执行异常: ${err.message}`,
+        showImage: false,
+      }));
     }
   };
+
+  const handleToggleAnswer = (setState: React.Dispatch<React.SetStateAction<StepState>>, current: StepState, answerCode: string, placeholderCode: string) => {
+    if (!current.showAnswer) {
+      setState(prev => ({ ...prev, code: answerCode, showAnswer: true }));
+    } else {
+      setState(prev => ({ ...prev, code: placeholderCode, showAnswer: false }));
+    }
+  };
+
+  const handleReset = (setState: React.Dispatch<React.SetStateAction<StepState>>, placeholderCode: string) => {
+    setState({
+      code: placeholderCode,
+      output: '',
+      error: '',
+      showAnswer: false,
+      isRunning: false,
+      showImage: false,
+    });
+  };
+
+  const renderStep = (
+    stepNumber: number,
+    title: string,
+    description: string,
+    state: StepState,
+    setState: React.Dispatch<React.SetStateAction<StepState>>,
+    placeholder: string,
+    answer: string
+  ) => (
+    <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-8 border border-blue-100">
+      <div className="flex items-start gap-4 mb-6">
+        <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+          {stepNumber}
+        </div>
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">{title}</h2>
+          <p className="text-gray-600">{description}</p>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <AceEditor
+          mode="python"
+          theme="monokai"
+          value={state.code}
+          onChange={(newCode) => setState(prev => ({ ...prev, code: newCode }))}
+          name={`ml-editor-step${stepNumber}`}
+          editorProps={{ $blockScrolling: true }}
+          className="rounded-lg shadow-lg border border-gray-300"
+          style={{ height: '380px', width: '100%', fontSize: '14px' }}
+          setOptions={{
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            enableSnippets: true,
+            showLineNumbers: true,
+            tabSize: 4,
+          }}
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-3 mb-6">
+        <button
+          onClick={() => handleRun(`step${stepNumber}` as any, setState, state.code)}
+          disabled={state.isRunning || !isReady}
+          className="bg-primary text-white px-6 py-2 rounded-full font-bold shadow-button hover:shadow-button-hover hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {state.isRunning ? '⏳ 运行中...' : '▶ 运行代码'}
+        </button>
+        <button
+          onClick={() => handleToggleAnswer(setState, state, answer, placeholder)}
+          className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium hover:bg-blue-200 transition-all"
+        >
+          {state.showAnswer ? '📝 恢复练习代码' : '💡 查看参考答案'}
+        </button>
+        <button
+          onClick={() => handleReset(setState, placeholder)}
+          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full font-medium hover:bg-gray-300 transition-all"
+        >
+          🔄 重置
+        </button>
+      </div>
+
+      {state.error && (
+        <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-100 mb-4 whitespace-pre-wrap font-mono text-sm">
+          ❌ {state.error}
+        </div>
+      )}
+
+      {state.output && !state.showImage && (
+        <div className="whitespace-pre-wrap font-mono text-sm p-4 bg-gray-900 text-green-400 rounded-lg">
+          {state.output}
+        </div>
+      )}
+
+      {state.output && state.showImage && (
+        <div className="p-4 bg-white rounded-lg border-2 border-gray-200">
+          <div dangerouslySetInnerHTML={{ __html: state.output }} />
+        </div>
+      )}
+    </div>
+  );
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <PyodideLoader
+            stage={stage as any}
+            percent={percent}
+            error={loadError}
+            elapsedSeconds={elapsedSeconds}
+            onRetry={() => window.location.reload()}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Python 机器学习实战
-              </h1>
-              <p className="text-gray-500 mt-2">边学边做，掌握核心算法</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${pyodideReady ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></div>
-              <span className="text-sm text-gray-600">{loadingMessage || '检查环境...'}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {projects.map((project, index) => (
-              <button
-                key={project.id}
-                onClick={() => handleProjectSelect(index)}
-                className={`p-6 rounded-xl border-2 transition-all duration-300 text-left ${
-                  selectedProject === index
-                    ? 'border-purple-500 bg-purple-50 shadow-lg'
-                    : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                    selectedProject === index ? 'bg-purple-500' : 'bg-gray-400'
-                  }`}>
-                    {project.id}
-                  </div>
-                  <h3 className="font-semibold text-gray-800">{project.title}</h3>
-                </div>
-                <p className="text-sm text-gray-600">{project.description}</p>
-              </button>
-            ))}
-          </div>
-
-          <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-3">
-              {projects[selectedProject].title}
-            </h2>
-            <p className="text-gray-600">
-              {projects[selectedProject].description} - 点击下方代码编辑器中的代码，然后点击运行按钮开始
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8">
+      <div className="container mx-auto px-4 max-w-6xl">
+        {/* Hero 区域 */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 mb-8 bg-gradient-to-br from-white via-blue-50 to-purple-50 border border-blue-100">
+          <div className="text-center">
+            <div className="text-7xl md:text-8xl mb-6 inline-block animate-bounce-slow">🤖</div>
+            <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+              机器学习实战课程
+            </h1>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-6">
+              通过真实客户数据，从数据探索到 K-Means 聚类，再到可视化业务解读，
+              三步带你掌握机器学习核心流程，亲手构建完整的客户分群分析系统。
             </p>
-          </div>
-
-          <div className="mb-6">
-            <AceEditor
-              mode="python"
-              theme="monokai"
-              value={code}
-              onChange={handleCodeChange}
-              name="machine-learning-editor"
-              editorProps={{
-                $blockScrolling: true
-              }}
-              className="rounded-lg shadow-lg"
-              style={{ height: '400px', width: '100%' }}
-              setOptions={{
-                fontSize: 14,
-                enableBasicAutocompletion: true,
-                enableLiveAutocompletion: true,
-                enableSnippets: true
-              }}
-            />
-          </div>
-
-          <div className="flex gap-4 mb-6">
-            <button
-              onClick={handleRunCode}
-              disabled={isRunning}
-              className={`flex-1 py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg ${
-                isRunning
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:shadow-xl transform hover:-translate-y-1'
-              } text-white`}
-            >
-              {isRunning ? (
-                <span className="flex items-center justify-center gap-3">
-                  <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  运行中...
-                </span>
-              ) : (
-                '▶ 运行代码'
-              )}
-            </button>
-            
-            <button
-              onClick={() => {
-                setCode(projects[selectedProject].answerCode);
-                setResult(null);
-                setErrorDetails(null);
-              }}
-              className="py-4 px-8 rounded-xl font-bold text-lg bg-blue-500 text-white hover:bg-blue-600 transition-all duration-300 shadow-lg"
-            >
-              💡 显示参考答案
-            </button>
-            
-            <button
-              onClick={() => {
-                setCode(projects[selectedProject].placeholderCode);
-                setResult(null);
-                setErrorDetails(null);
-              }}
-              className="py-4 px-8 rounded-xl font-bold text-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all duration-300"
-            >
-              重置代码
-            </button>
-          </div>
-
-          {errorDetails && (
-            <div className="mb-6 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="bg-red-100 p-3 rounded-full">
-                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-red-700 mb-2">
-                    {errorDetails.type === 'InputError' ? '输入错误' : 
-                     errorDetails.type === 'SyntaxError' ? '语法错误' :
-                     errorDetails.type === 'InitializationError' ? '环境错误' : '执行错误'}
-                  </h3>
-                  <div className="space-y-2">
-                    <p className="text-red-600 font-medium">{errorDetails.message}</p>
-                    {errorDetails.lineNumber && (
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                        <span>错误位置: 第 {errorDetails.lineNumber} 行</span>
-                      </div>
-                    )}
-                    {errorDetails.details && (
-                      <p className="text-gray-600 text-sm mt-2">{errorDetails.details}</p>
-                    )}
-                  </div>
-                  <div className="mt-4 p-3 bg-white rounded-lg border border-red-200">
-                    <p className="text-sm text-gray-600">
-                      💡 <strong>提示:</strong> 检查代码中的语法、变量名拼写，或确保所有引号和括号都已正确闭合
-                    </p>
-                  </div>
-                </div>
+            <div className="flex flex-wrap justify-center gap-4 mt-6">
+              <div className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full font-semibold text-sm md:text-base">
+                🐍 Python
               </div>
-            </div>
-          )}
-
-          {result && result.success && (
-            <div className="bg-gray-900 rounded-xl p-6 text-white">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-green-500 p-2 rounded-full">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-green-400">运行成功!</h3>
+              <div className="px-5 py-2 bg-purple-100 text-purple-700 rounded-full font-semibold text-sm md:text-base">
+                📊 Pandas
               </div>
-              <div className="bg-gray-800 rounded-lg p-4 overflow-auto max-h-96">
-                {result.output && (
-                  <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
-                    {result.output.includes('<img') ? (
-                      <div dangerouslySetInnerHTML={{ __html: result.output }} />
-                    ) : (
-                      result.output
-                    )}
-                  </pre>
-                )}
+              <div className="px-5 py-2 bg-pink-100 text-pink-700 rounded-full font-semibold text-sm md:text-base">
+                🎯 Scikit-learn
               </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8 bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">📚 学习要点</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-5 rounded-xl">
-              <h3 className="font-bold text-blue-700 mb-2">监督学习</h3>
-              <p className="text-sm text-gray-600">使用有标签的数据进行训练，预测已知类别或连续值</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl">
-              <h3 className="font-bold text-purple-700 mb-2">KNN 算法</h3>
-              <p className="text-sm text-gray-600">根据最近邻居的投票来决定分类，简单直观</p>
-            </div>
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-xl">
-              <h3 className="font-bold text-green-700 mb-2">K-Means 聚类</h3>
-              <p className="text-sm text-gray-600">无监督学习，自动发现数据中的群体结构</p>
+              <div className="px-5 py-2 bg-orange-100 text-orange-700 rounded-full font-semibold text-sm md:text-base">
+                📈 Matplotlib
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 bg-white rounded-2xl shadow-xl p-6 md:p-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">📝 课后练习题</h2>
+        {/* 核心概念板块 */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 md:p-10 mb-8 border border-purple-100">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-3">📚</div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">核心概念入门</h2>
+            <p className="text-gray-600">在动手实践前，先了解机器学习的基础思想和常见陷阱</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {exercises.map((exercise) => (
-              <div key={exercise.id} className="bg-gradient-to-br from-orange-50 to-yellow-50 p-6 rounded-xl border-2 border-orange-100 hover:border-orange-300 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-orange-500 text-white font-bold flex items-center justify-center">
-                    {exercise.id}
-                  </div>
-                  <h3 className="font-bold text-gray-800">{exercise.title}</h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">{exercise.description}</p>
-                <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
-                  <p className="text-xs text-gray-500 mb-2 font-semibold">任务：</p>
-                  <p className="text-sm text-gray-700 whitespace-pre-line">{exercise.task}</p>
-                </div>
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-xs text-blue-600">
-                    <strong>💡 提示：</strong>{exercise.hint}
-                  </p>
-                </div>
+            {/* 什么是机器学习 */}
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 hover:shadow-lg transition-all">
+              <div className="text-4xl mb-3">🧠</div>
+              <h3 className="text-xl font-bold text-blue-900 mb-3">什么是机器学习？</h3>
+              <p className="text-gray-700 leading-relaxed text-sm">
+                机器学习是让计算机从<strong>数据</strong>中自动学习规律，并用这些规律来做预测或决策的技术。
+                不同于传统编程（写死规则），机器学习让程序<strong>自己从数据中发现模式</strong>。
+              </p>
+              <div className="mt-4 p-3 bg-white rounded-lg text-xs text-gray-600 border border-blue-100">
+                <strong className="text-blue-700">经典例子：</strong><br />
+                垃圾邮件分类 → 机器从大量邮件中自动识别"垃圾邮件"的特征模式
               </div>
-            ))}
+            </div>
+
+            {/* 为什么重要 */}
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200 hover:shadow-lg transition-all">
+              <div className="text-4xl mb-3">💡</div>
+              <h3 className="text-xl font-bold text-purple-900 mb-3">为什么它很重要？</h3>
+              <p className="text-gray-700 leading-relaxed text-sm">
+                在海量数据时代，人工分析和规则编写已无法应对复杂业务场景。
+                机器学习能<strong>自动发现隐藏模式</strong>、<strong>处理大规模数据</strong>、
+                <strong>随时间持续优化</strong>，是数据驱动决策的核心引擎。
+              </p>
+              <div className="mt-4 p-3 bg-white rounded-lg text-xs text-gray-600 border border-purple-100">
+                <strong className="text-purple-700">典型应用：</strong><br />
+                客户分群 · 推荐系统 · 风险评估 · 图像识别 · 自然语言处理
+              </div>
+            </div>
+
+            {/* 常见误区 */}
+            <div className="bg-gradient-to-br from-red-50 to-orange-100 rounded-2xl p-6 border border-red-200 hover:shadow-lg transition-all">
+              <div className="text-4xl mb-3">⚠️</div>
+              <h3 className="text-xl font-bold text-red-900 mb-3">常见误区与陷阱</h3>
+              <div className="space-y-2 text-sm text-gray-700">
+                <p>
+                  <strong className="text-red-700">过拟合 (Overfitting):</strong>{' '}
+                  模型在训练数据上表现极好，但在新数据上完全失灵——把"噪音"当成了"规律"。
+                </p>
+                <p>
+                  <strong className="text-red-700">数据泄露 (Data Leakage):</strong>{' '}
+                  训练时使用了未来才会有的信息，导致模型在实际中失效。
+                </p>
+                <p>
+                  <strong className="text-red-700">特征缩放:</strong>{' '}
+                  不同特征量纲差异大（如消费金额 vs 频次），会导致算法权重失衡——必须标准化！
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 流程图 */}
+          <div className="mt-8 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl p-6 border border-gray-200">
+            <h3 className="text-center text-lg font-bold text-gray-800 mb-5">🔄 机器学习典型工作流</h3>
+            <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
+              {['📂 数据收集', '🔍 数据探索', '⚙️ 特征工程', '🧪 模型训练', '📊 结果评估', '💼 业务应用'].map((item, idx, arr) => (
+                <React.Fragment key={item}>
+                  <div className="px-4 py-3 bg-white rounded-xl shadow-md text-sm md:text-base font-semibold text-gray-700 border border-gray-200">
+                    {item}
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <div className="text-2xl text-gray-400 font-bold hidden md:block">→</div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Step 1 */}
+        {renderStep(1, 'Step 1：数据读取与探索性分析', '使用 pandas 读取客户特征数据（年龄、消费、频次），探索数据分布、统计特征', step1, setStep1, step1Placeholder, step1Answer)}
+
+        {/* Step 2 */}
+        {renderStep(2, 'Step 2：K-Means 聚类算法实现', '使用 sklearn 中的 K-Means 算法对客户进行分群，学习数据标准化和聚类中心解读', step2, setStep2, step2Placeholder, step2Answer)}
+
+        {/* Step 3 */}
+        {renderStep(3, 'Step 3：聚类可视化与业务解读', '使用 matplotlib 绘制散点图展示聚类结果，结合业务场景解读客户群体特征并提出营销建议', step3, setStep3, step3Placeholder, step3Answer)}
+
+        {/* 课程完成组件 */}
+        <CourseCompletion
+          courseId="machine-learning"
+          courseTitle="机器学习"
+          badgeIcon="🤖"
+          badgeName="机器学习新星"
+        />
       </div>
     </div>
   );
