@@ -143,7 +143,7 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
     
     // 构建错误信息对象
     const errorInfo = {
-      type: 'SyntaxError' in errorMessage ? 'SyntaxError' : (error.name || 'Error'),
+      type: errorMessage.includes('SyntaxError') ? 'SyntaxError' : (error.name || 'Error'),
       message: userErrorMessage,
       stack: error.stack,
       lineNumber: lineNumber
