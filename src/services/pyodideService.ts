@@ -119,12 +119,34 @@ export async function runPythonCode(code: string): Promise<PythonExecutionResult
       stderr
     };
   } catch (error: any) {
-    // 获取详细的错误信息
+    // 将完整的原始错误打印到控制台，方便调试
+    console.error('Python代码执行错误:', error);
+    
+    // 获取错误消息
+    const errorMessage = error.message || '未知错误';
+    
+    // 默认错误信息
+    let userErrorMessage = '代码运行出错，请检查逻辑后重试。';
+    let lineNumber: number | undefined;
+    
+    // 检查是否是语法错误
+    if (errorMessage.includes('SyntaxError') || errorMessage.includes('unterminated string literal')) {
+      // 尝试提取行号，匹配 "line X" 模式
+      const lineMatch = errorMessage.match(/line (\d+)/);
+      if (lineMatch && lineMatch[1]) {
+        lineNumber = parseInt(lineMatch[1], 10);
+        userErrorMessage = `❌ 第 ${lineNumber} 行有语法错误，请检查引号、括号是否闭合。`;
+      } else {
+        userErrorMessage = '❌ 代码存在语法错误，请检查引号、括号是否闭合。';
+      }
+    }
+    
+    // 构建错误信息对象
     const errorInfo = {
-      type: error.name || 'Error',
-      message: error.message || '未知错误',
+      type: 'SyntaxError' in errorMessage ? 'SyntaxError' : (error.name || 'Error'),
+      message: userErrorMessage,
       stack: error.stack,
-      lineNumber: error.lineno
+      lineNumber: lineNumber
     };
     
     // 尝试获取 Pyodide 特有的错误信息
