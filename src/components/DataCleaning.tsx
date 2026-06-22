@@ -201,11 +201,11 @@ for num_col in ["quantity", "price"]:
     lower = q1 - 1.5 * iqr
     upper = q3 + 1.5 * iqr
 
-    neg_vals = [(i + 1, v) for i, r in enumerate(rows)
+    neg_vals = [(i + 1, vv) for i, r in enumerate(rows)
                 for vv in [safe_float(r[num_col])] if vv is not None and vv < 0]
-    zero_vals = [(i + 1, v) for i, r in enumerate(rows)
+    zero_vals = [(i + 1, vv) for i, r in enumerate(rows)
                  for vv in [safe_float(r[num_col])] if vv is not None and vv == 0]
-    outlier_vals = [(i + 1, v) for i, r in enumerate(rows)
+    outlier_vals = [(i + 1, vv) for i, r in enumerate(rows)
                     for vv in [safe_float(r[num_col])] if vv is not None and (vv < lower or vv > upper)]
 
     print(f"\\n  【{num_col}】")
