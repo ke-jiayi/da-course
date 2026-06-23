@@ -29,7 +29,44 @@ Treatment,10000,610,148500
 """
 
 print("=" * 50)
-print("📊 A/B 测试数据分析")
+print("A/B 测试数据分析")
+print("=" * 50)
+
+# TODO: 解析 CSV 数据
+# 提示: 使用 split('\\n') 分割行，使用 split(',') 分割列
+lines = data_csv.strip().split('\\n')
+headers = lines[0].split(',')
+rows = []
+
+# 在这里编写代码：
+
+
+# TODO: 计算基础指标
+print("\\n基础统计对比:")
+print("-" * 50)
+
+# 在这里编写代码：
+
+
+# TODO: 对比分析
+print("\\n" + "=" * 50)
+print("提升效果 (实验组 vs 控制组)")
+print("=" * 50)
+
+# 在这里编写代码：
+
+`;
+
+const answerCodeStep1 = `# Step 1: 基础统计 - 读取 A/B 测试数据
+# 参考答案
+
+data_csv = """group,users,conversions,revenue
+Control,10000,520,125000
+Treatment,10000,610,148500
+"""
+
+print("=" * 50)
+print("A/B 测试数据分析")
 print("=" * 50)
 
 # 解析 CSV 数据
@@ -44,7 +81,7 @@ for line in lines[1:]:
     rows.append(row)
 
 # 计算基础指标
-print("\\n📈 基础统计对比:")
+print("\\n基础统计对比:")
 print("-" * 50)
 
 for row in rows:
@@ -76,18 +113,16 @@ treatment_rev = float(treatment['revenue']) / int(treatment['users'])
 rev_lift = (treatment_rev - control_rev) / control_rev * 100
 
 print("\\n" + "=" * 50)
-print("📊 提升效果 (实验组 vs 控制组)")
+print("提升效果 (实验组 vs 控制组)")
 print("=" * 50)
 print(f"  转化率提升: {cr_lift:+.2f}%")
 print(f"  每用户收入提升: {rev_lift:+.2f}%")
 
 if cr_lift > 0:
-    print(f"\\n✅ 实验组转化率表现更优")
+    print(f"\\n实验组转化率表现更优")
 else:
-    print(f"\\n⚠️  实验组转化率未优于控制组")
+    print(f"\\n实验组转化率未优于控制组")
 `;
-
-const answerCodeStep1 = initialCodeStep1;
 
 const initialCodeStep2 = `# Step 2: 统计显著性检验 - z-test 和 p-value
 # 验证转化率提升是否是统计显著的（非偶然）
@@ -95,7 +130,55 @@ const initialCodeStep2 = `# Step 2: 统计显著性检验 - z-test 和 p-value
 import math
 
 print("=" * 60)
-print("🔬 统计显著性检验 (Z-test for Conversion Rates)")
+print("统计显著性检验 (Z-test for Conversion Rates)")
+print("=" * 60)
+
+# A/B 测试数据
+n_control = 10000     # 控制组样本量
+conv_control = 520    # 控制组转化数
+n_treatment = 10000   # 实验组样本量
+conv_treatment = 610  # 实验组转化数
+
+# TODO: 计算转化率
+p_control = None
+p_treatment = None
+
+print(f"\\n输入参数:")
+print(f"  控制组: {conv_control}/{n_control}")
+print(f"  实验组: {conv_treatment}/{n_treatment}")
+
+# TODO: 计算联合转化率（pooled proportion）
+p_pooled = None
+
+# TODO: 计算标准误差
+se = None
+
+# TODO: 计算 Z 统计量
+z_score = None
+
+print(f"\\n计算过程:")
+print(f"  联合转化率: {p_pooled}")
+print(f"  标准误差: {se}")
+print(f"  Z 统计量: {z_score}")
+
+# TODO: 判断结论
+alpha = 0.05
+
+print(f"\\n{'=' * 60}")
+print("结论")
+print(f"{'=' * 60}")
+
+# 在这里编写代码判断统计显著性：
+
+`;
+
+const answerCodeStep2 = `# Step 2: 统计显著性检验 - z-test 和 p-value
+# 参考答案
+
+import math
+
+print("=" * 60)
+print("统计显著性检验 (Z-test for Conversion Rates)")
 print("=" * 60)
 
 # A/B 测试数据
@@ -108,7 +191,7 @@ conv_treatment = 610  # 实验组转化数
 p_control = conv_control / n_control
 p_treatment = conv_treatment / n_treatment
 
-print(f"\\n📋 输入参数:")
+print(f"\\n输入参数:")
 print(f"  控制组: {conv_control}/{n_control} = {p_control:.4%}")
 print(f"  实验组: {conv_treatment}/{n_treatment} = {p_treatment:.4%}")
 print(f"  绝对差异: {(p_treatment - p_control):.4%}")
@@ -123,13 +206,12 @@ se = math.sqrt(p_pooled * (1 - p_pooled) * (1/n_control + 1/n_treatment))
 # Z 统计量
 z_score = (p_treatment - p_control) / se
 
-print(f"\\n🧮 计算过程:")
+print(f"\\n计算过程:")
 print(f"  联合转化率 (p_pooled): {p_pooled:.6f}")
 print(f"  标准误差 (SE):         {se:.6f}")
 print(f"  Z 统计量:              {z_score:.4f}")
 
 # 手动计算 p-value（使用正态分布近似）
-# 使用 erf 函数的多项式近似
 def erf_approx(x):
     a1 =  0.254829592
     a2 = -0.284496736
@@ -149,23 +231,23 @@ def normal_cdf(z):
 # 双尾检验 p-value
 p_value = 2 * (1 - normal_cdf(abs(z_score)))
 
-print(f"\\n📊 检验结果:")
+print(f"\\n检验结果:")
 print(f"  p-value: {p_value:.6f}")
 print(f"  显著性水平 (α): 0.05")
 
 # 判断结论
 print(f"\\n{'=' * 60}")
-print("🎯 结论")
+print("结论")
 print(f"{'=' * 60}")
 
 alpha = 0.05
 if p_value < alpha:
-    print(f"  ✅ p-value ({p_value:.6f}) < α ({alpha})")
+    print(f"  p-value ({p_value:.6f}) < α ({alpha})")
     print(f"  → 拒绝原假设 (H0)")
     print(f"  → 两组转化率差异具有统计显著性")
     print(f"  → 实验方案确实有效！")
 else:
-    print(f"  ❌ p-value ({p_value:.6f}) >= α ({alpha})")
+    print(f"  p-value ({p_value:.6f}) >= α ({alpha})")
     print(f"  → 无法拒绝原假设")
     print(f"  → 差异可能是随机波动")
     print(f"  → 需要更大样本量来验证")
@@ -176,9 +258,9 @@ diff = p_treatment - p_control
 ci_lower = diff - ci_margin
 ci_upper = diff + ci_margin
 
-print(f"\\n📐 95% 置信区间 (差异):")
+print(f"\\n95% 置信区间 (差异):")
 print(f"  [{ci_lower:.4%}, {ci_upper:.4%}]")
-print(f"  区间不包含 0 → 差异显著 ✓" if ci_lower > 0 else "  区间包含 0 → 差异不显著 ✗")
+print(f"  区间不包含 0 → 差异显著" if ci_lower > 0 else "  区间包含 0 → 差异不显著")
 `;
 
 const initialCodeStep3 = `# Step 3: 综合业务决策分析
@@ -187,13 +269,8 @@ const initialCodeStep3 = `# Step 3: 综合业务决策分析
 import math
 
 print("=" * 60)
-print("💼 数据驱动的业务决策分析")
+print("数据驱动的业务决策分析")
 print("=" * 60)
-
-# ========== 场景设定 ==========
-# 某电商平台计划对首页推荐算法进行改版 (实验)
-# 需要评估是否应该全量上线新算法
-# =================================
 
 # 实验数据
 data = [
@@ -201,9 +278,53 @@ data = [
     {"group": "实验组 (新算法)", "users": 10000, "conversions": 610, "revenue": 148500}
 ]
 
-print("\\n📊 实验概览:")
+print("\\n实验概览:")
 print("-" * 60)
 
+# TODO: 计算关键指标
+metrics = []
+
+# 在这里编写代码计算转化率、客单价、ARPU：
+
+
+# TODO: 计算指标提升
+
+
+# TODO: 统计检验
+
+
+# TODO: 业务影响评估
+
+
+# TODO: 综合决策报告
+
+
+print(f"\\n{'=' * 60}")
+print("最终建议")
+print(f"{'=' * 60}")
+# 根据分析给出建议
+
+`;
+
+const answerCodeStep3 = `# Step 3: 综合业务决策分析
+# 参考答案
+
+import math
+
+print("=" * 60)
+print("数据驱动的业务决策分析")
+print("=" * 60)
+
+# 实验数据
+data = [
+    {"group": "控制组 (旧算法)", "users": 10000, "conversions": 520, "revenue": 125000},
+    {"group": "实验组 (新算法)", "users": 10000, "conversions": 610, "revenue": 148500}
+]
+
+print("\\n实验概览:")
+print("-" * 60)
+
+# 计算关键指标
 metrics = []
 for d in data:
     cr = d['conversions'] / d['users'] * 100
@@ -223,14 +344,14 @@ cr_lift = (treat['cr'] - ctrl['cr']) / ctrl['cr'] * 100
 aov_lift = (treat['aov'] - ctrl['aov']) / ctrl['aov'] * 100
 arpu_lift = (treat['arpu'] - ctrl['arpu']) / ctrl['arpu'] * 100
 
-print(f"\\n📈 相对提升:")
+print(f"\\n相对提升:")
 print(f"  转化率: {cr_lift:+.2f}%")
 print(f"  客单价: {aov_lift:+.2f}%")
 print(f"  ARPU:   {arpu_lift:+.2f}%")
 
-# ========== 统计检验 ==========
+# 统计检验
 print(f"\\n{'=' * 60}")
-print("🔬 统计检验")
+print("统计检验")
 print(f"{'=' * 60}")
 
 p_ctrl = ctrl['conversions'] / ctrl['users']
@@ -265,12 +386,12 @@ print(f"  Z统计量: {z:.4f}")
 print(f"  p-value: {p_value:.6f}")
 print(f"  95% CI:  [{ci_low:.2f}%, {ci_high:.2f}%]")
 
-# ========== 业务影响评估 ==========
+# 业务影响评估
 print(f"\\n{'=' * 60}")
-print("💰 业务影响评估 (假设全量上线)")
+print("业务影响评估 (假设全量上线)")
 print(f"{'=' * 60}")
 
-monthly_visitors = 500000  # 月活用户
+monthly_visitors = 500000
 arpu_diff = treat['arpu'] - ctrl['arpu']
 additional_revenue_monthly = arpu_diff * monthly_visitors
 additional_revenue_yearly = additional_revenue_monthly * 12
@@ -280,75 +401,55 @@ print(f"  ARPU 增量:       ¥{arpu_diff:.2f}/用户")
 print(f"  月度增量收入:    ¥{additional_revenue_monthly:,.0f}")
 print(f"  年度增量收入:    ¥{additional_revenue_yearly:,.0f}")
 
-# ========== 综合决策报告 ==========
+# 综合决策报告
 print(f"\\n{'=' * 60}")
-print("📝 综合决策报告")
+print("综合决策报告")
 print(f"{'=' * 60}")
 
 print("\\n【评估维度】")
 print("-" * 40)
 
-# 1. 统计显著性
 stat_sig = p_value < 0.05
-print(f"\\n1️⃣  统计显著性:")
+print(f"\\n1. 统计显著性:")
 print(f"   p-value = {p_value:.6f}")
-print(f"   {'✅ 通过 (p < 0.05)' if stat_sig else '❌ 未通过'}")
+print(f"   通过 (p < 0.05)" if stat_sig else "   未通过")
 
-# 2. 实际业务价值
 has_value = arpu_lift > 0
-print(f"\\n2️⃣  业务价值:")
+print(f"\\n2. 业务价值:")
 print(f"   ARPU 提升: {arpu_lift:+.2f}%")
 print(f"   年度增量收入预测: ¥{additional_revenue_yearly:,.0f}")
-print(f"   {'✅ 具有正收益' if has_value else '❌ 收益不明显'}")
+print(f"   具有正收益" if has_value else "   收益不明显")
 
-# 3. 置信区间
 ci_reliable = ci_low > 0
-print(f"\\n3️⃣  置信区间可靠性:")
+print(f"\\n3. 置信区间可靠性:")
 print(f"   转化率差异 95% CI: [{ci_low:.2f}%, {ci_high:.2f}%]")
-print(f"   {'✅ 区间下限 > 0, 可靠' if ci_reliable else '⚠️  区间包含 0, 需谨慎'}")
+print(f"   区间下限 > 0, 可靠" if ci_reliable else "   区间包含 0, 需谨慎")
 
-# 4. 效果幅度
 magnitude = "显著提升" if cr_lift > 10 else ("中等提升" if cr_lift > 5 else "小幅提升" if cr_lift > 0 else "无提升")
-print(f"\\n4️⃣  效果幅度: {magnitude} ({cr_lift:+.2f}%)")
+print(f"\\n4. 效果幅度: {magnitude} ({cr_lift:+.2f}%)")
 
-# ========== 最终建议 ==========
+# 最终建议
 print(f"\\n{'=' * 60}")
-print("🎯 最终建议")
+print("最终建议")
 print(f"{'=' * 60}")
 
 if stat_sig and has_value and ci_reliable:
-    recommendation = "✅ 建议全量上线新算法"
+    recommendation = "建议全量上线新算法"
     reasons = [
         "1. 统计检验显示差异显著 (p < 0.05)",
         "2. 实验组在转化率和收入上均优于控制组",
         "3. 置信区间不包含零，结果可靠",
-        "4. 预计年度可增加显著收入",
-        "",
-        "实施建议:",
-        "  - 分阶段灰度上线 (30% → 70% → 100%)",
-        "  - 持续监控核心指标至少2周",
-        "  - 关注新算法对不同用户群体的影响",
-        "  - 准备回滚方案应对可能的异常"
-    ]
-elif stat_sig and not has_value:
-    recommendation = "⚠️  统计显著但业务价值有限"
-    reasons = [
-        "1. 虽然统计上显著，但实际业务收益不明显",
-        "2. 需要评估上线成本 vs 收益",
-        "3. 建议优化实验方案后再做决策"
+        "4. 预计年度可增加显著收入"
     ]
 elif not stat_sig:
-    recommendation = "❌ 建议暂缓上线，继续验证"
+    recommendation = "建议暂缓上线，继续验证"
     reasons = [
         "1. 差异未达到统计显著性",
         "2. 当前效果可能来自随机波动",
-        "3. 建议:",
-        "   - 扩大样本量继续实验",
-        "   - 优化实验设计",
-        "   - 考虑其他改进方向"
+        "3. 建议扩大样本量继续实验"
     ]
 else:
-    recommendation = "🤔 需要更多数据进行综合评估"
+    recommendation = "需要更多数据进行综合评估"
     reasons = ["建议收集更多维度数据后重新分析"]
 
 print(f"\\n  {recommendation}")
@@ -357,7 +458,7 @@ for r in reasons:
     print(f"  {r}")
 
 print(f"\\n{'=' * 60}")
-print("📌 关键指标汇总")
+print("关键指标汇总")
 print(f"{'=' * 60}")
 print(f"  {'指标':<15} {'控制组':>12} {'实验组':>12} {'变化':>10}")
 print("-" * 55)
@@ -445,7 +546,7 @@ print(f"  {'ARPU':<15} ¥{ctrl['arpu']:>10.2f} ¥{treat['arpu']:>10.2f} {arpu_li
   };
 
   const handleShowAnswer = (stepKey: 'step1' | 'step2' | 'step3') => {
-    const answerCode = stepKey === 'step1' ? answerCodeStep1 : stepKey === 'step2' ? initialCodeStep2 : initialCodeStep3;
+    const answerCode = stepKey === 'step1' ? answerCodeStep1 : stepKey === 'step2' ? answerCodeStep2 : answerCodeStep3;
     if (stepKey === 'step1') setStep1({ ...step1, code: answerCode, showAnswer: true });
     if (stepKey === 'step2') setStep2({ ...step2, code: answerCode, showAnswer: true });
     if (stepKey === 'step3') setStep3({ ...step3, code: answerCode, showAnswer: true });
