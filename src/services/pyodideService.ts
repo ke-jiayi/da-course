@@ -406,7 +406,6 @@ sys.stderr = _original_stderr
     let lineNumber: number | undefined;
     let details: string | undefined;
 
-    // 将完整的原始错误打印到控制台，方便调试
     console.error('[PyodideService] Python 执行错误:', error);
 
     if (error && typeof error === 'object') {
@@ -439,7 +438,6 @@ sys.stderr = _original_stderr
       errorMessage = String(error);
     }
 
-    // 从错误信息中提取行号（兼容多种错误格式）
     if (lineNumber === undefined) {
       const lineMatch = errorMessage.match(/line (\d+)/);
       if (lineMatch) {
@@ -447,13 +445,11 @@ sys.stderr = _original_stderr
       }
     }
 
-    // 检查是否为语法错误（包括 unterminated string literal）
     const isSyntaxError = errorType === 'SyntaxError' || 
                          errorMessage.includes('SyntaxError') || 
                          errorMessage.includes('unterminated string literal');
 
     if (isSyntaxError) {
-      // 提取行号并生成友好的错误提示
       if (lineNumber !== undefined) {
         errorMessage = `❌ 第 ${lineNumber} 行有语法错误，请检查引号、括号是否闭合。`;
       } else {
@@ -483,7 +479,6 @@ sys.stderr = _original_stderr
     } else if (errorType === 'ValueError') {
       errorMessage = `❌ 值错误: ${errorMessage}`;
     } else {
-      // 其他未分类错误，统一显示友好提示
       errorMessage = '❌ 代码运行出错，请检查逻辑后重试。';
     }
 
@@ -507,8 +502,6 @@ sys.stderr = _original_stderr
       }
     };
   }
-
-  
 
   isReady(): boolean {
     return loadingState.isReady;
