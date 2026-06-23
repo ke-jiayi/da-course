@@ -406,6 +406,9 @@ sys.stderr = _original_stderr
     let lineNumber: number | undefined;
     let details: string | undefined;
 
+    // 将完整的原始错误打印到控制台，方便调试
+    console.error('[PyodideService] Python 执行错误:', error);
+
     if (error && typeof error === 'object') {
       errorType = error.type || error.name || 'Error';
       errorMessage = error.message || String(error);
@@ -436,29 +439,52 @@ sys.stderr = _original_stderr
       errorMessage = String(error);
     }
 
-    if (errorType === 'SyntaxError') {
-      errorMessage = this.formatSyntaxError(errorMessage);
+    // 从错误信息中提取行号（兼容多种错误格式）
+    if (lineNumber === undefined) {
+      const lineMatch = errorMessage.match(/line (\d+)/);
+      if (lineMatch) {
+        lineNumber = parseInt(lineMatch[1], 10);
+      }
+    }
+
+    // 检查是否为语法错误（包括 unterminated string literal）
+    const isSyntaxError = errorType === 'SyntaxError' || 
+                         errorMessage.includes('SyntaxError') || 
+                         errorMessage.includes('unterminated string literal');
+
+    if (isSyntaxError) {
+      // 提取行号并生成友好的错误提示
+      if (lineNumber !== undefined) {
+        errorMessage = `❌ 第 ${lineNumber} 行有语法错误，请检查引号、括号是否闭合。`;
+      } else {
+        errorMessage = `❌ 语法错误，请检查代码中的引号、括号是否正确闭合。`;
+      }
     } else if (errorType === 'IndentationError') {
-      errorMessage = `缩进错误: ${errorMessage}`;
+      errorMessage = `❌ 缩进错误: 请检查代码的缩进是否一致（建议使用4个空格）。`;
     } else if (errorType === 'NameError') {
       const match = errorMessage.match(/name '(\w+)' is not defined/);
       if (match) {
-        errorMessage = `变量 "${match[1]}" 未定义，请检查是否拼写正确或已赋值`;
+        errorMessage = `❌ 变量 "${match[1]}" 未定义，请检查是否拼写正确或已赋值。`;
+      } else {
+        errorMessage = `❌ 名称错误: ${errorMessage}`;
       }
     } else if (errorType === 'TypeError') {
-      errorMessage = `类型错误: ${errorMessage}`;
+      errorMessage = `❌ 类型错误: ${errorMessage}`;
     } else if (errorType === 'AttributeError') {
-      errorMessage = `属性错误: ${errorMessage}`;
+      errorMessage = `❌ 属性错误: ${errorMessage}`;
     } else if (errorType === 'ImportError' || errorType === 'ModuleNotFoundError') {
-      errorMessage = `导入错误: ${errorMessage}`;
+      errorMessage = `❌ 导入错误: ${errorMessage}`;
     } else if (errorType === 'ZeroDivisionError') {
-      errorMessage = '数学错误: 除数不能为零';
+      errorMessage = '❌ 数学错误: 除数不能为零。';
     } else if (errorType === 'IndexError') {
-      errorMessage = `索引错误: ${errorMessage}`;
+      errorMessage = `❌ 索引错误: ${errorMessage}`;
     } else if (errorType === 'KeyError') {
-      errorMessage = `键错误: ${errorMessage}`;
+      errorMessage = `❌ 键错误: ${errorMessage}`;
     } else if (errorType === 'ValueError') {
-      errorMessage = `值错误: ${errorMessage}`;
+      errorMessage = `❌ 值错误: ${errorMessage}`;
+    } else {
+      // 其他未分类错误，统一显示友好提示
+      errorMessage = '❌ 代码运行出错，请检查逻辑后重试。';
     }
 
     const fullOutput: string[] = [];
@@ -482,18 +508,7 @@ sys.stderr = _original_stderr
     };
   }
 
-  private formatSyntaxError(message: string): string {
-    if (message.includes('EOF')) {
-      return `语法错误: 代码不完整（意外的结束）\n提示: 检查括号、引号是否成对匹配`;
-    }
-    if (message.includes('EOL')) {
-      return `语法错误: 字符串未正确关闭\n提示: 检查引号是否成对匹配`;
-    }
-    if (message.includes('invalid syntax')) {
-      return `语法错误: ${message}\n提示: 检查关键字拼写、标点符号是否正确`;
-    }
-    return `语法错误: ${message}`;
-  }
+  
 
   isReady(): boolean {
     return loadingState.isReady;
